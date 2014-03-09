@@ -1,0 +1,38 @@
+12345
+123456789
+1234.3241
+.4532345
+0
+0.1234
+
+0x1234abcdef
+
+0xaffe
+
+01234576543
+
+
+02234563
+
+identifier_Here
+
+identifierThere
+
+identifier2345everywhere
+
+broken_here yes
+
+import "testfile.f";
+
+// test comment
+
+/* moar
+tests
+with
+comments */
+
+after_comment(here);
+
+"Unknown Escape \\ sequence '\\"
+
+"test \033[1;31m breaks"

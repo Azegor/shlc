@@ -1,5 +1,5 @@
 project(compiler)
 
-add_executable(compiler main.cpp)
+add_executable(compiler lexer.cpp main.cpp)
 
 install(TARGETS compiler RUNTIME DESTINATION bin)
