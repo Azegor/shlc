@@ -1,0 +1,24 @@
+class ParseResult
+  {
+  public:
+    std::vector<FunctionExprPtr> functions;
+    std::vector<FunctionHeadExprPtr> functionHeads;
+    FunctionExprPtr mainFunction;
+
+    ParseResult(std::vector<FunctionExprPtr> fns) : functions(std::move(fns)) {}
+
+    ParseResult(const ParseResult &) = delete;
+    ParseResult(ParseResult &&o)
+        : functions(std::move(o.functions)),
+          functionHeads(std::move(o.functionHeads)),
+          mainFunction(std::move(o.mainFunction))
+    {
+    }
+    ParseResult& operator=(const ParseResult&) = delete;
+    ParseResult& operator=(ParseResult&& o) {
+      functions = std::move(o.functions);
+      functionHeads = std::move(o.functionHeads);
+      mainFunction = std::move(o.mainFunction);
+      return *this;
+    }
+  };

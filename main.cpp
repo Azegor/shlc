@@ -4,14 +4,16 @@
 #include <unordered_set>
 
 #include "lexer.h"
+#include "parser.h"
 
 std::unordered_set<std::string> includedFiles;
 
 void printTokenInfo(std::string typeName, std::string tok,
                     std::string after = "")
 {
-  std::cout << typeName << "\033[1;29m" << tok << "\033[00m" << after
-            << std::endl;
+  /* std::cout << typeName << "\033[1;29m" << tok << "\033[00m" << after
+             << std::endl; */
+  std::cout << "\'\033[1;29m" << tok << "\033[00m\' ";
 }
 
 bool readFile(std::string input)
@@ -32,52 +34,53 @@ bool readFile(std::string input)
     while (token = lex.nextToken(), token.type != Token::eof) {
       switch (token.type) {
       case Token::dec_number:
-        printTokenInfo("Dec Number ", token.tokenString);
+        printTokenInfo("Dec Number ", token.str);
         break;
       case Token::hex_number:
-        printTokenInfo("Hex Number ", token.tokenString);
+        printTokenInfo("Hex Number ", token.str);
         break;
       case Token::bin_number:
-        printTokenInfo("Bin Number ", token.tokenString);
+        printTokenInfo("Bin Number ", token.str);
         break;
       case Token::oct_number:
-        printTokenInfo("Oct Number ", token.tokenString);
+        printTokenInfo("Oct Number ", token.str);
         break;
       case Token::identifier:
-        printTokenInfo("Identifier ", token.tokenString);
+        printTokenInfo("Identifier ", token.str);
         break;
 
-      case Token::id_import: {
-        std::cout << "Import statement " << std::endl;
+      case Token::id_use: {
+        std::cout << "Use statement " << std::endl;
         token = lex.nextToken();
         if (token.type != Token::dq_string)
           throw LexError(token.line, token.col,
                          "expected filename after import statement",
-                         std::string("import \"") + token.tokenString + '"');
-        printTokenInfo("Reading file ", token.tokenString);
-        if (!readFile(token.tokenString))
+                         std::string("import \"") + token.str + '"');
+        printTokenInfo("Reading file ", token.str);
+        if (!readFile(token.str))
           throw LexError(token.line, token.col,
-                         "could not open file " + token.tokenString,
-                         std::string("import \"") + token.tokenString + '"');
-        printTokenInfo("Done reading ", token.tokenString);
+                         "could not open file " + token.str,
+                         std::string("import \"") + token.str + '"');
+        printTokenInfo("Done reading ", token.str);
         break;
       }
 
       case Token::dq_string:
-        printTokenInfo("String \"", token.tokenString, "\"");
+        printTokenInfo("String \"", token.str, "\"");
         break;
       case Token::sq_string:
-        printTokenInfo("String '", token.tokenString, "'");
+        printTokenInfo("String '", token.str, "'");
         break;
       default:
         if (token.type >= 0)
-          printTokenInfo("Character '", std::string(1, (char)token.type),
+          printTokenInfo("Char '", std::string(1, (char)token.type),
                          "' (#" + std::to_string(token.type) + ')');
         else
-          printTokenInfo("Unknown Token type: id = ",
-                         std::to_string(token.type),
-                         std::string(" on line ") + std::to_string(token.line) +
-                             ':' + std::to_string(token.col));
+          printTokenInfo("Token ", token.str);
+        /*
+              std::cout << "Unknown Token type: id = \033[1;31m" << token.type
+                        << "\033[00m on line " << token.line << ':' << token.col
+                        << std::endl; */
         break;
       }
     }
@@ -92,9 +95,8 @@ bool readFile(std::string input)
   return true;
 }
 
-int main(int argc, char **argv)
+void testLexer(const char *filename)
 {
-  auto filename = argc == 2 ? argv[1] : "../test.code";
   try { readFile(filename); }
   catch (LexError &e)
   {
@@ -102,5 +104,30 @@ int main(int argc, char **argv)
               << ": \033[1;31m" << e.what() << "\033[00m:" << std::endl;
     std::cout << e.getErrorLineHighlight() << std::endl;
   }
+}
+
+void testParser(const char *filename)
+{
+  try
+  {
+    Parser parser;
+    auto parseRes = parser.parse(filename);
+    for (auto &r : parseRes)
+      r->print();
+  }
+  catch (ParseError &e)
+  {
+    std::cout << "Caught ParseError on line " << e.token.line << ':'
+              << e.token.col << ": \033[1;31m" << e.what()
+              << "\033[00m:" << std::endl;
+    std::cout << e.getErrorLineHighlight() << std::endl;
+  }
+}
+
+int main(int argc, char **argv)
+{
+  auto filename = argc == 2 ? argv[1] : "../test.language";
+  // testLexer(filename);
+  testParser(filename);
   return 0;
 }
