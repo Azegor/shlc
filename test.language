@@ -1,0 +1,26 @@
+fn main() {
+  hi();
+}
+
+fn test(int a) {
+  yo();
+}
+
+fn bla(int a, b) {
+  exit(1);
+}
+
+fn bla2(int a, b; flt c, d) {
+  test(2);
+}
+
+fn whatever_fn_name(int a; flt b, c, d; chr e,f,g,h,i;boo l;) {
+  yo();
+}
+
+fn declaration();
+fn decl2(int a, b; flt c,d;);
+fn decl3();
+
+fn nativeFunction() native;
+fn ANF(int a,b,c,d,e,f;boo g,h,i,j,k,l;) native;

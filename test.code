@@ -22,7 +22,7 @@ identifier2345everywhere
 
 broken_here yes
 
-import "testfile.f";
+use "testfile.f";
 
 // test comment
 
@@ -31,8 +31,27 @@ tests
 with
 comments */
 
+int a = 1;
+
+int b = a / 5;
+
+a /= 7;
+
+a += b + 2;
+b -= 7 - 5;
+int c = 3;
+c *= -1 * 1;
+
 after_comment(here);
 
 "Unknown Escape \\ sequence '\\"
 
 "test \033[1;31m breaks"
+
+string escape_test = "test\b with\a escape\n characters\r yay";
+
+bit <<= shift << left
+bit >>= shift >> right;
+
+a ** b;
+c **= d;

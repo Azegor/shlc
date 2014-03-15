@@ -62,28 +62,95 @@ struct Token
     bin_number,
     oct_number,
 
-    //  identifiers:
-    id_import,
-
-    // operators:
-    divide,
+    // arithmetic operators:
+    add_assign,
+    sub_assign,
+    mul_assign,
     div_assign,
+    mod_assign,
+    pow_assign,
+    increment,
+    decrement,
+    power,
+
+    // bool operators
+    lte,
+    gte,
+    log_and,
+    log_or,
+
+    // bit operations
+    lshift,
+    rshift,
+    lshift_assign,
+    rshift_assign,
+    bit_and_assign,
+    bit_or_assign,
+    bit_complement_assign,
+    bit_xor_assign,
+
+    //  identifiers:
+    id_if,
+    id_elif,
+    id_el,
+    id_for,
+    id_whl,
+    id_brk,
+    id_cnt,
+    id_T,
+    id_F,
+    id_nil,
+    id_use,
+    id_fn,
+    id_main,
+    id_ret,
+    id_native,
+    id_op,
+
+    // type IDs
+    id_var,
+    id_vac,
+    // valid var types:
+    id_int,
+    id_flt,
+    id_boo,
+    id_str,
+    id_chr,
   };
   int type;
   int line, col;
-  std::string tokenString;
+  std::string str;
 
   Token() : Token(none, 0, 0, "") {}
   Token(int type) : Token(type, 0, 0, "") {}
 
   Token(int type, int line, int col, std::string tokString)
-      : type(type), line(line), col(col), tokenString(std::move(tokString))
+      : type(type), line(line), col(col), str(std::move(tokString))
   {
   }
 
-  Token(const Token &o)
-      : type(o.type), line(o.line), col(o.col), tokenString(o.tokenString)
+  Token(const Token &o) : type(o.type), line(o.line), col(o.col), str(o.str) {}
+  Token(Token &&o)
+      : type(o.type), line(o.line), col(o.col), str(std::move(o.str))
   {
+  }
+
+  Token &operator=(const Token &o)
+  {
+    type = o.type;
+    line = o.line;
+    col = o.col;
+    str = o.str;
+    return *this;
+  }
+
+  Token &operator=(Token &&o)
+  {
+    type = o.type;
+    line = o.line;
+    col = o.col;
+    str = std::move(o.str);
+    return *this;
   }
 };
 
@@ -108,21 +175,16 @@ private:
 
   int readNext();
 
-  std::unordered_map<std::string, Token::TokenType> identifierTokens = {
-      {"import", Token::id_import}, };
+  void appendAndNext()
+  {
+    tokenString += lastChar;
+    readNext();
+  }
 
-  std::unordered_map<char, char> escapeCharacters = {{'\'', '\''},
-                                                     {'"', '\"'},
-                                                     {'?', '\?'},
-                                                     {'\\', '\\'},
-                                                     {'0', '\0'},
-                                                     {'a', '\a'},
-                                                     {'b', '\b'},
-                                                     {'f', '\f'},
-                                                     {'n', '\n'},
-                                                     {'r', '\r'},
-                                                     {'t', '\t'},
-                                                     {'v', '\v'}};
+  static std::unordered_map<std::string, Token::TokenType> identifierTokens;
+  static std::unordered_map<char, char> escapeCharacters;
+  static std::unordered_map<int, std::string> tokenNames;
+
   Token readString(char sep, int tokenType);
   Token readLeadingZeroNumber();
   Token readDecNumber();
@@ -130,6 +192,19 @@ private:
   Token readNumberExponentPart();
 
   Token readDivideOperatorOrComment();
+  Token readMultiplyOperator();
+  Token readModuloOperator();
+  Token readPlusOperator();
+  Token readMinusOperator();
+
+  Token readLTOperator();
+  Token readGTOperator();
+
+  Token readAndOperator();
+  Token readOrOperator();
+
+  Token readBitComplOperator();
+  Token readBitXorOperator();
 
   Token makeToken(int type) { return Token(type, line, column, tokenString); }
 
@@ -148,10 +223,15 @@ private:
   }
 
 public:
-  // TODO take file name as argument?
-  Lexer(std::istream &input) : input(&input) { checkStream(); }
+  const std::string filename;
 
-  Lexer(std::string filename) : input(new std::ifstream(filename))
+  Lexer(std::istream &input) : input(&input), filename("<unknown>")
+  {
+    checkStream();
+  }
+
+  Lexer(std::string filename)
+      : input(new std::ifstream(filename)), filename(filename)
   {
     ownsStream = true;
     checkStream();
@@ -167,7 +247,7 @@ public:
         column(o.column),
         currentLine(o.currentLine)
   {
-    o.input = nullptr;
+    // o.input = nullptr;
     o.ownsStream = false;
   }
 
@@ -178,6 +258,19 @@ public:
   }
 
   Token nextToken();
+
+  std::string abortAndGetCurrentLine()
+  {
+    finishCurrentLine();
+    return currentLine;
+  }
+
+  static std::string getTokenName(int type) {
+    auto pos = tokenNames.find(type);
+    if (pos != tokenNames.end())
+      return pos->second;
+    return std::to_string((char)type);
+  }
 };
 
 #endif // LEXER_H

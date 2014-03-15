@@ -17,6 +17,110 @@
 
 #include "lexer.h"
 
+std::unordered_map<std::string, Token::TokenType> Lexer::identifierTokens{
+    {"if", Token::id_if},
+    {"elif", Token::id_elif},
+    {"el", Token::id_el},
+    {"for", Token::id_for},
+    {"whl", Token::id_whl},
+    {"brk", Token::id_brk},
+    {"cnt", Token::id_cnt},
+    {"var", Token::id_var},
+    {"int", Token::id_int},
+    {"flt", Token::id_flt},
+    {"boo", Token::id_boo},
+    {"str", Token::id_str},
+    {"vac", Token::id_vac},
+    {"chr", Token::id_chr},
+    {"T", Token::id_T},
+    {"F", Token::id_F},
+    {"nil", Token::id_nil},
+    {"use", Token::id_use},
+    {"fn", Token::id_fn},
+    {"main", Token::id_main},
+    {"ret", Token::id_ret},
+    {"native", Token::id_native}};
+
+std::unordered_map<char, char> Lexer::escapeCharacters{
+    {'\'', '\''}, // --------------
+    {'"', '\"'},
+    {'?', '\?'},
+    {'\\', '\\'},
+    {'0', '\0'},
+    {'a', '\a'},
+    {'b', '\b'},
+    {'f', '\f'},
+    {'n', '\n'},
+    {'r', '\r'},
+    {'t', '\t'},
+    {'v', '\v'}};
+
+std::unordered_map<int, std::string> Lexer::tokenNames{
+    {Token::none, "none"},
+    {Token::eof, "eof"},
+    {Token::identifier, "identifier"},
+    {Token::dq_string, "dq_string"},
+    {Token::sq_string, "sq_string"},
+    {Token::dec_number, "dec_number"},
+    {Token::hex_number, "hex_number"},
+    {Token::bin_number, "bin_number"},
+    {Token::oct_number, "oct_number"},
+
+    // arithmetic operators:
+    {Token::add_assign, "add_assign"},
+    {Token::sub_assign, "sub_assign"},
+    {Token::mul_assign, "mul_assign"},
+    {Token::div_assign, "div_assign"},
+    {Token::mod_assign, "mod_assign"},
+    {Token::pow_assign, "pow_assign"},
+    {Token::increment, "increment"},
+    {Token::decrement, "decrement"},
+    {Token::power, "power"},
+
+    // bool operators
+    {Token::lte, "lte"},
+    {Token::gte, "gte"},
+    {Token::log_and, "log_and"},
+    {Token::log_or, "log_or"},
+
+    // bit operations
+    {Token::lshift, "lshift"},
+    {Token::rshift, "rshift"},
+    {Token::lshift_assign, "lshift_assign"},
+    {Token::rshift_assign, "rshift_assign"},
+    {Token::bit_and_assign, "bit_and_assign"},
+    {Token::bit_or_assign, "bit_or_assign"},
+    {Token::bit_complement_assign, "bit_complement_assign"},
+    {Token::bit_xor_assign, "bit_xor_assign"},
+
+    //  identifiers:
+    {Token::id_if, "id_if"},
+    {Token::id_elif, "id_elif"},
+    {Token::id_el, "id_el"},
+    {Token::id_for, "id_for"},
+    {Token::id_whl, "id_whl"},
+    {Token::id_brk, "id_brk"},
+    {Token::id_cnt, "id_cnt"},
+    {Token::id_T, "id_T"},
+    {Token::id_F, "id_F"},
+    {Token::id_nil, "id_nil"},
+    {Token::id_use, "id_use"},
+    {Token::id_fn, "id_fn"},
+    {Token::id_main, "id_main"},
+    {Token::id_ret, "id_ret"},
+    {Token::id_native, "id_native"},
+    {Token::id_op, "id_op"},
+
+    // type IDs
+    {Token::id_var, "id_var"},
+    {Token::id_vac, "id_vac"},
+    // valid var types:
+    {Token::id_int, "id_int"},
+    {Token::id_flt, "id_flt"},
+    {Token::id_boo, "id_boo"},
+    {Token::id_str, "id_str"},
+    {Token::id_chr, "id_chr"}, };
+
 int Lexer::readNext()
 {
   static enum { normal, cr, lf, crlf } lineState = normal;
@@ -138,9 +242,8 @@ Token Lexer::nextToken()
   if (lastChar == '/')
     return readDivideOperatorOrComment();
 
-  /*
   if (lastChar == '*')
-    return readTimesOperator();
+    return readMultiplyOperator();
 
   if (lastChar == '+')
     return readPlusOperator();
@@ -153,13 +256,26 @@ Token Lexer::nextToken()
 
   if (lastChar == '>')
     return readGTOperator();
-  */
+
+  if (lastChar == '&')
+    return readAndOperator();
+
+  if (lastChar == '|')
+    return readOrOperator();
+
+  if (lastChar == '~')
+    return readBitComplOperator();
+
+  if (lastChar == '^')
+    return readBitXorOperator();
+
   // -----------
   // end of file
   if (input->eof())
     return makeToken(Token::eof);
 
   // remaining single characters as tokens (i.e. operator symbols)
+  tokenString = lastChar;
   int thisChar = lastChar;
   readNext();
   return makeToken(thisChar);
@@ -299,7 +415,7 @@ inline Token Lexer::readNumberExponentPart()
   return makeToken(Token::dec_number);
 }
 //----
-Token Lexer::readDivideOperatorOrComment()
+inline Token Lexer::readDivideOperatorOrComment()
 {
   // read '/' '/=' '//' '/*'
   tokenString = '/';
@@ -319,20 +435,156 @@ Token Lexer::readDivideOperatorOrComment()
     while (!input->eof()) {
       if (lastChar == '*') {
         if (readNext() == '/') {
-	  readNext();
+          readNext();         // eat '/'
           return nextToken(); // recursive call
-	}
-        else
+        } else
           continue; // skip readNext() for cases like '**/'
       }
       readNext();
     }
     error("unexpected end of file in multi line comment");
   } else if (lastChar == '=') {
-    tokenString += lastChar;
-    readNext();
+    appendAndNext();
     return makeToken(Token::div_assign);
   } else {
-    return makeToken(Token::divide);
+    return makeToken('/');
   }
+}
+
+inline Token Lexer::readMultiplyOperator()
+{
+  tokenString = '*';
+  if (readNext() == '=') {
+    appendAndNext();
+    return makeToken(Token::mul_assign);
+  }
+  if (lastChar == '*') {
+    appendAndNext();
+    if (lastChar == '=') {
+      appendAndNext();
+      return makeToken(Token::pow_assign);
+    }
+    return makeToken(Token::power);
+  }
+  return makeToken('*');
+}
+
+inline Token Lexer::readModuloOperator()
+{
+  tokenString = '%';
+  if (readNext() == '=') {
+    appendAndNext();
+    return makeToken(Token::mod_assign);
+  }
+  return makeToken('%');
+}
+
+inline Token Lexer::readPlusOperator()
+{
+  tokenString = '+';
+  if (readNext() == '=') {
+    appendAndNext();
+    return makeToken(Token::add_assign);
+  }
+  if (lastChar == '+') {
+    appendAndNext();
+    return makeToken(Token::increment);
+  }
+  return makeToken('+');
+}
+
+inline Token Lexer::readMinusOperator()
+{
+  tokenString = '-';
+  if (readNext() == '=') {
+    appendAndNext();
+    return makeToken(Token::sub_assign);
+  }
+  if (lastChar == '-') {
+    appendAndNext();
+    return makeToken(Token::decrement);
+  }
+  return makeToken('-');
+}
+
+inline Token Lexer::readLTOperator()
+{
+  tokenString = '<';
+  if (readNext() == '=') {
+    appendAndNext();
+    return makeToken(Token::lte);
+  }
+  if (lastChar == '<') {
+    appendAndNext();
+    if (lastChar == '=') {
+      appendAndNext();
+      return makeToken(Token::lshift_assign);
+    }
+    return makeToken(Token::lshift);
+  }
+  return makeToken('<');
+}
+inline Token Lexer::readGTOperator()
+{
+  tokenString = '>';
+  if (readNext() == '=') {
+    appendAndNext();
+    return makeToken(Token::gte);
+  }
+  if (lastChar == '>') {
+    appendAndNext();
+    if (lastChar == '=') {
+      appendAndNext();
+      return makeToken(Token::rshift_assign);
+    }
+    return makeToken(Token::rshift);
+  }
+  return makeToken('>');
+}
+
+inline Token Lexer::readAndOperator()
+{
+  tokenString = '&';
+  if (readNext() == '&') {
+    appendAndNext();
+    return makeToken(Token::log_and);
+  }
+  if (lastChar == '=') {
+    appendAndNext();
+    return makeToken(Token::bit_and_assign);
+  }
+  return makeToken('&');
+}
+inline Token Lexer::readOrOperator()
+{
+  tokenString = '|';
+  if (readNext() == '|') {
+    appendAndNext();
+    return makeToken(Token::log_or);
+  }
+  if (lastChar == '=') {
+    appendAndNext();
+    return makeToken(Token::bit_or_assign);
+  }
+  return makeToken('|');
+}
+
+inline Token Lexer::readBitComplOperator()
+{
+  tokenString = '~';
+  if (readNext() == '=') {
+    appendAndNext();
+    return makeToken(Token::bit_complement_assign);
+  }
+  return makeToken('~');
+}
+
+inline Token Lexer::readBitXorOperator()
+{
+  tokenString = '^';
+  if (readNext() == '=') {
+    appendAndNext();
+    return makeToken(Token::bit_xor_assign);
+  }
+  return makeToken('^');
 }
