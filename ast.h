@@ -36,9 +36,19 @@ public:
 
 using AstNodePtr = std::unique_ptr<AstNode>;
 
+enum Type : int { none, int_t, flt_t, chr_t, boo_t, str_t, vac_t, };
+
+std::string getTypeName(Type t);
+Type getTypeFromToken(int tok);
+
 class Expr : public AstNode
 {
+protected:
+  Type type = Type::none;
+
 public:
+  Expr() = default; // TODO: remove when all derived classes use 2nd constructor
+  Expr(Type type) : type(type) {}
   virtual ~Expr() {}
   // virtual llvm::Value *Codegen() = 0;
 };
@@ -46,65 +56,86 @@ public:
 using ExprPtr = std::unique_ptr<Expr>;
 using ExprList = std::vector<ExprPtr>;
 
-// Functions:
+class BlockExpr : public Expr
+{
+  ExprList block;
 
+public:
+  BlockExpr(ExprList block) : block(std::move(block)) {}
+  void print(int indent = 0) override;
+  /*
+  BlockExpr(const BlockExpr&) = delete;
+  BlockExpr(BlockExpr&&) = delete;
+  BlockExpr &operator=(const BlockExpr&) = delete;
+  BlockExpr &operator=(BlockExpr&&) = delete;
+  */
+};
+
+using BlockExprPtr = std::unique_ptr<BlockExpr>;
+
+template <typename Ex, typename... Args> ExprPtr make_EPtr(Args &&... args)
+{
+  return ExprPtr{new Ex(std::forward<Args>(args)...)};
+}
+
+// Functions: ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 using ArgVector = std::vector<std::pair<int, std::string>>;
 
-class FunctionHeadExpr : public AstNode
+class FunctionHead : public AstNode
 {
   std::string name;
   ArgVector args;
+  Type retType;
 
 public:
-  FunctionHeadExpr(std::string name, ArgVector args)
-      : name(std::move(name)), args(std::move(args))
+  FunctionHead(std::string name, ArgVector args, Type retType)
+      : name(std::move(name)), args(std::move(args)), retType(retType)
   {
   }
 
   void print(int indent = 0) override;
 };
 
-using FunctionHeadExprPtr = std::unique_ptr<FunctionHeadExpr>;
+using FunctionHeadPtr = std::unique_ptr<FunctionHead>;
 
-class FunctionExpr : public Expr
+class Function : public AstNode
 {
 protected:
-  FunctionHeadExprPtr head;
+  FunctionHeadPtr head;
 
 public:
-  FunctionExpr(FunctionHeadExprPtr head) : head(std::move(head)) {}
+  Function(FunctionHeadPtr head) : head(std::move(head)) {}
   void print(int indent = 0) override;
 };
 
-class NativeFunctionExpr : public FunctionExpr
+class NativeFunction : public Function
 {
 public:
-  NativeFunctionExpr(FunctionHeadExprPtr head) : FunctionExpr(std::move(head))
+  NativeFunction(FunctionHeadPtr head) : Function(std::move(head)) {}
+  void print(int indent = 0) override;
+};
+
+class NormalFunction : public Function
+{
+  BlockExprPtr body;
+
+public:
+  NormalFunction(FunctionHeadPtr head, BlockExprPtr body)
+      : Function(std::move(head)), body(std::move(body))
   {
   }
   void print(int indent = 0) override;
 };
-class NormalFunctionExpr : public FunctionExpr
-{
-  ExprList body;
-
-public:
-  NormalFunctionExpr(FunctionHeadExprPtr head, ExprList body)
-      : FunctionExpr(std::move(head)), body(std::move(body))
-  {
-  }
-  void print(int indent = 0) override;
-};
-class FunctionDeclExpr : public FunctionExpr
+class FunctionDecl : public Function
 {
 public:
-  FunctionDeclExpr(FunctionHeadExprPtr head) : FunctionExpr(std::move(head)) {}
+  FunctionDecl(FunctionHeadPtr head) : Function(std::move(head)) {}
   void print(int indent = 0) override;
 };
 
-using FunctionExprPtr = std::unique_ptr<FunctionExpr>;
+using FunctionPtr = std::unique_ptr<Function>;
 
-// Expressions:
+// Expressions: ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 class CallExpr : public Expr
 {
@@ -112,30 +143,92 @@ class CallExpr : public Expr
   ArgVector args;
 
 public:
-};
-
-/*
-
-class TestToken : public Expr
-{
-  std::string name;
-  std::vector<ExprPtr> children;
-
-public:
-  TestToken(std::string name) : name(std::move(name)) {}
-
-  void addChild(ExprPtr child) { children.push_back(std::move(child)); }
-
-  void print(int indent = 0) override
+  CallExpr(std::string fnName, ArgVector args)
+      : fnName(std::move(fnName)), args(std::move(args))
   {
-    printIndent(indent);
-    std::cout << name << '[' << std::endl;
-    for (auto &c : children)
-      c->print(indent + 1);
-    std::cout << ']' << std::endl;
   }
 };
 
-*/
+class VariableExpr : public Expr
+{
+  std::string name;
+
+public:
+  VariableExpr(std::string name) : name(std::move(name)) {}
+  void print(int indent = 0) override;
+};
+
+class FunctionCallExpr : public Expr
+{
+  std::string name;
+  ExprList args;
+
+public:
+  FunctionCallExpr(std::string name, ExprList args)
+      : name(std::move(name)), args(std::move(args))
+  {
+  }
+  void print(int indent = 0) override;
+};
+
+class NumberExpr : public Expr
+{
+public:
+  NumberExpr(Type type) : Expr(type) {}
+  void print(int indent = 0) override;
+};
+
+class IntNumberExpr : public NumberExpr
+{
+  long long value;
+
+public:
+  IntNumberExpr(long long val) : NumberExpr(Type::int_t), value(val) {}
+  void print(int indent = 0) override;
+};
+
+class FltNumberExpr : public NumberExpr
+{
+  long double value;
+
+public:
+  FltNumberExpr(long double val) : NumberExpr(Type::flt_t), value(val) {}
+  void print(int indent = 0) override;
+};
+
+class VarDeclExpr : public Expr
+{
+  Type type;
+  std::vector<std::string> names;
+
+public:
+  VarDeclExpr(Type type, std::vector<std::string> names)
+      : type(type), names(std::move(names))
+  {
+  }
+  void print(int indent = 0) override;
+};
+
+class BinOpExpr : public Expr
+{
+  int op;
+  ExprPtr lhs, rhs;
+
+public:
+  BinOpExpr(int op, ExprPtr lhs, ExprPtr rhs)
+      : op(op), lhs(std::move(lhs)), rhs(std::move(rhs))
+  {
+  }
+  void print(int indent = 0) override;
+};
+
+class ReturnExpr : public Expr
+{
+  ExprPtr expr;
+
+public:
+  ReturnExpr(ExprPtr expr) : expr(std::move(expr)) {}
+  void print(int indent = 0) override;
+};
 
 #endif // AST_H

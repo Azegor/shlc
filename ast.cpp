@@ -17,6 +17,33 @@
 
 #include "ast.h"
 
+#include <unordered_map>
+
+std::string getTypeName(Type t)
+{
+  static std::unordered_map<int, std::string> names = {
+      {Type::none, "none"}, // *
+      {Type::int_t, "int_t"},
+      {Type::flt_t, "flt_t"},
+      {Type::chr_t, "chr_t"},
+      {Type::boo_t, "boo_t"},
+      {Type::str_t, "str_t"},
+      {Type::vac_t, "vac_t"}};
+  return names[t];
+}
+
+Type getTypeFromToken(int tok)
+{
+  static std::unordered_map<int, Type> types = {
+      {Token::id_int, Type::int_t}, // *
+      {Token::id_flt, Type::flt_t},
+      {Token::id_chr, Type::chr_t},
+      {Token::id_boo, Type::boo_t},
+      {Token::id_str, Type::str_t},
+      {Token::id_vac, Type::vac_t}};
+  return types[tok];
+}
+
 static void printIndent(int indent)
 {
   static constexpr int width = 2;
@@ -37,17 +64,17 @@ static void printList(L list, Callback callback)
   }
 }
 
-void FunctionHeadExpr::print(int indent)
+void FunctionHead::print(int indent)
 {
   printIndent(indent);
   std::cout << name << '(';
   printList(args, [](ArgVector::value_type e) {
     return Lexer::getTokenName(e.first) + " " + e.second;
   });
-  std::cout << ')' << std::endl;
+  std::cout << ") : " << getTypeName(retType) << std::endl;
 }
 
-void FunctionExpr::print(int indent)
+void Function::print(int indent)
 {
   printIndent(indent);
   std::cout << "* Function [" << std::endl;
@@ -56,22 +83,17 @@ void FunctionExpr::print(int indent)
   std::cout << ']' << std::endl;
 }
 
-void NormalFunctionExpr::print(int indent)
+void NormalFunction::print(int indent)
 {
   printIndent(indent);
   std::cout << "Normal Function [" << std::endl;
   head->print(indent + 1);
-  printIndent(indent + 1);
-  std::cout << '{' << std::endl;
-  for (auto &stmt : body)
-    stmt->print(indent + 2);
-  printIndent(indent + 1);
-  std::cout << '}' << std::endl;
+  body->print(indent + 1);
   printIndent(indent);
   std::cout << ']' << std::endl;
 }
 
-void NativeFunctionExpr::print(int indent)
+void NativeFunction::print(int indent)
 {
   printIndent(indent);
   std::cout << "Native Function [" << std::endl;
@@ -80,11 +102,86 @@ void NativeFunctionExpr::print(int indent)
   std::cout << ']' << std::endl;
 }
 
-void FunctionDeclExpr::print(int indent)
+void FunctionDecl::print(int indent)
 {
   printIndent(indent);
   std::cout << "Function Declaration [" << std::endl;
   head->print(indent + 1);
   printIndent(indent);
   std::cout << ']' << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+void VariableExpr::print(int indent)
+{
+  printIndent(indent);
+  std::cout << "Variable [" << name << ']' << std::endl;
+}
+
+void FunctionCallExpr::print(int indent)
+{
+  printIndent(indent);
+  std::cout << "Function Call [" << name << '(';
+  for (auto &e : args)
+    e->print();
+  std::cout << ")]";
+}
+
+void NumberExpr::print(int indent)
+{
+  printIndent(indent);
+  std::cout << "[Number, type: " << getTypeName(type) << "]";
+}
+void IntNumberExpr::print(int indent)
+{
+  printIndent(indent);
+  std::cout << "[Int Number: " << value << "]";
+}
+void FltNumberExpr::print(int indent)
+{
+  printIndent(indent);
+  std::cout << "[Flt Number: " << value << "]";
+}
+
+void VarDeclExpr::print(int indent)
+{
+  printIndent(indent);
+  std::cout << "[Variable Decl: ";
+  printList(names, [](std::string s) { return s; });
+  std::cout << " : " << getTypeName(type) << ']' << std::endl;
+}
+
+void BinOpExpr::print(int indent)
+{
+  printIndent(indent);
+  std::cout << "BinOp: [" << std::endl;
+  printIndent(indent + 1);
+  lhs->print(indent + 1);
+  std::cout << ' ' << Lexer::getTokenName(op) << ' ';
+  rhs->print(indent + 1);
+  printIndent(indent);
+  std::cout << ']' << std::endl;
+}
+
+void ReturnExpr::print(int indent)
+{
+  printIndent(indent);
+  std::cout << "Return: [" << std::endl;
+  expr->print(indent + 1);
+  printIndent(indent);
+  std::cout << ']' << std::endl;
+}
+
+void BlockExpr::print(int indent)
+{
+  printIndent(indent + 1);
+  std::cout << '{' << std::endl;
+  for (auto &stmt : block) {
+    if (stmt)
+      stmt->print(indent + 2);
+    std::cout << std::endl;
+  }
+  printIndent(indent + 1);
+  std::cout << '}' << std::endl;
 }

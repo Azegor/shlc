@@ -58,6 +58,7 @@ struct Token
     dq_string,
     sq_string,
     dec_number,
+    dec_flt_number,
     hex_number,
     bin_number,
     oct_number,
@@ -76,6 +77,8 @@ struct Token
     // bool operators
     lte,
     gte,
+    eq,
+    neq,
     log_and,
     log_or,
 
@@ -95,6 +98,7 @@ struct Token
     id_el,
     id_for,
     id_whl,
+    id_do,
     id_brk,
     id_cnt,
     id_T,
@@ -205,6 +209,8 @@ private:
 
   Token readBitComplOperator();
   Token readBitXorOperator();
+  Token readEq();
+  Token readBang();
 
   Token makeToken(int type) { return Token(type, line, column, tokenString); }
 
@@ -269,7 +275,7 @@ public:
     auto pos = tokenNames.find(type);
     if (pos != tokenNames.end())
       return pos->second;
-    return std::to_string((char)type);
+    return {(char)type};
   }
 };
 
