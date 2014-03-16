@@ -26,18 +26,84 @@ static inline bool isVarTypeId(int tokenType)
   return Token::id_int <= tokenType && tokenType <= Token::id_chr;
 }
 
-std::vector<FunctionExprPtr> Parser::parse(std::string filename)
+std::unordered_map<int, int> binOpPrecedence{
+    // Install standard binary operators.
+    // 1 is lowest precedence.
+    // the assignment operators might need a special treatment (right to left
+    // associativity!)
+    {'=', 2},
+    {Token::add_assign, 2},
+    {Token::sub_assign, 2},
+    {Token::mul_assign, 2},
+    {Token::div_assign, 2},
+    {Token::mod_assign, 2},
+    {Token::bit_and_assign, 2},
+    {Token::bit_or_assign, 2},
+    {Token::bit_xor_assign, 2},
+    {Token::lshift_assign, 2},
+    {Token::rshift_assign, 2},
+
+    // 20
+    {Token::log_or, 20},
+    // 30
+    {Token::log_and, 30},
+    // 40
+    {'|', 40},
+    // 50
+    {'^', 50},
+    // 60
+    {'&', 60},
+    // 70
+    {Token::eq, 70},
+    {Token::neq, 70},
+
+    // 80
+    {'<', 80},
+    {'>', 80},
+    {Token::lte, 80},
+    {Token::gte, 80},
+
+    // 90
+    {Token::lshift, 90},
+    {Token::rshift, 90},
+
+    // 100
+    {'+', 100},
+    {'-', 100},
+
+    // 110
+    {'*', 110},
+    {'/', 110},
+    {'%', 110}, };
+
+/* maybe needed later?
+std::unordered_map<int, int> unOpPrecedence{
+    // 150
+    {Token::increment, 150},
+    {Token::decrement, 150},
+}
+*/
+
+int Parser::getTokenPrecedence(int type)
+{
+  auto pos = binOpPrecedence.find(type);
+  if (pos == binOpPrecedence.end())
+    return -1;
+  return pos->second;
+}
+
+std::vector<FunctionPtr> Parser::parse(std::string filename)
 {
   pushLexer(filename);
   // outer:
-  std::vector<FunctionExprPtr> toplevelFunctions;
+  std::vector<FunctionPtr> toplevelFunctions;
   while (!lexers.empty()) {
     bool eof = false;
     readNextToken();
     while (!eof) {
       switch (curTok.type) {
       default:
-        std::cerr << "unexpected token: " << curTok.str << std::endl;
+        std::cerr << "unexpected token '" << curTok.str << '\'' << std::endl;
         readNextToken();
         break;
       case Token::id_fn:
@@ -55,74 +121,254 @@ std::vector<FunctionExprPtr> Parser::parse(std::string filename)
   return toplevelFunctions;
 }
 
-FunctionExprPtr Parser::parseFunctionDef()
+FunctionPtr Parser::parseFunctionDef()
 {
   readNextToken(); // eat 'fn'
   // handle main as normal Token::identifier
   if (curTok.type != Token::identifier && curTok.type != Token::id_main)
-    error("Unexpected Token " + curTok.str + ", expected identifier");
+    error("Unexpected Token '" + curTok.str + "', expected identifier");
   std::string fnName = curTok.str;
   if (readNextToken().type != '(')
-    error("Unexpected token " + curTok.str + ", expected '('");
+    error("Unexpected token '" + curTok.str + "', expected '('");
   ArgVector arguments;
 
   readNextToken(); // eat '('
 
   while (curTok.type != ')') {
     if (isVarTypeId(curTok.type)) {
-      readFunctionArguments(arguments);
+      parseFunctionArguments(arguments);
       if (curTok.type == ';')
         readNextToken(); // eat ';'
     } else {
-      error("Unexpected token " + curTok.str);
+      error("Unexpected '" + curTok.str + '\'');
     }
   }
 
   readNextToken(); // eat ')'
 
-  auto head = FunctionHeadExprPtr{
-      new FunctionHeadExpr(std::move(fnName), std::move(arguments))};
+  Type retType = Type::vac_t;
+  if (curTok.type == ':') // with return type
+  {
+    readNextToken();
+    if (!isVarTypeId(curTok.type))
+      error("unexpected '" + curTok.str + "', expected type");
+    retType = getTypeFromToken(curTok.type);
+    readNextToken();
+  }
+
+  auto head = FunctionHeadPtr{
+      new FunctionHead(std::move(fnName), std::move(arguments), retType)};
 
   switch (curTok.type) {
   default:
-    error("unexpected " + curTok.str + ", expected 'native' '{' or ';'");
+    error("unexpected '" + curTok.str + "', expected 'native' '{' or ';'");
     break;
   case Token::id_native: // native function
     if (readNextToken().type != ';')
-      error("unexpected " + curTok.str + ", expected ';'");
+      error("unexpected '" + curTok.str + "', expected ';'");
     readNextToken();
-    return FunctionExprPtr{new NativeFunctionExpr{std::move(head)}};
+    return FunctionPtr{new NativeFunction{std::move(head)}};
     break;
   case '{': // function definition
   {
-    auto body = readFunctionBody();
-    return FunctionExprPtr{
-        new NormalFunctionExpr(std::move(head), std::move(body))};
+    auto body = parseExprBlock();
+    return FunctionPtr{new NormalFunction(std::move(head), std::move(body))};
     break;
   }
   case ';':          // function declaration
     readNextToken(); // eat ';'
-    return FunctionExprPtr{new FunctionDeclExpr(std::move(head))};
+    return FunctionPtr{new FunctionDecl(std::move(head))};
     break;
   }
 }
 
 // reads until ';' or ')'
-void Parser::readFunctionArguments(ArgVector &args)
+void Parser::parseFunctionArguments(ArgVector &args)
 {
   // assert (isVarTypeId(curTok));
   int argType = curTok.type;
   readNextToken();
   do {
     if (curTok.type != Token::identifier)
-      error("unexpected token " + curTok.str + ", expected identifier");
+      error("unexpected '" + curTok.str + "', expected identifier");
     args.emplace_back(std::make_pair(argType, curTok.str));
     if (readNextToken().type == ',')
       readNextToken(); // eat ','
   } while (curTok.type != ';' && curTok.type != ')');
 }
 
-std::vector<ExprPtr> Parser::readFunctionBody()
+BlockExprPtr Parser::parseExprBlock()
+{
+  // assert(curTok.type == '{');
+  readNextToken();
+  ExprList exprL;
+  while (curTok.type != '}') {
+    exprL.push_back(parseTLExpr());
+    if (curTok.type != ';')
+      error("unexpected '" + curTok.str + "', expected ';'");
+    readNextToken();
+  }
+  readNextToken(); // eat '}'
+  return BlockExprPtr{new BlockExpr(std::move(exprL))};
+}
+
+ExprPtr Parser::parseTLExpr()
+{
+  switch (curTok.type) {
+  default:
+    return parseExpr();
+  case '{': // new block
+    return parseExprBlock();
+  case Token::id_if:
+    return parseIfExpr();
+  case Token::id_for:
+    return parseForExpr();
+  case Token::id_whl:
+    return parseWhlExpr();
+  case Token::id_do:
+    return parseDoExpr();
+  case Token::id_ret:
+    return parseRetExpr();
+  case Token::id_var:
+    return parseVarDeclExpr();
+  }
+}
+
+ExprPtr Parser::parseExpr()
+{
+  auto res =
+      parseBinOpRHS(0, parsePrimaryExpr()); // use parseUnary() here later!
+
+  return res;
+}
+
+ExprPtr Parser::parseBinOpRHS(int exprPrec, ExprPtr lhs)
+{
+  while (true) {
+    int tokPrec = getTokenPrecedence(curTok.type);
+
+    // if new binOp (tokPrec) binds less tight, we're done
+    if (tokPrec < exprPrec)
+      return lhs; // this is the loop exit point!
+
+    auto binOp = curTok.type;
+    readNextToken(); // eat binop
+
+    auto rhs = parsePrimaryExpr();
+
+    int nextPrec = getTokenPrecedence(curTok.type);
+    // if new op binds less tightly take current op as its RHS
+    if (tokPrec < nextPrec)
+      rhs = parseBinOpRHS(tokPrec + 1, std::move(rhs));
+
+    lhs = make_EPtr<BinOpExpr>(binOp, std::move(lhs), std::move(rhs));
+  }
+}
+
+ExprPtr Parser::parsePrimaryExpr()
+{
+  switch (curTok.type) {
+  default:
+    error("unexpected '" + curTok.str + "', expected primary expression");
+  case Token::identifier:
+    return parseIdentifierExpr();
+  case Token::dec_number:
+  case Token::hex_number:
+  case Token::oct_number:
+  case Token::bin_number:
+    return parseNumberExpr();
+  case '(':
+    return parseParenExpr();
+  }
+}
+
+ExprPtr Parser::parseIdentifierExpr()
+{
+  auto idName = curTok.str;
+  readNextToken(); // eat identifier
+  if (curTok.type != '(')
+    return make_EPtr<VariableExpr>(std::move(idName));
+
+  readNextToken();
+  ExprList args;
+  if (curTok.type != ')') {
+    while (true) {
+      args.push_back(parseExpr());
+      if (curTok.type == ')')
+        break;
+      if (curTok.type != ',')
+        error("Unexpected '" + curTok.str + "', expected ')' or ','");
+
+      readNextToken();
+    }
+  }
+  readNextToken(); // eat ')'
+  return make_EPtr<FunctionCallExpr>(std::move(idName), std::move(args));
+}
+ExprPtr Parser::parseNumberExpr()
+{
+  ExprPtr res;
+  switch (curTok.type) {
+  case Token::dec_number:
+  case Token::hex_number:
+  case Token::oct_number:
+  case Token::bin_number:
+    res = make_EPtr<IntNumberExpr>(std::stoll(curTok.str));
+    break;
+  case Token::dec_flt_number:
+    res = make_EPtr<FltNumberExpr>(std::stold(curTok.str));
+    break;
+  default:
+    error("!!! unknown token in parseNumberExpr: " +
+          Lexer::getTokenName(curTok.type));
+  }
+  readNextToken();
+  return res;
+}
+ExprPtr Parser::parseParenExpr()
 {
   return {};
+}
+ExprPtr Parser::parseIfExpr()
+{
+  return {};
+}
+ExprPtr Parser::parseForExpr()
+{
+  return {};
+}
+ExprPtr Parser::parseWhlExpr()
+{
+  return {};
+}
+ExprPtr Parser::parseDoExpr()
+{
+  return {};
+}
+ExprPtr Parser::parseRetExpr()
+{
+  readNextToken();
+  return {parseExpr()};
+}
+
+ExprPtr Parser::parseVarDeclExpr()
+{
+  readNextToken(); // eat 'var'
+  std::vector<std::string> names;
+
+  // TODO initializers missing so far
+  do {
+    if (curTok.type != Token::identifier)
+      error("unexpected '" + curTok.str + "', expected identifier");
+    names.push_back(std::move(curTok.str));
+    if (readNextToken().type == ',')
+      readNextToken(); // eat ','
+  } while (curTok.type != ':');
+  readNextToken(); // eat ':'
+  if (!isVarTypeId(curTok.type))
+    error("unexpected '" + curTok.str + "', expected type");
+  auto type = getTypeFromToken(curTok.type);
+  readNextToken(); // eat type
+
+  return make_EPtr<VarDeclExpr>(type, std::move(names));
 }

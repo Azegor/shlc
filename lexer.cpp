@@ -23,6 +23,7 @@ std::unordered_map<std::string, Token::TokenType> Lexer::identifierTokens{
     {"el", Token::id_el},
     {"for", Token::id_for},
     {"whl", Token::id_whl},
+    {"do", Token::id_do},
     {"brk", Token::id_brk},
     {"cnt", Token::id_cnt},
     {"var", Token::id_var},
@@ -80,6 +81,8 @@ std::unordered_map<int, std::string> Lexer::tokenNames{
     // bool operators
     {Token::lte, "lte"},
     {Token::gte, "gte"},
+    {Token::eq, "eq"},
+    {Token::neq, "neq"},
     {Token::log_and, "log_and"},
     {Token::log_or, "log_or"},
 
@@ -99,6 +102,7 @@ std::unordered_map<int, std::string> Lexer::tokenNames{
     {Token::id_el, "id_el"},
     {Token::id_for, "id_for"},
     {Token::id_whl, "id_whl"},
+    {Token::id_do, "id_do"},
     {Token::id_brk, "id_brk"},
     {Token::id_cnt, "id_cnt"},
     {Token::id_T, "id_T"},
@@ -230,8 +234,10 @@ Token Lexer::nextToken()
     return readLeadingZeroNumber();
 
   // leading .:
-  if (lastChar == '.')
+  if (lastChar == '.') {
+    tokenString = "";
     return readDotOrNumberDotPart();
+  }
 
   // leading 1-9:
   if (std::isdigit(lastChar))
@@ -268,6 +274,12 @@ Token Lexer::nextToken()
 
   if (lastChar == '^')
     return readBitXorOperator();
+
+  if (lastChar == '=')
+    return readEq();
+
+  if (lastChar == '!')
+    return readBang();
 
   // -----------
   // end of file
@@ -397,10 +409,11 @@ inline Token Lexer::readDotOrNumberDotPart()
     if (std::isalpha(lastChar))
       error(std::string("unexpected '") + ((char)lastChar) +
             "' in number literal");
-    return makeToken(Token::dec_number);
+    return makeToken(Token::dec_flt_number);
   }
-  // dot operator
-  return makeToken('.');
+  if (tokenString.front() == '.')
+    return makeToken('.');                 // dot operator
+  return makeToken(Token::dec_flt_number); // number ending with '.'
 }
 
 inline Token Lexer::readNumberExponentPart()
@@ -412,7 +425,7 @@ inline Token Lexer::readNumberExponentPart()
   if (std::isalnum(lastChar))
     error(std::string("unexpected '") + ((char)lastChar) +
           "' in number literal");
-  return makeToken(Token::dec_number);
+  return makeToken(Token::dec_flt_number);
 }
 //----
 inline Token Lexer::readDivideOperatorOrComment()
@@ -587,4 +600,24 @@ inline Token Lexer::readBitXorOperator()
     return makeToken(Token::bit_xor_assign);
   }
   return makeToken('^');
+}
+
+inline Token Lexer::readEq()
+{
+  tokenString = '=';
+  if (readNext() == '=') {
+    appendAndNext();
+    return makeToken(Token::eq);
+  }
+  return makeToken('=');
+}
+
+inline Token Lexer::readBang()
+{
+  tokenString = '!';
+  if (readNext() == '=') {
+    appendAndNext();
+    return makeToken(Token::neq);
+  }
+  return makeToken('!');
 }

@@ -69,12 +69,28 @@ class Parser
 
   Token &readNextToken() { return curTok = currentLexer->nextToken(); }
 
+  static int getTokenPrecedence(int type);
+
   // these functions expect the first token to already be in curTok
-  FunctionExprPtr parseFunctionDef();
-  std::vector<ExprPtr> readFunctionBody();
+  FunctionPtr parseFunctionDef();
+  BlockExprPtr parseExprBlock();
+  ExprPtr parseTLExpr();
+  ExprPtr parseExpr();
+  ExprPtr parseBinOpRHS(int prec, ExprPtr rhs);
+  ExprPtr parsePrimaryExpr();
+
+  ExprPtr parseIdentifierExpr();
+  ExprPtr parseNumberExpr();
+  ExprPtr parseParenExpr();
+  ExprPtr parseIfExpr();
+  ExprPtr parseForExpr();
+  ExprPtr parseWhlExpr();
+  ExprPtr parseDoExpr();
+  ExprPtr parseRetExpr();
+  ExprPtr parseVarDeclExpr();
 
   // helpers
-  void readFunctionArguments(ArgVector &args);
+  void parseFunctionArguments(ArgVector &args);
 
   [[noreturn]] void error(std::string msg)
   {
@@ -85,12 +101,7 @@ class Parser
 public:
   Parser() = default;
 
-  std::vector<FunctionExprPtr> parse(std::string filename);
+  std::vector<FunctionPtr> parse(std::string filename);
 };
 
 #endif // PARSER_H
-
-
-
-
-
