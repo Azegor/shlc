@@ -211,6 +211,8 @@ Token Lexer::nextToken()
   while (std::isspace(lastChar))
     readNext();
 
+  initToken(); // save line & col of token start
+
   if (lastChar == '"') {
     return readString('"', Token::dq_string);
   }
@@ -440,7 +442,7 @@ inline Token Lexer::readDivideOperatorOrComment()
       if (lastChar == '\r' && readNext() == '\n') // crlf
         readNext();
       if (!input->eof())
-        return nextToken(); // recursive call TODO replace with goto top?
+        return nextToken(); // recursive call TODO replace with goto top? nope! (tail call?)
     }
     return makeToken(Token::eof);
   } else if (lastChar == '*') {
