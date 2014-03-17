@@ -167,6 +167,7 @@ private:
   std::string tokenString;
 
   int line = 1, column = 1;
+  int tokenLine = 1, tokenCol = 1;
   std::string currentLine;
   void finishCurrentLine()
   {
@@ -212,7 +213,14 @@ private:
   Token readEq();
   Token readBang();
 
-  Token makeToken(int type) { return Token(type, line, column, tokenString); }
+  void initToken()
+  {
+    tokenString = "";
+    tokenLine = line;
+    tokenCol = column;
+  }
+
+  Token makeToken(int type) { return Token(type, tokenLine, tokenCol, tokenString); }
 
   [[noreturn]] void error(std::string msg)
   {
@@ -271,7 +279,8 @@ public:
     return currentLine;
   }
 
-  static std::string getTokenName(int type) {
+  static std::string getTokenName(int type)
+  {
     auto pos = tokenNames.find(type);
     if (pos != tokenNames.end())
       return pos->second;

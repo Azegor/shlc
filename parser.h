@@ -74,7 +74,7 @@ class Parser
   // these functions expect the first token to already be in curTok
   FunctionPtr parseFunctionDef();
   BlockExprPtr parseExprBlock();
-  ExprPtr parseTLExpr();
+  StmtPtr parseTLExpr(bool &isBlock);
   ExprPtr parseExpr();
   ExprPtr parseBinOpRHS(int prec, ExprPtr rhs);
   ExprPtr parsePrimaryExpr();

@@ -23,6 +23,7 @@ std::string getTypeName(Type t)
 {
   static std::unordered_map<int, std::string> names = {
       {Type::none, "none"}, // *
+      {Type::inferred, "inferred"},
       {Type::int_t, "int_t"},
       {Type::flt_t, "flt_t"},
       {Type::chr_t, "chr_t"},
@@ -52,7 +53,7 @@ static void printIndent(int indent)
 }
 
 template <typename L, typename Callback>
-static void printList(L list, Callback callback)
+static void printList(L &list, Callback callback)
 {
   bool first = true;
   for (auto &&e : list) {
@@ -68,7 +69,7 @@ void FunctionHead::print(int indent)
 {
   printIndent(indent);
   std::cout << name << '(';
-  printList(args, [](ArgVector::value_type e) {
+  printList(args, [](ArgVector::value_type &e) {
     return Lexer::getTokenName(e.first) + " " + e.second;
   });
   std::cout << ") : " << getTypeName(retType) << std::endl;
@@ -116,19 +117,19 @@ void FunctionDecl::print(int indent)
 void VariableExpr::print(int indent)
 {
   printIndent(indent);
-  std::cout << "Variable [" << name << ']' << std::endl;
+  std::cout << "[Variable: " << name << ']';
 }
 
 void FunctionCallExpr::print(int indent)
 {
   printIndent(indent);
-  std::cout << "Function Call [" << name << '(';
+  std::cout << "[Function Call: " << name << '(';
   for (auto &e : args)
     e->print();
   std::cout << ")]";
 }
 
-void NumberExpr::print(int indent)
+void ConstantExpr::print(int indent)
 {
   printIndent(indent);
   std::cout << "[Number, type: " << getTypeName(type) << "]";
@@ -144,11 +145,23 @@ void FltNumberExpr::print(int indent)
   std::cout << "[Flt Number: " << value << "]";
 }
 
+void BoolConstExpr::print(int indent)
+{
+  printIndent(indent);
+  std::cout << "[Bool constant: " << value << "]";
+}
+
+void StringConstExpr::print(int indent)
+{
+  printIndent(indent);
+  std::cout << "[String constant: " << value << "]";
+}
+
 void VarDeclExpr::print(int indent)
 {
   printIndent(indent);
   std::cout << "[Variable Decl: ";
-  printList(names, [](std::string s) { return s; });
+  printList(vars, [](VarEnties::value_type &s) { return s.first; });
   std::cout << " : " << getTypeName(type) << ']' << std::endl;
 }
 
@@ -173,15 +186,63 @@ void ReturnExpr::print(int indent)
   std::cout << ']' << std::endl;
 }
 
-void BlockExpr::print(int indent)
+void BlockStmt::print(int indent)
 {
-  printIndent(indent + 1);
+  printIndent(indent);
   std::cout << '{' << std::endl;
   for (auto &stmt : block) {
     if (stmt)
-      stmt->print(indent + 2);
+      stmt->print(indent + 1);
     std::cout << std::endl;
   }
-  printIndent(indent + 1);
+  printIndent(indent);
   std::cout << '}' << std::endl;
+}
+
+void CastExpr::print(int indent)
+{
+  printIndent(indent);
+  std::cout << "Cast: [" << std::endl;
+  expr->print(indent + 1);
+  printIndent(indent);
+  std::cout << "] to " << getTypeName(newType) << std::endl;
+}
+
+void IfExpr::print(int indent)
+{
+  printIndent(indent);
+  std::cout << "If: (";
+  cond->print();
+  std::cout << ")" << std::endl;
+  thenExpr->print(indent);
+  if (elseExpr) {
+    printIndent(indent);
+    std::cout << "else" << std::endl;
+    elseExpr->print(indent);
+  }
+  printIndent(indent);
+  std::cout  << std::endl;
+}
+
+void WhileExpr::print(int indent)
+{
+  printIndent(indent);
+  std::cout << "While: (";
+  cond->print();
+  std::cout << ")" << std::endl;
+  body->print(indent);
+  printIndent(indent);
+  std::cout  << std::endl;
+}
+
+void BreakStmt::print(int indent)
+{
+  printIndent(indent);
+  std::cout << "[Break]" << std::endl;
+}
+
+void ContinueStmt::print(int indent)
+{
+  printIndent(indent);
+  std::cout << "[Continue]" << std::endl;
 }
