@@ -23,8 +23,6 @@
 
 #include <llvm/IR/Instructions.h>
 
-#include "ast.h"
-
 class VariableAlreadyDefinedError : public std::exception
 {
 public:
@@ -79,7 +77,8 @@ public:
 
 struct ContextFrame
 {
-  std::map<std::pair<std::string, llvm::Type>, llvm::AllocaInst *> variables;
+//   std::map<std::pair<std::string, llvm::Type>, llvm::AllocaInst *> variables;
+  std::map<std::string, llvm::AllocaInst *> variables;
 };
 
 class Context
