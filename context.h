@@ -19,7 +19,7 @@
 #define CONTEXT_H
 
 #include <stack>
-#include <unordered_map>
+#include <map>
 
 #include <llvm/IR/Instructions.h>
 
@@ -79,7 +79,7 @@ public:
 
 struct ContextFrame
 {
-  std::unordered_map<std::pair<std::string, Type>, llvm::AllocaInst *> variables;
+  std::map<std::pair<std::string, llvm::Type>, llvm::AllocaInst *> variables;
 };
 
 class Context
@@ -120,3 +120,4 @@ public:
 };
 
 #endif // CONTEXT_H
+
