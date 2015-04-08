@@ -73,21 +73,24 @@ class Parser
 
   // these functions expect the first token to already be in curTok
   FunctionPtr parseFunctionDef();
-  BlockExprPtr parseExprBlock();
+  BlockStmtPtr parseExprBlock();
   StmtPtr parseTLExpr(bool &isBlock);
   ExprPtr parseExpr();
   ExprPtr parseBinOpRHS(int prec, ExprPtr rhs);
   ExprPtr parsePrimaryExpr();
 
+  // Expressions:
   ExprPtr parseIdentifierExpr();
   ExprPtr parseNumberExpr();
   ExprPtr parseParenExpr();
-  ExprPtr parseIfExpr();
-  ExprPtr parseForExpr();
-  ExprPtr parseWhlExpr();
-  ExprPtr parseDoExpr();
-  ExprPtr parseRetExpr();
-  ExprPtr parseVarDeclExpr();
+
+  // Statements:
+  StmtPtr parseVarDeclStmt();
+  StmtPtr parseIfStmt();
+  StmtPtr parseForStmt();
+  StmtPtr parseWhlStmt();
+  StmtPtr parseDoStmt();
+  StmtPtr parseRetStmt();
 
   // helpers
   void parseFunctionArguments(ArgVector &args);
@@ -96,6 +99,13 @@ class Parser
   {
     throw ParseError(curTok, std::move(msg),
                      currentLexer->abortAndGetCurrentLine());
+  }
+
+  // TODO make variadic for more tokens?
+  void assertToken(int token)
+  {
+    if (curTok.type != token)
+      error("Unexpected '" + curTok.str + "', expected '" + Lexer::getTokenName(token) + '\'');
   }
 
 public:
