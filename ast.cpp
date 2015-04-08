@@ -17,11 +17,12 @@
 
 #include "ast.h"
 
+#include <map>
 #include <unordered_map>
 
 std::string getTypeName(Type t)
 {
-  static std::unordered_map<int, std::string> names = {
+  static std::map<Type, std::string> names = {
       {Type::none, "none"}, // *
       {Type::inferred, "inferred"},
       {Type::int_t, "int_t"},

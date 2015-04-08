@@ -37,7 +37,7 @@ public:
 
 using AstNodePtr = std::unique_ptr<AstNode>;
 
-enum Type : int { none, inferred, int_t, flt_t, chr_t, boo_t, str_t, vac_t, };
+enum class Type : int { none, inferred, int_t, flt_t, chr_t, boo_t, str_t, vac_t, };
 
 namespace types {
   using int_t = long long;
@@ -118,6 +118,20 @@ void printList(L &list, Callback callback)
     std::cout << callback(std::forward<decltype(e)>(e));
   }
 }
+
+
+
+class CodeGenError : public std::exception
+{
+public:
+  const AstNode* node;
+  const std::string reason, errorLine;
+  CodeGenError(AstNode* node, std::string what)
+      : node(std::move(node)), reason(std::move(what))
+  {
+  }
+  const char *what() const noexcept override { return reason.c_str(); }
+};
 
 
 // Functions: ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
