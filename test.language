@@ -27,3 +27,8 @@ fn decl3();
 
 fn nativeFunction() native;
 fn ANF(int a,b,c,d,e,f;boo g,h,i,j,k,l;) native;
+
+// existing native functions:
+fn sin(flt val);
+fn cos(flt val);
+fn tan(flt val);

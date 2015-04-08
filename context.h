@@ -21,7 +21,10 @@
 #include <stack>
 #include <map>
 
+#include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Instructions.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/IRBuilder.h>
 
 class VariableAlreadyDefinedError : public std::exception
 {
@@ -75,6 +78,17 @@ public:
   */
 };
 
+class GlobalContext {
+public:
+    llvm::LLVMContext &llvm_context;
+    llvm::Module * const module;
+    llvm::IRBuilder<> builder;
+    GlobalContext() : llvm_context(llvm::getGlobalContext()),
+            module(new llvm::Module("my jit module", llvm_context)),
+            builder(llvm_context)
+    {}
+};
+
 struct ContextFrame
 {
 //   std::map<std::pair<std::string, llvm::Type>, llvm::AllocaInst *> variables;
@@ -88,7 +102,10 @@ class Context
   ContextFrame *top = nullptr;
 
 public:
-  Context() = default;
+  GlobalContext &global;
+
+public:
+  Context(GlobalContext &gl_ctx) : global(gl_ctx) { pushFrame(); }
   void pushFrame()
   {
     frames.emplace();

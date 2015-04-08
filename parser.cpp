@@ -190,7 +190,7 @@ FunctionPtr Parser::parseFunctionDef()
 void Parser::parseFunctionArguments(ArgVector &args)
 {
   // assert (isVarTypeId(curTok));
-  int argType = curTok.type;
+  Type argType = getTypeFromToken(curTok.type);
   readNextToken();
   do {
     if (curTok.type != Token::identifier)

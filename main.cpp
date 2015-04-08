@@ -3,8 +3,11 @@
 
 #include <unordered_set>
 
+#include <llvm/IR/Function.h>
+
 #include "lexer.h"
 #include "parser.h"
+#include "context.h"
 
 std::unordered_set<std::string> includedFiles;
 
@@ -104,6 +107,7 @@ void testLexer(const char *filename)
               << ": \033[1;31m" << e.what() << "\033[00m:" << std::endl;
     std::cout << e.getErrorLineHighlight() << std::endl;
   }
+  std::cout << std::endl;
 }
 
 void testParser(const char *filename)
@@ -124,10 +128,50 @@ void testParser(const char *filename)
   }
 }
 
+void testCodeGen(const char* filename)
+{
+  try
+  {
+    Parser parser;
+    auto parseRes = parser.parse(filename);
+    GlobalContext gl_ctx;
+    for (auto &r : parseRes)
+    {
+        auto fn = r->codegen(gl_ctx);
+        if (fn)
+        {
+            std::cout << r->getName() << ":" << std::endl;
+            std::cout << ">>>-----------------------------" << std::endl;
+            fn->dump();
+            std::cout << "<<<-----------------------------" << std::endl;
+        }
+        else
+        {
+            std::cout << r->getName() << ": nullptr" << std::endl;
+        }
+    }
+  }
+  catch (ParseError &e)
+  {
+    std::cout << "Caught ParseError on line " << e.token.line << ':'
+              << e.token.col << ": \033[1;31m" << e.what()
+              << "\033[00m:" << std::endl;
+    std::cout << e.getErrorLineHighlight() << std::endl;
+  }
+  catch (CodeGenError &e)
+  {
+    std::cout << "Caught CodeGenError: node" << e.node
+              << ": \033[1;31m" << e.what()
+              << "\033[00m:" << std::endl;
+  }
+}
+
 int main(int argc, char **argv)
 {
   auto filename = argc == 2 ? argv[1] : "../test.language";
-  // testLexer(filename);
+//   testLexer(filename);
   testParser(filename);
+  testCodeGen(filename);
   return 0;
 }
+

@@ -16,7 +16,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -g -fsanitize=address -fPIC")
 include_directories(${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
-add_executable(compiler stdlib.cpp ast_functions.cpp ast_expressions.cpp ast_statements.cpp context.cpp ast.cpp parser.cpp lexer.cpp main.cpp)
+add_executable(compiler stdlib.cpp ast_functions.cpp ast_expressions.cpp ast_statements.cpp context.cpp ast.cpp parser.cpp lexer.cpp codegen.cpp main.cpp)
 
 llvm_map_components_to_libnames(llvm_libs core mcjit native)
 target_link_libraries(compiler ${llvm_libs})
