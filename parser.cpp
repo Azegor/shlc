@@ -201,7 +201,7 @@ void Parser::parseFunctionArguments(ArgVector &args)
   } while (curTok.type != ';' && curTok.type != ')');
 }
 
-BlockExprPtr Parser::parseExprBlock()
+BlockStmtPtr Parser::parseExprBlock()
 {
   // assert(curTok.type == '{');
   readNextToken();
@@ -217,7 +217,7 @@ BlockExprPtr Parser::parseExprBlock()
     exprL.push_back(std::move(expr));
   }
   readNextToken(); // eat '}'
-  return BlockExprPtr{new BlockStmt(std::move(exprL))};
+  return BlockStmtPtr{new BlockStmt(std::move(exprL))};
 }
 
 StmtPtr Parser::parseTLExpr(bool &isBlock)
@@ -231,20 +231,19 @@ StmtPtr Parser::parseTLExpr(bool &isBlock)
     return parseExprBlock();
   case Token::id_if:
     isBlock = true;
-    return parseIfExpr();
+    return parseIfStmt();
   case Token::id_for:
     isBlock = true;
-    return parseForExpr();
+    return parseForStmt();
   case Token::id_whl:
     isBlock = true;
-    return parseWhlExpr();
+    return parseWhlStmt();
   case Token::id_do:
-    isBlock = true;
-    return parseDoExpr();
+    return parseDoStmt();
   case Token::id_ret:
-    return parseRetExpr();
+    return parseRetStmt();
   case Token::id_var:
-    return parseVarDeclExpr();
+    return parseVarDeclStmt();
   case Token::id_brk:
     readNextToken();
     return make_SPtr<BreakStmt>();
@@ -377,54 +376,78 @@ ExprPtr Parser::parseParenExpr()
 {
   return {};
 }
-ExprPtr Parser::parseIfExpr()
+StmtPtr Parser::parseIfStmt()
 {
   readNextToken();
   auto cond = parseExpr();
   if (curTok.type != '{')
     error("unexpected '" + curTok.str + "', expected '{'");
-  BlockExprPtr thenExpr = parseExprBlock();
-  BlockExprPtr elseExpr;
+  BlockStmtPtr thenExpr = parseExprBlock();
+  BlockStmtPtr elseExpr;
   if (curTok.type == Token::id_elif) {
-    auto elsePart = parseIfExpr();
+    auto elsePart = parseIfStmt();
   } else if (curTok.type == Token::id_el) {
     readNextToken();
     if (curTok.type != '{')
       error("unexpected '" + curTok.str + "', expected '{'");
     elseExpr = parseExprBlock();
   }
-  return make_EPtr<IfExpr>(std::move(cond), std::move(thenExpr),
+  return make_SPtr<IfStmt>(std::move(cond), std::move(thenExpr),
                            std::move(elseExpr));
 }
-ExprPtr Parser::parseForExpr()
+StmtPtr Parser::parseForStmt()
 {
   readNextToken();
-  return {};
+  ExprPtr init;
+  if (curTok.type != ';') // empty init
+    init = parseExpr();
+  if (curTok.type != ';')
+    error("unexpected '" + curTok.str + "', expected ';'");
+  readNextToken();
+  ExprPtr cond;
+  if (curTok.type != ';')
+    cond = parseExpr();
+  if (curTok.type != ';')
+    error("unexpected '" + curTok.str + "', expected ';'");
+  readNextToken();
+  ExprPtr incr;
+  if (curTok.type != '{')
+    incr = parseExpr();
+  if (curTok.type != '{')
+    error("unexpected '" + curTok.str + "', expected '{'");
+  auto body = parseExprBlock();
+  return make_SPtr<ForStmt>(std::move(init), std::move(cond), std::move(incr),
+                            std::move(body));
 }
-ExprPtr Parser::parseWhlExpr()
+StmtPtr Parser::parseWhlStmt()
 {
   readNextToken();
   auto cond = parseExpr();
   if (curTok.type != '{')
     error("unexpected '" + curTok.str + "', expected '{'");
-  BlockExprPtr body = parseExprBlock();
-  return make_EPtr<WhileExpr>(std::move(cond), std::move(body));
+  BlockStmtPtr body = parseExprBlock();
+  return make_SPtr<WhileStmt>(std::move(cond), std::move(body));
 }
-ExprPtr Parser::parseDoExpr()
+StmtPtr Parser::parseDoStmt()
 {
   readNextToken();
-  return {};
+  assertToken('{');
+  auto body = parseExprBlock();
+  assertToken(Token::id_whl);
+  readNextToken(); // eat 'whl'
+  auto cond = parseExpr();
+  return make_SPtr<DoWhileStmt>(std::move(cond), std::move(body));
 }
-ExprPtr Parser::parseRetExpr()
+StmtPtr Parser::parseRetStmt()
 {
   readNextToken();
   return {parseExpr()};
 }
 
-ExprPtr Parser::parseVarDeclExpr()
+StmtPtr Parser::parseVarDeclStmt()
 {
   readNextToken(); // eat 'var'
-  VarDeclExpr::VarEnties vars;
+  VarDeclStmt::VarEnties vars;
 
   // TODO initializers missing so far
   bool inferred = false;
@@ -459,5 +482,5 @@ ExprPtr Parser::parseVarDeclExpr()
     readNextToken(); // eat type
   }
 
-  return make_EPtr<VarDeclExpr>(type, std::move(vars));
+  return make_SPtr<VarDeclStmt>(type, std::move(vars));
 }
