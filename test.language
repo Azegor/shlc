@@ -32,3 +32,19 @@ fn ANF(int a,b,c,d,e,f;boo g,h,i,j,k,l;) native;
 fn sin(flt val);
 fn cos(flt val);
 fn tan(flt val);
+
+fn complex()
+{
+  ret 2*(3+4)*(5*6+7*8);
+  whl T {
+    ret 42;
+  }
+  var i : int;
+  do {
+    i = 7;
+  } whl F;
+  for j = 0; j < 7; j+=1
+  {
+    i += 2;
+  }
+}

@@ -103,7 +103,7 @@ void testLexer(const char *filename)
   try { readFile(filename); }
   catch (LexError &e)
   {
-    std::cout << "Caught LexException on line " << e.line << ':' << e.col
+    std::cout << "Caught LexError on line " << e.line << ':' << e.col
               << ": \033[1;31m" << e.what() << "\033[00m:" << std::endl;
     std::cout << e.getErrorLineHighlight() << std::endl;
   }
@@ -118,6 +118,12 @@ void testParser(const char *filename)
     auto parseRes = parser.parse(filename);
     for (auto &r : parseRes)
       r->print();
+  }
+  catch (LexError &e)
+  {
+    std::cout << "Caught LexError on line " << e.line << ':' << e.col
+              << ": \033[1;31m" << e.what() << "\033[00m:" << std::endl;
+    std::cout << e.getErrorLineHighlight() << std::endl;
   }
   catch (ParseError &e)
   {
@@ -151,6 +157,12 @@ void testCodeGen(const char* filename)
         }
     }
   }
+  catch (LexError &e)
+  {
+    std::cout << "Caught LexError on line " << e.line << ':' << e.col
+              << ": \033[1;31m" << e.what() << "\033[00m:" << std::endl;
+    std::cout << e.getErrorLineHighlight() << std::endl;
+  }
   catch (ParseError &e)
   {
     std::cout << "Caught ParseError on line " << e.token.line << ':'
@@ -169,7 +181,7 @@ void testCodeGen(const char* filename)
 int main(int argc, char **argv)
 {
   auto filename = argc == 2 ? argv[1] : "../test.language";
-//   testLexer(filename);
+  testLexer(filename);
   testParser(filename);
   testCodeGen(filename);
   return 0;
