@@ -175,7 +175,7 @@ FunctionPtr Parser::parseFunctionDef()
     break;
   case '{': // function definition
   {
-    auto body = parseExprBlock();
+    auto body = parseStmtBlock();
     return FunctionPtr{new NormalFunction(std::move(head), std::move(body))};
     break;
   }
@@ -201,7 +201,7 @@ void Parser::parseFunctionArguments(ArgVector &args)
   } while (curTok.type != ';' && curTok.type != ')');
 }
 
-BlockStmtPtr Parser::parseExprBlock()
+BlockStmtPtr Parser::parseStmtBlock()
 {
   // assert(curTok.type == '{');
   readNextToken();
@@ -228,7 +228,7 @@ StmtPtr Parser::parseTLExpr(bool &isBlock)
     return parseExpr();
   case '{': // new block
     isBlock = true;
-    return parseExprBlock();
+    return parseStmtBlock();
   case Token::id_if:
     isBlock = true;
     return parseIfStmt();
@@ -374,7 +374,12 @@ ExprPtr Parser::parseNumberExpr()
 }
 ExprPtr Parser::parseParenExpr()
 {
-  return {};
+  readNextToken(); // eat '('
+  auto expr = parseExpr();
+  if (curTok.type != ')')
+      error("unexpected '" + curTok.str + "', expected ')'");
+  readNextToken(); // eat ')'
+  return expr;
 }
 StmtPtr Parser::parseIfStmt()
 {
@@ -382,7 +387,7 @@ StmtPtr Parser::parseIfStmt()
   auto cond = parseExpr();
   if (curTok.type != '{')
     error("unexpected '" + curTok.str + "', expected '{'");
-  BlockStmtPtr thenExpr = parseExprBlock();
+  BlockStmtPtr thenExpr = parseStmtBlock();
   BlockStmtPtr elseExpr;
   if (curTok.type == Token::id_elif) {
     auto elsePart = parseIfStmt();
@@ -390,7 +395,7 @@ StmtPtr Parser::parseIfStmt()
     readNextToken();
     if (curTok.type != '{')
       error("unexpected '" + curTok.str + "', expected '{'");
-    elseExpr = parseExprBlock();
+    elseExpr = parseStmtBlock();
   }
   return make_SPtr<IfStmt>(std::move(cond), std::move(thenExpr),
                            std::move(elseExpr));
@@ -415,7 +420,7 @@ StmtPtr Parser::parseForStmt()
     incr = parseExpr();
   if (curTok.type != '{')
     error("unexpected '" + curTok.str + "', expected '{'");
-  auto body = parseExprBlock();
+  auto body = parseStmtBlock();
   return make_SPtr<ForStmt>(std::move(init), std::move(cond), std::move(incr),
                             std::move(body));
 }
@@ -425,14 +430,14 @@ StmtPtr Parser::parseWhlStmt()
   auto cond = parseExpr();
   if (curTok.type != '{')
     error("unexpected '" + curTok.str + "', expected '{'");
-  BlockStmtPtr body = parseExprBlock();
+  BlockStmtPtr body = parseStmtBlock();
   return make_SPtr<WhileStmt>(std::move(cond), std::move(body));
 }
 StmtPtr Parser::parseDoStmt()
 {
   readNextToken();
   assertToken('{');
-  auto body = parseExprBlock();
+  auto body = parseStmtBlock();
   assertToken(Token::id_whl);
   readNextToken(); // eat 'whl'
   auto cond = parseExpr();
@@ -441,7 +446,7 @@ StmtPtr Parser::parseDoStmt()
 StmtPtr Parser::parseRetStmt()
 {
   readNextToken();
-  return {parseExpr()};
+  return make_SPtr<ReturnStmt>(parseExpr());
 }
 
 StmtPtr Parser::parseVarDeclStmt()

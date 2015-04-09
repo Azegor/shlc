@@ -55,6 +55,7 @@ class Statement : public AstNode
 public:
   Statement() = default;
   virtual ~Statement() {}
+  virtual llvm::Value *codegen(){return nullptr;}; // TODO remove default make abstract
 };
 
 using StmtPtr = std::unique_ptr<Statement>;
