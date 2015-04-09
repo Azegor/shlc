@@ -67,3 +67,10 @@ void BlockStmt::print(int indent)
   printIndent(indent);
   std::cout << '}' << std::endl;
 }
+
+llvm::Value *BlockStmt::codegen(Context &ctx)
+{
+    for (auto&& stmt : block)
+        stmt->codegen(ctx);
+    return nullptr;
+}

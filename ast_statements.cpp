@@ -102,3 +102,16 @@ void ContinueStmt::print(int indent)
   printIndent(indent);
   std::cout << "[Continue]" << std::endl;
 }
+
+llvm::Value *ReturnStmt::codegen(Context &ctx)
+{
+    if (expr->getType(ctx) == Type::vac_t)
+    {
+        ctx.global.builder.CreateRetVoid();
+    }
+    else
+    {
+        ctx.global.builder.CreateRet(expr->codegen(ctx));
+    }
+    return nullptr;
+}

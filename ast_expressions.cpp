@@ -19,6 +19,8 @@
 
 #include <iostream>
 
+#include <llvm/ADT/APInt.h>
+
 #include "ast.h"
 
 void VariableExpr::print(int indent)
@@ -82,4 +84,20 @@ void BinOpExpr::print(int indent)
   rhs->print(indent + 1);
   printIndent(indent);
   std::cout << ']' << std::endl;
+}
+
+llvm::Value* IntNumberExpr::codegen(Context &ctx)
+{
+    return llvm::ConstantInt::get(ctx.global.llvm_context, llvm::APInt(64, value, true));
+}
+
+llvm::Value* FltNumberExpr::codegen(Context &ctx)
+{
+    // TODO do something about this (double) cast, or change back no short double
+    return llvm::ConstantFP::get(ctx.global.llvm_context, llvm::APFloat((double)value));
+}
+
+llvm::Value* BoolConstExpr::codegen(Context &ctx)
+{
+    return llvm::ConstantInt::get(ctx.global.llvm_context, llvm::APInt(1, value));
 }

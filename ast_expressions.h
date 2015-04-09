@@ -29,7 +29,7 @@ class VariableExpr : public Expr
 public:
   VariableExpr(std::string name) : name(std::move(name)) {}
   void print(int indent = 0) override;
-  Type getType(Context &cc) override
+  Type getType(Context &) override
   {
     return Type::none; // TODO consult variable table here
   }
@@ -46,7 +46,7 @@ public:
   {
   }
   void print(int indent = 0) override;
-  Type getType(Context &cc) override
+  Type getType(Context &) override
   {
     return Type::none; // TODO consult function table here
   }
@@ -59,7 +59,7 @@ class ConstantExpr : public Expr
 public:
   ConstantExpr(Type type) : type(type) {}
   void print(int indent = 0) override;
-  Type getType(Context &cc) override { return type; }
+  Type getType(Context &) override { return type; }
 };
 
 class IntNumberExpr : public ConstantExpr
@@ -69,6 +69,7 @@ class IntNumberExpr : public ConstantExpr
 public:
   IntNumberExpr(long long val) : ConstantExpr(Type::int_t), value(val) {}
   void print(int indent = 0) override;
+  llvm::Value* codegen(Context &ctx) override;
 };
 
 class FltNumberExpr : public ConstantExpr
@@ -78,6 +79,7 @@ class FltNumberExpr : public ConstantExpr
 public:
   FltNumberExpr(long double val) : ConstantExpr(Type::flt_t), value(val) {}
   void print(int indent = 0) override;
+  llvm::Value* codegen(Context &ctx) override;
 };
 
 class BoolConstExpr : public ConstantExpr
@@ -87,6 +89,7 @@ class BoolConstExpr : public ConstantExpr
 public:
   BoolConstExpr(bool val) : ConstantExpr(Type::boo_t), value(val) {}
   void print(int indent = 0) override;
+  llvm::Value* codegen(Context &ctx) override;
 };
 
 class StringConstExpr : public ConstantExpr
@@ -112,10 +115,10 @@ public:
   {
   }
   void print(int indent = 0) override;
-  Type getType(Context &cc) override
+  Type getType(Context &ctx) override
   {
     // TODO check implicit cast, throw errors, etc...
-    return lhs->getType(cc);
+    return lhs->getType(ctx);
   }
 };
 
@@ -129,7 +132,7 @@ public:
   {
   }
   void print(int indent = 0) override;
-  Type getType(Context &cc) override { return newType; }
+  Type getType(Context &) override { return newType; }
 };
 
 #endif // ASTEXPRESSIONS_H
