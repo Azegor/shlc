@@ -16,6 +16,7 @@
  */
 
 #include "ast_statements.h"
+#include "ast_expressions.h"
 
 #include <iostream>
 

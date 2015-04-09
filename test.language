@@ -48,3 +48,9 @@ fn complex()
     i += 2;
   }
 }
+
+fn double() : flt {ret 1.1;}
+fn integer() : int {ret 1;}
+fn boolean() : boo {ret T;}
+fn char() : chr {ret 'c';}
+//fn string() : str {ret "hi";}

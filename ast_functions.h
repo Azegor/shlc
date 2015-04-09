@@ -18,7 +18,7 @@
 #ifndef ASTFUNCTIONS_H
 #define ASTFUNCTIONS_H
 
-#include "ast.h"
+#include "ast_base.h"
 #include "ast_expressions.h"
 
 using ArgVector = std::vector<std::pair<Type, std::string>>;
