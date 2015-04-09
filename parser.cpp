@@ -299,6 +299,7 @@ ExprPtr Parser::parsePrimaryExpr()
   case Token::hex_number:
   case Token::oct_number:
   case Token::bin_number:
+  case Token::dec_flt_number:
     res = parseNumberExpr();
     break;
   case Token::dq_string:

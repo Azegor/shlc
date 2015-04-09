@@ -41,14 +41,14 @@ llvm::Function *FunctionHead::codegen(Context &ctx)
   argumentTypes.reserve(args.size());
   for (auto &arg : args)
   {
-    argumentTypes.push_back(getTypeFromTokID(ctx.global, arg.first));
+    argumentTypes.push_back(getLLVMTypeFromType(ctx.global, arg.first));
   }
 
   llvm::FunctionType *ft = llvm::FunctionType::get(
-      llvm::Type::getDoubleTy(ctx.global.llvm_context), argumentTypes, false);
+      getLLVMTypeFromType(ctx.global, retType), argumentTypes, false);
 
   llvm::Function *f = llvm::Function::Create(
-      ft, llvm::Function::ExternalLinkage, name, ctx.global.module);
+      ft, llvm::Function::ExternalLinkage, name, ctx.global.module.get());
 
   // Set names for all arguments.
   int idx = 0;
@@ -68,7 +68,7 @@ void FunctionHead::createArgumentAllocas(Context &ctx, llvm::Function *fn)
   {
     // Create an alloca for this variable.
     llvm::AllocaInst *alloca = createEntryBlockAlloca(
-        fn, args[idx].second, getTypeFromTokID(ctx.global, args[idx].first));
+        fn, args[idx].second, getLLVMTypeFromType(ctx.global, args[idx].first));
 
     // Store the initial value into the alloca.
     ctx.global.builder.CreateStore(ai, alloca);

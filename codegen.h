@@ -23,7 +23,7 @@
 #include "context.h"
 #include "ast.h"
 
-llvm::Type *getTypeFromTokID(GlobalContext &ctx, Type tokID);
+llvm::Type *getLLVMTypeFromType(GlobalContext &ctx, Type tokID);
 
 llvm::AllocaInst *createEntryBlockAlloca(llvm::Function *fn,
                         const std::string &varName, llvm::Type *varType);

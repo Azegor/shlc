@@ -156,6 +156,8 @@ void testCodeGen(const char* filename)
             std::cout << r->getName() << ": nullptr" << std::endl;
         }
     }
+    std::cout << "===============================================" << std::endl;
+    gl_ctx.module->dump();
   }
   catch (LexError &e)
   {

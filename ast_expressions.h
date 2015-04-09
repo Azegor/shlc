@@ -18,7 +18,9 @@
 #ifndef ASTEXPRESSIONS_H
 #define ASTEXPRESSIONS_H
 
-#include "ast.h"
+#include "ast_base.h"
+
+#include <string>
 
 class VariableExpr : public Expr
 {

@@ -25,6 +25,9 @@
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LegacyPassManager.h>
+#include <llvm/Analysis/Passes.h>
+#include <llvm/Transforms/Scalar.h> // for createPromoteMemoryToRegisterPass()
 
 class VariableAlreadyDefinedError : public std::exception
 {
@@ -81,12 +84,29 @@ public:
 class GlobalContext {
 public:
     llvm::LLVMContext &llvm_context;
-    llvm::Module * const module;
+    const std::unique_ptr<llvm::Module> module;
     llvm::IRBuilder<> builder;
+    llvm::legacy::FunctionPassManager fpm;
     GlobalContext() : llvm_context(llvm::getGlobalContext()),
             module(new llvm::Module("my jit module", llvm_context)),
-            builder(llvm_context)
-    {}
+            builder(llvm_context),
+            fpm(module.get())
+    {
+        // Provide basic AliasAnalysis support for GVN.
+        fpm.add(llvm::createBasicAliasAnalysisPass());
+        // Promote allocas to registers.
+        fpm.add(llvm::createPromoteMemoryToRegisterPass());
+        // Do simple "peephole" optimizations and bit-twiddling optzns.
+        fpm.add(llvm::createInstructionCombiningPass());
+        // Reassociate expressions.
+        fpm.add(llvm::createReassociatePass());
+        // Eliminate Common SubExpressions.
+        fpm.add(llvm::createGVNPass());
+        // Simplify the control flow graph (deleting unreachable blocks, etc).
+        fpm.add(llvm::createCFGSimplificationPass());
+
+        fpm.doInitialization();
+    }
 };
 
 struct ContextFrame
@@ -103,6 +123,7 @@ class Context
 
 public:
   GlobalContext &global;
+  llvm::Value *returnValue = nullptr;
 
 public:
   Context(GlobalContext &gl_ctx) : global(gl_ctx) { pushFrame(); }

@@ -21,7 +21,7 @@
 
 #include "ast.h"
 
-llvm::Type *getTypeFromTokID(GlobalContext &ctx, Type type)
+llvm::Type *getLLVMTypeFromType(GlobalContext &ctx, Type type)
 {
     switch(type) {
         // int_t, flt_t, chr_t, boo_t, str_t, vac_t
