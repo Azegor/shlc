@@ -51,7 +51,7 @@ llvm::Function *FunctionHead::codegen(Context &ctx)
       ft, llvm::Function::ExternalLinkage, name, ctx.global.module.get());
 
   // Set names for all arguments.
-  int idx = 0;
+  size_t idx = 0;
   for (llvm::Function::arg_iterator ai = f->arg_begin(); idx != args.size();
        ++ai, ++idx)
   {
@@ -108,6 +108,8 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
   gl_ctx.builder.SetInsertPoint(bb);
 
   head->createArgumentAllocas(ctx, fn);
+
+  body->codegen(ctx);
 
   return fn;
 }

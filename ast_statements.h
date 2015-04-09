@@ -41,6 +41,7 @@ class ReturnStmt : public Statement
 public:
   ReturnStmt(ExprPtr expr) : expr(std::move(expr)) {}
   void print(int indent = 0) override;
+  llvm::Value *codegen(Context &ctx) override;
 };
 
 class IfStmt : public Statement

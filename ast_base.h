@@ -50,12 +50,13 @@ namespace types {
 std::string getTypeName(Type t);
 Type getTypeFromToken(int tok);
 
+// TODO use different class as Expr-ancestor, so that Statement can have it's own codegen-function with other/no return type
 class Statement : public AstNode
 {
 public:
   Statement() = default;
   virtual ~Statement() {}
-  virtual llvm::Value *codegen(){return nullptr;}; // TODO remove default make abstract
+  virtual llvm::Value *codegen(Context &ctx){return nullptr;} // TODO remove default make abstract
 };
 
 using StmtPtr = std::unique_ptr<Statement>;
@@ -71,7 +72,6 @@ public:
   // Expr(Type type) : type(type) {}
   virtual ~Expr() {}
   virtual Type getType(Context &cc) = 0;
-  // virtual llvm::Value *Codegen() = 0;
 };
 
 using ExprPtr = std::unique_ptr<Expr>;
@@ -84,12 +84,7 @@ class BlockStmt : public Statement
 public:
   BlockStmt(StmtList block) : block(std::move(block)) {}
   void print(int indent = 0) override;
-  /*
-  BlockStmt(const BlockStmt&) = delete;
-  BlockStmt(BlockStmt&&) = delete;
-  BlockStmt &operator=(const BlockStmt&) = delete;
-  BlockStmt &operator=(BlockStmt&&) = delete;
-  */
+  llvm::Value *codegen(Context &ctx) override;
 };
 
 using BlockStmtPtr = std::unique_ptr<BlockStmt>;
