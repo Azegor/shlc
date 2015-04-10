@@ -37,11 +37,14 @@ public:
 
   void print(int indent = 0) override;
   const std::string &getName() const {return name; }
+  Type getReturnType() const { return retType; }
   llvm::Function *codegen(Context &ctx);
   void createArgumentAllocas(Context &ctx, llvm::Function* fn);
 };
 
 using FunctionHeadPtr = std::unique_ptr<FunctionHead>;
+
+// TODO: add to some function table, to look up function when called
 
 class Function : public AstNode
 {

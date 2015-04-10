@@ -4,6 +4,7 @@
 #include <unordered_set>
 
 #include <llvm/IR/Function.h>
+#include <llvm/Support/TargetSelect.h>
 
 #include "lexer.h"
 #include "parser.h"
@@ -141,23 +142,36 @@ void testCodeGen(const char* filename)
     Parser parser;
     auto parseRes = parser.parse(filename);
     GlobalContext gl_ctx;
+    llvm::Function *mainFn = nullptr;
     for (auto &r : parseRes)
     {
         auto fn = r->codegen(gl_ctx);
-        if (fn)
-        {
-            std::cout << r->getName() << ":" << std::endl;
-            std::cout << ">>>-----------------------------" << std::endl;
-            fn->dump();
-            std::cout << "<<<-----------------------------" << std::endl;
-        }
-        else
-        {
-            std::cout << r->getName() << ": nullptr" << std::endl;
-        }
+        if (fn->getName() == "main")
+            mainFn = fn;
+//         if (fn)
+//         {
+//             std::cout << r->getName() << ":" << std::endl;
+//             std::cout << ">>>-----------------------------" << std::endl;
+//             fn->dump();
+//             std::cout << "<<<-----------------------------" << std::endl;
+//         }
+//         else
+//         {
+//             std::cout << r->getName() << ": nullptr" << std::endl;
+//         }
     }
     std::cout << "===============================================" << std::endl;
     gl_ctx.module->dump();
+
+    if (mainFn) {
+        auto main_ptr = gl_ctx.execEngine->getPointerToFunction(mainFn);
+        void (*_main)() = (void(*)())main_ptr;
+        if (_main)
+        {
+            std::cout << " --- calling main() ---" << std::endl;
+            _main();
+        }
+    }
   }
   catch (LexError &e)
   {
@@ -180,11 +194,20 @@ void testCodeGen(const char* filename)
   }
 }
 
+void init_llvm()
+{
+
+  llvm::InitializeNativeTarget();
+  llvm::InitializeNativeTargetAsmPrinter();
+  llvm::InitializeNativeTargetAsmParser();
+}
+
 int main(int argc, char **argv)
 {
+  init_llvm();
   auto filename = argc == 2 ? argv[1] : "../test.language";
-  testLexer(filename);
-  testParser(filename);
+//   testLexer(filename);
+//   testParser(filename);
   testCodeGen(filename);
   return 0;
 }

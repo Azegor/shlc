@@ -22,6 +22,7 @@
 #include <llvm/IR/IRBuilder.h>
 
 #include "codegen.h"
+#include "ast_statements.h"
 
 void FunctionHead::print(int indent)
 {
@@ -48,7 +49,7 @@ llvm::Function *FunctionHead::codegen(Context &ctx)
       getLLVMTypeFromType(ctx.global, retType), argumentTypes, false);
 
   llvm::Function *f = llvm::Function::Create(
-      ft, llvm::Function::ExternalLinkage, name, ctx.global.module.get());
+      ft, llvm::Function::ExternalLinkage, name, ctx.global.module);
 
   // Set names for all arguments.
   size_t idx = 0;
@@ -110,6 +111,15 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
   head->createArgumentAllocas(ctx, fn);
 
   body->codegen(ctx);
+
+  if (ctx.returnType == Type::none) // missing return statement
+  {
+      if (head->getReturnType() == Type::vac_t) // add default return
+          ReturnStmt().codegen(ctx);
+      else
+          throw CodeGenError(this, "missing return statement in non-void function");
+  }
+
 
   return fn;
 }

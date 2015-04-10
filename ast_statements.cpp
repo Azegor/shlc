@@ -103,15 +103,32 @@ void ContinueStmt::print(int indent)
   std::cout << "[Continue]" << std::endl;
 }
 
+void ExprStmt::print(int indent)
+{
+
+}
+
 llvm::Value *ReturnStmt::codegen(Context &ctx)
 {
-    if (expr->getType(ctx) == Type::vac_t)
+    Type type = Type::none;
+    if (!expr) // void
     {
         ctx.global.builder.CreateRetVoid();
+        type = Type::vac_t;
     }
     else
     {
-        ctx.global.builder.CreateRet(expr->codegen(ctx));
+        auto val = expr->codegen(ctx);
+        ctx.global.builder.CreateRet(val);
+        type = expr->getType(ctx);
+    }
+    if (ctx.returnType == Type::none)
+    {
+        ctx.returnType = type;
+    }
+    else if (ctx.returnType != type)
+    {
+        throw CodeGenError(this, "incompatible return types '" +getTypeName(type) + "' and '" + getTypeName(ctx.returnType) + '\'');
     }
     return nullptr;
 }
