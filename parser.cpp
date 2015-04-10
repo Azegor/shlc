@@ -225,7 +225,7 @@ StmtPtr Parser::parseTLExpr(bool &isBlock)
   isBlock = false;
   switch (curTok.type) {
   default:
-    return parseExpr();
+    return make_SPtr<ExprStmt>(parseExpr());
   case '{': // new block
     isBlock = true;
     return parseStmtBlock();
@@ -302,8 +302,13 @@ ExprPtr Parser::parsePrimaryExpr()
   case Token::dec_flt_number:
     res = parseNumberExpr();
     break;
+  case Token::sq_string: // char constant
+    if (curTok.str.length() != 1)
+        error("invalid char constant: '" + curTok.str + "' with length " + std::to_string(curTok.str.length()));
+    res = make_EPtr<IntNumberExpr>(curTok.str[0]);
+    readNextToken();
+    break;
   case Token::dq_string:
-  case Token::sq_string:
     res = make_EPtr<StringConstExpr>(curTok.str);
     readNextToken();
     break;

@@ -37,19 +37,6 @@ public:
 
 using AstNodePtr = std::unique_ptr<AstNode>;
 
-enum class Type : int { none, inferred, int_t, flt_t, chr_t, boo_t, str_t, vac_t, };
-
-namespace types {
-  using int_t = long long;
-  using flt_t = long double;
-  using chr_t = signed char;
-  using boo_t = bool;
-  using str_t = std::string;
-}
-
-std::string getTypeName(Type t);
-Type getTypeFromToken(int tok);
-
 // TODO use different class as Expr-ancestor, so that Statement can have it's own codegen-function with other/no return type
 class Statement : public AstNode
 {
@@ -62,7 +49,7 @@ public:
 using StmtPtr = std::unique_ptr<Statement>;
 using StmtList = std::vector<StmtPtr>;
 
-class Expr : public Statement
+class Expr : public AstNode
 {
 protected:
   // Type type = Type::none;
@@ -72,6 +59,7 @@ public:
   // Expr(Type type) : type(type) {}
   virtual ~Expr() {}
   virtual Type getType(Context &cc) = 0;
+  virtual llvm::Value *codegen(Context &ctx){return nullptr;} // TODO remove default make abstract
 };
 
 using ExprPtr = std::unique_ptr<Expr>;

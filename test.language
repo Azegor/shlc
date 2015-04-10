@@ -52,5 +52,5 @@ fn complex()
 fn double() : flt {ret 1.2345;}
 fn integer() : int {ret 123;}
 fn boolean() : boo {ret T;}
-fn char() : chr {ret 42;}
+fn char() : chr {ret 'c';}
 //fn string() : str {ret "hi";}

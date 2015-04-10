@@ -39,7 +39,7 @@ class ReturnStmt : public Statement
   ExprPtr expr;
 
 public:
-  ReturnStmt(ExprPtr expr) : expr(std::move(expr)) {}
+  ReturnStmt(ExprPtr expr = {}) : expr(std::move(expr)) {}
   void print(int indent = 0) override;
   llvm::Value *codegen(Context &ctx) override;
 };
@@ -111,6 +111,14 @@ public:
 class ContinueStmt : public Statement
 {
 public:
+  void print(int indent = 0) override;
+};
+
+class ExprStmt : public Statement
+{
+    ExprPtr expr;
+public:
+  ExprStmt(ExprPtr expr) : expr(std::move(expr)) {}
   void print(int indent = 0) override;
 };
 
