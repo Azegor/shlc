@@ -101,6 +101,7 @@ void NormalFunction::print(int indent)
 llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
 {
   Context ctx(gl_ctx);
+  head->addToFunctionTable(gl_ctx, false);
   auto fn = head->codegen(ctx);
 
   // Create a new basic block to start insertion into.
@@ -110,7 +111,14 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
 
   head->createArgumentAllocas(ctx, fn);
 
+  ctx.pushFrame();
+
   body->codegen(ctx);
+
+  ctx.popFrame();
+
+  if (ctx.frameCount() != 1)
+      throw CodeGenError(this, "variable frame count inconsistent (" + std::to_string(ctx.frameCount()) + " != 1)");
 
   if (ctx.returnType == Type::none) // missing return statement
   {
@@ -136,6 +144,7 @@ void NativeFunction::print(int indent)
 llvm::Function *NativeFunction::codegen(GlobalContext &gl_ctx)
 {
   Context ctx(gl_ctx);
+  head->addToFunctionTable(gl_ctx, false); // register before codegen -> allows self-recursion
   return head->codegen(ctx);
 }
 
@@ -151,5 +160,34 @@ void FunctionDecl::print(int indent)
 llvm::Function *FunctionDecl::codegen(GlobalContext &gl_ctx)
 {
   Context ctx(gl_ctx);
-  return head->codegen(ctx);
+  head->addToFunctionTable(gl_ctx, true);
+//   return head->codegen(ctx); // TODO: don't codegen for declaration!
+  return nullptr;
+}
+
+void FunctionHead::addToFunctionTable(GlobalContext &ctx, bool declareOnly)
+{
+    auto range = ctx.declaredFunctions.equal_range(name);
+    if (range.first == range.second) // no other fns
+    {
+        ctx.declaredFunctions.insert({name, {declareOnly, this}});
+        return;
+    }
+    // already functions with same name
+    for (auto fn = range.first; fn != range.second; ++fn)
+    {
+        if (args == (*fn).second.second->args) // cannot have function with same args again
+        {
+            if (declareOnly || (*fn).second.first)
+            {
+                if (retType != (*fn).second.second->retType) // same signature, other return type
+                    throw CodeGenError(this, "invalid overload of function (with different return type)");
+            }
+            else
+            {
+                throw CodeGenError(this, "invalid redeclaration of function");
+            }
+        }
+    }
+    ctx.declaredFunctions.insert({name, {declareOnly, this}});
 }

@@ -19,9 +19,11 @@
 
 #include <iostream>
 
+#include <llvm/IR/Constants.h>
 #include <llvm/ADT/APInt.h>
 
 #include "ast.h"
+#include "context.h"
 
 void VariableExpr::print(int indent)
 {
@@ -47,6 +49,11 @@ void IntNumberExpr::print(int indent)
 {
   printIndent(indent);
   std::cout << "[Int Number: " << value << "]";
+}
+void CharConstExpr::print(int indent)
+{
+  printIndent(indent);
+  std::cout << "[Char Const: '" << value << "']";
 }
 void FltNumberExpr::print(int indent)
 {
@@ -89,6 +96,11 @@ void BinOpExpr::print(int indent)
 llvm::Value* IntNumberExpr::codegen(Context &ctx)
 {
     return llvm::ConstantInt::get(ctx.global.llvm_context, llvm::APInt(64, value, true));
+}
+
+llvm::Value* CharConstExpr::codegen(Context &ctx)
+{
+    return llvm::ConstantInt::get(ctx.global.llvm_context, llvm::APInt(8, value, true));
 }
 
 llvm::Value* FltNumberExpr::codegen(Context &ctx)

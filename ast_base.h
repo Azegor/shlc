@@ -23,8 +23,12 @@
 #include <string>
 #include <vector>
 
+#include <llvm/IR/Value.h>
+
 #include "lexer.h"
-#include "context.h"
+#include "type.h"
+
+class Context;
 
 // TODO: might not be neccessary!
 class AstNode

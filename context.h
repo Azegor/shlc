@@ -21,6 +21,8 @@
 #include <stack>
 #include <map>
 #include <memory>
+#include <set>
+#include <unordered_map>
 
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Instructions.h>
@@ -33,6 +35,7 @@
 #include <llvm/ExecutionEngine/SectionMemoryManager.h>
 
 #include "type.h"
+#include "ast_functions.h"
 
 class VariableAlreadyDefinedError : public std::exception
 {
@@ -60,12 +63,12 @@ public:
   */
 };
 
-class VariableNotDefinedError : public std::exception
+class VariableNotDefinedError : public CodeGenError
 {
 public:
   const std::string variableName;
   VariableNotDefinedError(std::string name)
-      : variableName(std::move(name)) // implement row/col later
+      : CodeGenError(nullptr, std::move(name)) // implement row/col later
   {
   }
   const char *what() const noexcept override
@@ -94,6 +97,9 @@ public:
     llvm::legacy::FunctionPassManager fpm;
     std::string errorString;
     llvm::ExecutionEngine *execEngine;
+
+    std::unordered_multimap<std::string, std::pair<bool, FunctionHead *>> declaredFunctions;
+
     GlobalContext();
 };
 
@@ -134,13 +140,15 @@ public:
       throw VariableAlreadyDefinedError(name);
     top->variables[name] = aInst;
   }
-  llvm::AllocaInst *getVar(const std::string &name)
+  llvm::AllocaInst *getVar(const std::string &name) const
   {
-    auto var = top->variables[name];
-    if (!var)
+    auto var = top->variables.find(name);
+    if (var == top->variables.end())
       throw VariableNotDefinedError(name);
-    return var;
+    return var->second;
   }
+
+  int frameCount() const { return frames.size(); }
   // currentBlock() etc...
 };
 

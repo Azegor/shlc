@@ -17,6 +17,7 @@
 
 #include "ast_statements.h"
 #include "ast_expressions.h"
+#include "context.h"
 
 #include <iostream>
 
@@ -119,6 +120,8 @@ llvm::Value *ReturnStmt::codegen(Context &ctx)
     else
     {
         auto val = expr->codegen(ctx);
+        if (!val)
+            throw CodeGenError(this, "missing value for return statement");
         ctx.global.builder.CreateRet(val);
         type = expr->getType(ctx);
     }
@@ -130,5 +133,11 @@ llvm::Value *ReturnStmt::codegen(Context &ctx)
     {
         throw CodeGenError(this, "incompatible return types '" +getTypeName(type) + "' and '" + getTypeName(ctx.returnType) + '\'');
     }
+    return nullptr;
+}
+
+llvm::Value *WhileStmt::codegen(Context &ctx)
+{
+
     return nullptr;
 }
