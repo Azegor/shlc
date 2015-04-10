@@ -21,6 +21,8 @@
 #include "ast_base.h"
 #include "ast_expressions.h"
 
+class GlobalContext;
+
 using ArgVector = std::vector<std::pair<Type, std::string>>;
 
 class FunctionHead : public AstNode
@@ -34,6 +36,23 @@ public:
       : name(std::move(name)), args(std::move(args)), retType(retType)
   {
   }
+
+  bool operator ==(const FunctionHead &o) const
+  {
+      return name == o.name && args == o.args && retType == o.retType;
+  }
+  // relative ordering for maps/sets
+  bool operator <(const FunctionHead &o) const
+  {
+      if (name < o.name) return true;
+      if (name > o.name) return false;
+      if (args < o.args) return true;
+      if (args > o.args) return false;
+      if (retType < o.retType) return true;
+      return false;
+  }
+
+  void addToFunctionTable(GlobalContext & ctx, bool declareOnly);
 
   void print(int indent = 0) override;
   const std::string &getName() const {return name; }

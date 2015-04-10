@@ -305,7 +305,7 @@ ExprPtr Parser::parsePrimaryExpr()
   case Token::sq_string: // char constant
     if (curTok.str.length() != 1)
         error("invalid char constant: '" + curTok.str + "' with length " + std::to_string(curTok.str.length()));
-    res = make_EPtr<IntNumberExpr>(curTok.str[0]);
+    res = make_EPtr<CharConstExpr>(curTok.str[0]);
     readNextToken();
     break;
   case Token::dq_string:
@@ -452,6 +452,10 @@ StmtPtr Parser::parseDoStmt()
 StmtPtr Parser::parseRetStmt()
 {
   readNextToken();
+  if (curTok.type == ';')
+  {
+      return make_SPtr<ReturnStmt>(); // void return
+  }
   return make_SPtr<ReturnStmt>(parseExpr());
 }
 

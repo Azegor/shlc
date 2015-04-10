@@ -29,13 +29,15 @@ fn nativeFunction() native;
 fn ANF(int a,b,c,d,e,f;boo g,h,i,j,k,l;) native;
 
 // existing native functions:
-fn sin(flt val);
-fn cos(flt val);
-fn tan(flt val);
+fn sin(flt val) native;
+fn cos(flt val) native;
+fn tan(flt val) native;
+
+fn putc(chr c) native;
 
 fn complex()
 {
-  ret 2*(3+4)*(5*6+7*8);
+  //ret 2*(3+4)*(5*6+7*8);
   whl T {
     ret 42;
   }
@@ -54,3 +56,14 @@ fn integer() : int {ret 123;}
 fn boolean() : boo {ret T;}
 fn char() : chr {ret 'c';}
 //fn string() : str {ret "hi";}
+
+fn duplicate();
+fn duplicate();
+fn duplicate();
+fn duplicate();
+fn duplicate() {}
+fn duplicate();
+fn duplicate();
+fn duplicate();
+
+//fn double(flt f) : flt { ret f; }

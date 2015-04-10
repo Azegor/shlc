@@ -72,6 +72,16 @@ public:
   llvm::Value* codegen(Context &ctx) override;
 };
 
+class CharConstExpr : public ConstantExpr
+{
+  char value;
+
+public:
+  CharConstExpr(char val) : ConstantExpr(Type::chr_t), value(val) {}
+  void print(int indent = 0) override;
+  llvm::Value* codegen(Context &ctx) override;
+};
+
 class FltNumberExpr : public ConstantExpr
 {
   long double value;

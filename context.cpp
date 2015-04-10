@@ -34,6 +34,11 @@ GlobalContext::GlobalContext() : llvm_context(llvm::getGlobalContext()),
 {
     if (!execEngine)
         throw std::runtime_error("Could not create Execution Engine: " + errorString);
+
+
+    // Set up the optimizer pipeline.  Start with registering info about how the
+    // target lays out data structures.
+    module->setDataLayout(execEngine->getDataLayout());
     // Provide basic AliasAnalysis support for GVN.
     fpm.add(llvm::createBasicAliasAnalysisPass());
     // Promote allocas to registers.

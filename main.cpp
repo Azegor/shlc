@@ -5,6 +5,7 @@
 
 #include <llvm/IR/Function.h>
 #include <llvm/Support/TargetSelect.h>
+#include <llvm/Support/FileSystem.h>
 
 #include "lexer.h"
 #include "parser.h"
@@ -146,8 +147,9 @@ void testCodeGen(const char* filename)
     for (auto &r : parseRes)
     {
         auto fn = r->codegen(gl_ctx);
-        if (fn->getName() == "main")
+        if (fn && fn->getName() == "main")
             mainFn = fn;
+//         auto _ = gl_ctx.execEngine->getPointerToFunction(fn);
 //         if (fn)
 //         {
 //             std::cout << r->getName() << ":" << std::endl;
@@ -163,8 +165,16 @@ void testCodeGen(const char* filename)
     std::cout << "===============================================" << std::endl;
     gl_ctx.module->dump();
 
+    static constexpr const char * outFileName = "out.ll";
+    std::string err;
+    llvm::raw_fd_ostream outFile(outFileName, err, llvm::sys::fs::F_RW | llvm::sys::fs::F_Text);
+    std::cout << "Wringing generated code to " << outFileName << std::endl;
+    gl_ctx.module->print(outFile, nullptr);
+    outFile.close();
+
     if (mainFn) {
         auto main_ptr = gl_ctx.execEngine->getPointerToFunction(mainFn);
+//         auto main_ptr = gl_ctx.execEngine->getFunctionAddress("main");
         void (*_main)() = (void(*)())main_ptr;
         if (_main)
         {
