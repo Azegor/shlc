@@ -77,7 +77,10 @@ void VarDeclStmt::print(int indent)
 {
   printIndent(indent);
   std::cout << "[Variable Decl: ";
-  printList(vars, [](VarEnties::value_type &s) { return s.first; });
+  printList(vars, [](VarEnties::value_type &s)
+            {
+    return s.first;
+  });
   std::cout << " : " << getTypeName(type) << ']' << std::endl;
 }
 
@@ -93,23 +96,26 @@ void BinOpExpr::print(int indent)
   std::cout << ']' << std::endl;
 }
 
-llvm::Value* IntNumberExpr::codegen(Context &ctx)
+llvm::Value *IntNumberExpr::codegen(Context &ctx)
 {
-    return llvm::ConstantInt::get(ctx.global.llvm_context, llvm::APInt(64, value, true));
+  return llvm::ConstantInt::get(ctx.global.llvm_context,
+                                llvm::APInt(64, value, true));
 }
 
-llvm::Value* CharConstExpr::codegen(Context &ctx)
+llvm::Value *CharConstExpr::codegen(Context &ctx)
 {
-    return llvm::ConstantInt::get(ctx.global.llvm_context, llvm::APInt(8, value, true));
+  return llvm::ConstantInt::get(ctx.global.llvm_context,
+                                llvm::APInt(8, value, true));
 }
 
-llvm::Value* FltNumberExpr::codegen(Context &ctx)
+llvm::Value *FltNumberExpr::codegen(Context &ctx)
 {
-    // TODO do something about this (double) cast, or change back no short double
-    return llvm::ConstantFP::get(ctx.global.llvm_context, llvm::APFloat((double)value));
+  // TODO do something about this (double) cast, or change back no short double
+  return llvm::ConstantFP::get(ctx.global.llvm_context,
+                               llvm::APFloat((double)value));
 }
 
-llvm::Value* BoolConstExpr::codegen(Context &ctx)
+llvm::Value *BoolConstExpr::codegen(Context &ctx)
 {
-    return llvm::ConstantInt::get(ctx.global.llvm_context, llvm::APInt(1, value));
+  return llvm::ConstantInt::get(ctx.global.llvm_context, llvm::APInt(1, value));
 }

@@ -23,23 +23,31 @@
 
 llvm::Type *getLLVMTypeFromType(GlobalContext &ctx, Type type)
 {
-    switch(type) {
-        // int_t, flt_t, chr_t, boo_t, str_t, vac_t
-        case Type::vac_t: return llvm::Type::getVoidTy(ctx.llvm_context);
-        case Type::int_t: return llvm::Type::getInt64Ty(ctx.llvm_context);
-        case Type::flt_t: return llvm::Type::getDoubleTy(ctx.llvm_context);
-        case Type::boo_t: return llvm::Type::getInt1Ty(ctx.llvm_context);
-//         case Type::str_t: return llvm::Type::getInt8PtrTy(ctx.llvm_context); // TODO: do the right thing here!!!
-        case Type::chr_t: return llvm::Type::getInt8Ty(ctx.llvm_context); // no unicode
-        default: throw CodeGenError(nullptr, "Unknown type id" + getTypeName(type));
-    }
+  switch (type)
+  {
+    // int_t, flt_t, chr_t, boo_t, str_t, vac_t
+    case Type::vac_t:
+      return llvm::Type::getVoidTy(ctx.llvm_context);
+    case Type::int_t:
+      return llvm::Type::getInt64Ty(ctx.llvm_context);
+    case Type::flt_t:
+      return llvm::Type::getDoubleTy(ctx.llvm_context);
+    case Type::boo_t:
+      return llvm::Type::getInt1Ty(ctx.llvm_context);
+    //         case Type::str_t: return
+    //         llvm::Type::getInt8PtrTy(ctx.llvm_context); // TODO: do the right
+    //         thing here!!!
+    case Type::chr_t:
+      return llvm::Type::getInt8Ty(ctx.llvm_context); // no unicode
+    default:
+      throw CodeGenError(nullptr, "Unknown type id" + getTypeName(type));
+  }
 }
 
 llvm::AllocaInst *createEntryBlockAlloca(llvm::Function *fn,
-                        const std::string &varName, llvm::Type *varType)
+                                         const std::string &varName,
+                                         llvm::Type *varType)
 {
-  llvm::IRBuilder<> TmpB(&fn->getEntryBlock(),
-                   fn->getEntryBlock().begin());
-  return TmpB.CreateAlloca(varType, 0,
-                           varName.c_str());
+  llvm::IRBuilder<> TmpB(&fn->getEntryBlock(), fn->getEntryBlock().begin());
+  return TmpB.CreateAlloca(varType, 0, varName.c_str());
 }

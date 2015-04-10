@@ -23,12 +23,16 @@
 
 class GlobalContext;
 
-using ArgVector = std::vector<std::pair<Type, std::string>>;
+using ArgVector = std::vector<std::pair<Type, std::string> >;
 
 class FunctionHead : public AstNode
 {
 public:
-  enum class Binding { Intern, Extern_C };
+  enum class Binding
+  {
+    Intern,
+    Extern_C
+  };
 
 private:
   std::string name;
@@ -38,38 +42,48 @@ private:
   llvm::Function *llvm_fn = nullptr;
 
 public:
-  FunctionHead(std::string name, ArgVector args, Type retType, Binding bind = Binding::Intern)
-      : name(std::move(name)), args(std::move(args)), retType(retType), binding(bind)
+  FunctionHead(std::string name, ArgVector args, Type retType,
+               Binding bind = Binding::Intern)
+      : name(std::move(name)),
+        args(std::move(args)),
+        retType(retType),
+        binding(bind)
   {
   }
 
-  bool operator ==(const FunctionHead &o) const
+  bool operator==(const FunctionHead &o) const
   {
-      return name == o.name && args == o.args && retType == o.retType && binding == o.binding;
+    return name == o.name && args == o.args && retType == o.retType &&
+           binding == o.binding;
   }
   // relative ordering for maps/sets
-  bool operator <(const FunctionHead &o) const
+  bool operator<(const FunctionHead &o) const
   {
-      if (name < o.name) return true;
-      if (name > o.name) return false;
-      if (args < o.args) return true;
-      if (args > o.args) return false;
-      if (retType < o.retType) return true;
-      if (retType > o.retType) return false;
-      if (binding < o.binding) return true;
-      return false;
+    if (name < o.name) return true;
+    if (name > o.name) return false;
+    if (args < o.args) return true;
+    if (args > o.args) return false;
+    if (retType < o.retType) return true;
+    if (retType > o.retType) return false;
+    if (binding < o.binding) return true;
+    return false;
   }
 
-  enum class FnReg {Declare, Define, Native};
-  void addToFunctionTable(GlobalContext & ctx, FnReg regType);
+  enum class FnReg
+  {
+    Declare,
+    Define,
+    Native
+  };
+  void addToFunctionTable(GlobalContext &ctx, FnReg regType);
 
   void print(int indent = 0) override;
-  const std::string &getName() const {return name; }
+  const std::string &getName() const { return name; }
   std::string getMangledName() const;
   Type getReturnType() const { return retType; }
   llvm::Function *codegen(Context &ctx);
   llvm::Function *getLLVMFunction(GlobalContext &gl_ctx);
-  void createArgumentAllocas(Context &ctx, llvm::Function* fn);
+  void createArgumentAllocas(Context &ctx, llvm::Function *fn);
   void setBinding(Binding b) { binding = b; }
 };
 
@@ -85,16 +99,16 @@ protected:
 public:
   Function(FunctionHeadPtr head) : head(std::move(head)) {}
   void print(int indent = 0) override;
-  const std::string &getName() const {return head->getName(); }
+  const std::string &getName() const { return head->getName(); }
   virtual llvm::Function *codegen(GlobalContext &gl_ctx) = 0;
-
 };
 
 class NativeFunction : public Function
 {
 public:
-  NativeFunction(FunctionHeadPtr h) : Function(std::move(h)) {
-      head->setBinding(FunctionHead::Binding::Extern_C);
+  NativeFunction(FunctionHeadPtr h) : Function(std::move(h))
+  {
+    head->setBinding(FunctionHead::Binding::Extern_C);
   }
   void print(int indent = 0) override;
   llvm::Function *codegen(GlobalContext &gl_ctx) override;
@@ -108,8 +122,8 @@ public:
   NormalFunction(FunctionHeadPtr h, BlockStmtPtr body)
       : Function(std::move(h)), body(std::move(body))
   {
-      if (head->getName() == "main")
-          head->setBinding(FunctionHead::Binding::Extern_C); // no mangling!
+    if (head->getName() == "main")
+      head->setBinding(FunctionHead::Binding::Extern_C); // no mangling!
   }
   void print(int indent = 0) override;
   llvm::Function *codegen(GlobalContext &gl_ctx) override;

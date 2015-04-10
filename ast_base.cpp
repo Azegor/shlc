@@ -30,9 +30,9 @@ void BlockStmt::print(int indent)
 {
   printIndent(indent);
   std::cout << '{' << std::endl;
-  for (auto &stmt : block) {
-    if (stmt)
-      stmt->print(indent + 1);
+  for (auto &stmt : block)
+  {
+    if (stmt) stmt->print(indent + 1);
     std::cout << std::endl;
   }
   printIndent(indent);
@@ -41,7 +41,7 @@ void BlockStmt::print(int indent)
 
 llvm::Value *BlockStmt::codegen(Context &ctx)
 {
-    for (auto&& stmt : block)
-        stmt->codegen(ctx);
-    return nullptr;
+  for (auto &&stmt : block)
+    stmt->codegen(ctx);
+  return nullptr;
 }
