@@ -23,7 +23,7 @@
 class VarDeclStmt : public Statement
 {
 public:
-  using VarEnties = std::vector<std::pair<std::string, ExprPtr>>;
+  using VarEnties = std::vector<std::pair<std::string, ExprPtr> >;
 
 private:
   Type type;
@@ -117,7 +117,8 @@ public:
 
 class ExprStmt : public Statement
 {
-    ExprPtr expr;
+  ExprPtr expr;
+
 public:
   ExprStmt(ExprPtr expr) : expr(std::move(expr)) {}
   void print(int indent = 0) override;

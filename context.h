@@ -89,28 +89,32 @@ public:
   */
 };
 
-class GlobalContext {
+class GlobalContext
+{
 public:
-    llvm::LLVMContext &llvm_context;
-    llvm::Module * const module;
-    llvm::IRBuilder<> builder;
-    llvm::legacy::FunctionPassManager fpm;
-    std::string errorString;
-    llvm::ExecutionEngine *execEngine;
+  llvm::LLVMContext &llvm_context;
+  llvm::Module *const module;
+  llvm::IRBuilder<> builder;
+  llvm::legacy::FunctionPassManager fpm;
+  std::string errorString;
+  llvm::ExecutionEngine *execEngine;
 
-    struct Fn {
-        FunctionHead::FnReg regType;
-        FunctionHead * fnHead;
-//         Fn(FunctionHead::FnReg reg, FunctionHead *fh) : regType(reg), fnHead(fh) {}
-    };
-    std::unordered_multimap<std::string, Fn> declaredFunctions;
+  struct Fn
+  {
+    FunctionHead::FnReg regType;
+    FunctionHead *fnHead;
+    //         Fn(FunctionHead::FnReg reg, FunctionHead *fh) : regType(reg),
+    //         fnHead(fh) {}
+  };
+  std::unordered_multimap<std::string, Fn> declaredFunctions;
 
-    GlobalContext();
+  GlobalContext();
 };
 
 struct ContextFrame
 {
-//   std::map<std::pair<std::string, llvm::Type>, llvm::AllocaInst *> variables;
+  //   std::map<std::pair<std::string, llvm::Type>, llvm::AllocaInst *>
+  //   variables;
   std::map<std::string, llvm::AllocaInst *> variables;
 };
 
@@ -141,15 +145,13 @@ public:
   }
   void putVar(const std::string &name, llvm::AllocaInst *aInst)
   {
-    if (top->variables[name])
-      throw VariableAlreadyDefinedError(name);
+    if (top->variables[name]) throw VariableAlreadyDefinedError(name);
     top->variables[name] = aInst;
   }
   llvm::AllocaInst *getVar(const std::string &name) const
   {
     auto var = top->variables.find(name);
-    if (var == top->variables.end())
-      throw VariableNotDefinedError(name);
+    if (var == top->variables.end()) throw VariableNotDefinedError(name);
     return var->second;
   }
 
@@ -158,4 +160,3 @@ public:
 };
 
 #endif // CONTEXT_H
-

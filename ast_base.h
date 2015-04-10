@@ -41,13 +41,15 @@ public:
 
 using AstNodePtr = std::unique_ptr<AstNode>;
 
-// TODO use different class as Expr-ancestor, so that Statement can have it's own codegen-function with other/no return type
+// TODO use different class as Expr-ancestor, so that Statement can have it's
+// own codegen-function with other/no return type
 class Statement : public AstNode
 {
 public:
   Statement() = default;
   virtual ~Statement() {}
-  virtual llvm::Value *codegen(Context &ctx){return nullptr;} // TODO remove default make abstract
+  // TODO remove default make abstract
+  virtual llvm::Value *codegen(Context &ctx) { return nullptr; }
 };
 
 using StmtPtr = std::unique_ptr<Statement>;
@@ -63,7 +65,8 @@ public:
   // Expr(Type type) : type(type) {}
   virtual ~Expr() {}
   virtual Type getType(Context &cc) = 0;
-  virtual llvm::Value *codegen(Context &ctx){return nullptr;} // TODO remove default make abstract
+  // TODO remove default make abstract
+  virtual llvm::Value *codegen(Context &ctx) { return nullptr; }
 };
 
 using ExprPtr = std::unique_ptr<Expr>;
@@ -98,7 +101,8 @@ template <typename L, typename Callback>
 void printList(L &list, Callback callback)
 {
   bool first = true;
-  for (auto &&e : list) {
+  for (auto &&e : list)
+  {
     if (first)
       first = false;
     else
@@ -107,31 +111,16 @@ void printList(L &list, Callback callback)
   }
 }
 
-
-
 class CodeGenError : public std::exception
 {
 public:
-  const AstNode* node;
+  const AstNode *node;
   const std::string reason, errorLine;
-  CodeGenError(const AstNode* node, std::string what)
+  CodeGenError(const AstNode *node, std::string what)
       : node(std::move(node)), reason(std::move(what))
   {
   }
   const char *what() const noexcept override { return reason.c_str(); }
 };
-
-
-// // Functions: ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//
-// #include "ast_functions.h"
-//
-// // Expressions: ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//
-// #include "ast_expressions.h"
-//
-// // Statements:~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//
-// #include "ast_statements.h"
 
 #endif // AST_BASE_H

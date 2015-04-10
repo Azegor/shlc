@@ -51,7 +51,8 @@ public:
 
 struct Token
 {
-  enum TokenType : int {
+  enum TokenType : int
+  {
     none = -0x100,
     eof,
     identifier,
@@ -220,7 +221,10 @@ private:
     tokenCol = column;
   }
 
-  Token makeToken(int type) { return Token(type, tokenLine, tokenCol, tokenString); }
+  Token makeToken(int type)
+  {
+    return Token(type, tokenLine, tokenCol, tokenString);
+  }
 
   [[noreturn]] void error(std::string msg)
   {
@@ -267,8 +271,7 @@ public:
 
   ~Lexer()
   {
-    if (ownsStream)
-      delete input;
+    if (ownsStream) delete input;
   }
 
   Token nextToken();
@@ -282,8 +285,7 @@ public:
   static std::string getTokenName(int type)
   {
     auto pos = tokenNames.find(type);
-    if (pos != tokenNames.end())
-      return pos->second;
+    if (pos != tokenNames.end()) return pos->second;
     return {(char)type};
   }
 };

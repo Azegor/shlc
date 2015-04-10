@@ -69,7 +69,7 @@ class IntNumberExpr : public ConstantExpr
 public:
   IntNumberExpr(long long val) : ConstantExpr(Type::int_t), value(val) {}
   void print(int indent = 0) override;
-  llvm::Value* codegen(Context &ctx) override;
+  llvm::Value *codegen(Context &ctx) override;
 };
 
 class CharConstExpr : public ConstantExpr
@@ -79,7 +79,7 @@ class CharConstExpr : public ConstantExpr
 public:
   CharConstExpr(char val) : ConstantExpr(Type::chr_t), value(val) {}
   void print(int indent = 0) override;
-  llvm::Value* codegen(Context &ctx) override;
+  llvm::Value *codegen(Context &ctx) override;
 };
 
 class FltNumberExpr : public ConstantExpr
@@ -89,7 +89,7 @@ class FltNumberExpr : public ConstantExpr
 public:
   FltNumberExpr(long double val) : ConstantExpr(Type::flt_t), value(val) {}
   void print(int indent = 0) override;
-  llvm::Value* codegen(Context &ctx) override;
+  llvm::Value *codegen(Context &ctx) override;
 };
 
 class BoolConstExpr : public ConstantExpr
@@ -99,7 +99,7 @@ class BoolConstExpr : public ConstantExpr
 public:
   BoolConstExpr(bool val) : ConstantExpr(Type::boo_t), value(val) {}
   void print(int indent = 0) override;
-  llvm::Value* codegen(Context &ctx) override;
+  llvm::Value *codegen(Context &ctx) override;
 };
 
 class StringConstExpr : public ConstantExpr

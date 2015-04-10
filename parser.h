@@ -105,7 +105,8 @@ class Parser
   void assertToken(int token)
   {
     if (curTok.type != token)
-      error("Unexpected '" + curTok.str + "', expected '" + Lexer::getTokenName(token) + '\'');
+      error("Unexpected '" + curTok.str + "', expected '" +
+            Lexer::getTokenName(token) + '\'');
   }
 
 public:

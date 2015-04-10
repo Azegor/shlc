@@ -22,14 +22,25 @@
 
 #include "lexer.h"
 
-enum class Type : int { none, inferred, int_t, flt_t, chr_t, boo_t, str_t, vac_t, };
+enum class Type : int
+{
+  none,
+  inferred,
+  int_t,
+  flt_t,
+  chr_t,
+  boo_t,
+  str_t,
+  vac_t,
+};
 
-namespace types {
-  using int_t = long long;
-  using flt_t = long double;
-  using chr_t = signed char;
-  using boo_t = bool;
-  using str_t = std::string;
+namespace types
+{
+using int_t = long long;
+using flt_t = long double;
+using chr_t = signed char;
+using boo_t = bool;
+using str_t = std::string;
 }
 
 std::string getTypeName(Type t);

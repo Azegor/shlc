@@ -30,8 +30,8 @@ void FunctionHead::print(int indent)
   std::cout << name << '(';
   printList(args, [](ArgVector::value_type &e)
             {
-              return getTypeName(e.first) + " " + e.second;
-            });
+    return getTypeName(e.first) + " " + e.second;
+  });
   std::cout << ") : " << getTypeName(retType) << std::endl;
 }
 
@@ -53,21 +53,19 @@ llvm::Function *FunctionHead::getLLVMFunction(GlobalContext &gl_ctx)
 {
   std::string mangled_name = getMangledName();
   auto range = gl_ctx.declaredFunctions.equal_range(mangled_name);
-  if (range.first == range.second)
-  {
-      throw CodeGenError(this, "can't find function in function table");
+  if (range.first == range.second) {
+    throw CodeGenError(this, "can't find function in function table");
   }
   auto second = range.first;
   ++second;
-//   if (second != range.second)
-  if (std::distance(range.first, range.second) > 1)
-  {
-      throw CodeGenError(this, "too many functions (overloading not supported yet)");
+  //   if (second != range.second)
+  if (std::distance(range.first, range.second) > 1) {
+    throw CodeGenError(this,
+                       "too many functions (overloading not supported yet)");
   }
-  if (range.first->second.fnHead->llvm_fn != 0)
-  {
-      llvm_fn = range.first->second.fnHead->llvm_fn;
-      return llvm_fn;
+  if (range.first->second.fnHead->llvm_fn != 0) {
+    llvm_fn = range.first->second.fnHead->llvm_fn;
+    return llvm_fn;
   }
   else
   {
@@ -75,20 +73,20 @@ llvm::Function *FunctionHead::getLLVMFunction(GlobalContext &gl_ctx)
     argumentTypes.reserve(args.size());
     for (auto &arg : args)
     {
-        argumentTypes.push_back(getLLVMTypeFromType(gl_ctx, arg.first));
+      argumentTypes.push_back(getLLVMTypeFromType(gl_ctx, arg.first));
     }
 
     llvm::FunctionType *ft = llvm::FunctionType::get(
-        getLLVMTypeFromType(gl_ctx, retType), argumentTypes, false);
+      getLLVMTypeFromType(gl_ctx, retType), argumentTypes, false);
 
     // TODO: maybe change linkage for internal functions to something fast?
     auto linkage = llvm::Function::ExternalLinkage;
-//     if (binding == Binding::Intern)
-//     {
-//         linkage = llvm::Function::PrivateLinkage;
-//     }
-    llvm::Function *f = llvm::Function::Create(
-        ft, linkage, getMangledName(), gl_ctx.module);
+    //     if (binding == Binding::Intern)
+    //     {
+    //         linkage = llvm::Function::PrivateLinkage;
+    //     }
+    llvm::Function *f =
+      llvm::Function::Create(ft, linkage, getMangledName(), gl_ctx.module);
     llvm_fn = f;
 
     return f;
@@ -103,7 +101,7 @@ void FunctionHead::createArgumentAllocas(Context &ctx, llvm::Function *fn)
   {
     // Create an alloca for this variable.
     llvm::AllocaInst *alloca = createEntryBlockAlloca(
-        fn, args[idx].second, getLLVMTypeFromType(ctx.global, args[idx].first));
+      fn, args[idx].second, getLLVMTypeFromType(ctx.global, args[idx].first));
 
     // Store the initial value into the alloca.
     ctx.global.builder.CreateStore(ai, alloca);
@@ -140,7 +138,7 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
 
   // Create a new basic block to start insertion into.
   llvm::BasicBlock *bb =
-      llvm::BasicBlock::Create(gl_ctx.llvm_context, "entry", fn);
+    llvm::BasicBlock::Create(gl_ctx.llvm_context, "entry", fn);
   gl_ctx.builder.SetInsertPoint(bb);
 
   head->createArgumentAllocas(ctx, fn);
@@ -152,16 +150,16 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
   ctx.popFrame();
 
   if (ctx.frameCount() != 1)
-      throw CodeGenError(this, "variable frame count inconsistent (" + std::to_string(ctx.frameCount()) + " != 1)");
+    throw CodeGenError(this, "variable frame count inconsistent (" +
+                               std::to_string(ctx.frameCount()) + " != 1)");
 
   if (ctx.returnType == Type::none) // missing return statement
   {
-      if (head->getReturnType() == Type::vac_t) // add default return
-          ReturnStmt().codegen(ctx);
-      else
-          throw CodeGenError(this, "missing return statement in non-void function");
+    if (head->getReturnType() == Type::vac_t) // add default return
+      ReturnStmt().codegen(ctx);
+    else
+      throw CodeGenError(this, "missing return statement in non-void function");
   }
-
 
   return fn;
 }
@@ -178,7 +176,9 @@ void NativeFunction::print(int indent)
 llvm::Function *NativeFunction::codegen(GlobalContext &gl_ctx)
 {
   Context ctx(gl_ctx);
-  head->addToFunctionTable(gl_ctx, FunctionHead::FnReg::Native); // register before codegen -> allows self-recursion
+  head->addToFunctionTable(
+    gl_ctx, FunctionHead::FnReg::Native); // register before codegen -> allows
+                                          // self-recursion
   return head->codegen(ctx);
 }
 
@@ -196,56 +196,57 @@ llvm::Function *FunctionDecl::codegen(GlobalContext &gl_ctx)
   Context ctx(gl_ctx);
   head->addToFunctionTable(gl_ctx, FunctionHead::FnReg::Declare);
   return head->codegen(ctx); // TODO: don't codegen for declaration!
-//   return nullptr;
+                             //   return nullptr;
 }
 
 void FunctionHead::addToFunctionTable(GlobalContext &ctx, FnReg regType)
 {
-    std::string mangled_name = getMangledName();
-    auto range = ctx.declaredFunctions.equal_range(mangled_name);
-    if (range.first == range.second) // no other fns
-    {
-        ctx.declaredFunctions.insert({mangled_name, {regType, this}});
-        return;
-    }
-    // already functions with same name
-    for (auto fn = range.first; fn != range.second; ++fn) // should only be one element for now
-    {
-        std::cout << mangled_name << std::endl;
-        if (args == fn->second.fnHead->args) // cannot have function with same args again
-        {
-            if (regType == FnReg::Declare || fn->second.regType == FnReg::Declare)
-            {
-                if (retType != fn->second.fnHead->retType) // same signature, other return type
-                    throw CodeGenError(this, "invalid overload of function (with different return type)");
-                return; // already exist -> exit
-            }
-            else
-            {
-                throw CodeGenError(this, "invalid redeclaration of function");
-            }
-        }
-    }
-    throw CodeGenError(this, "function overloading not supported yet");
+  std::string mangled_name = getMangledName();
+  auto range = ctx.declaredFunctions.equal_range(mangled_name);
+  if (range.first == range.second) // no other fns
+  {
     ctx.declaredFunctions.insert({mangled_name, {regType, this}});
+    return;
+  }
+  // already functions with same name
+  for (auto fn = range.first; fn != range.second;
+       ++fn) // should only be one element for now
+  {
+    std::cout << mangled_name << std::endl;
+    if (args ==
+        fn->second.fnHead->args) // cannot have function with same args again
+    {
+      if (regType == FnReg::Declare || fn->second.regType == FnReg::Declare) {
+        if (retType !=
+            fn->second.fnHead->retType) // same signature, other return type
+          throw CodeGenError(
+            this, "invalid overload of function (with different return type)");
+        return; // already exist -> exit
+      }
+      else
+      {
+        throw CodeGenError(this, "invalid redeclaration of function");
+      }
+    }
+  }
+  throw CodeGenError(this, "function overloading not supported yet");
+  ctx.declaredFunctions.insert({mangled_name, {regType, this}});
 }
 
 std::string FunctionHead::getMangledName() const
 {
-    if (binding == Binding::Intern)
-    {
+  if (binding == Binding::Intern) {
     std::string res = name + '_';
-    for (auto& arg : args)
+    for (auto &arg : args)
     {
-        res += getMangleName(arg.first);
+      res += getMangleName(arg.first);
     }
     res += '_';
     res += getMangleName(retType);
     return res;
-    }
-    if (binding == Binding::Extern_C)
-    {
-        return name;
-    }
-    throw CodeGenError(this, "unknown function binding type");
+  }
+  if (binding == Binding::Extern_C) {
+    return name;
+  }
+  throw CodeGenError(this, "unknown function binding type");
 }

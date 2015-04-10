@@ -26,6 +26,7 @@
 llvm::Type *getLLVMTypeFromType(GlobalContext &ctx, Type tokID);
 
 llvm::AllocaInst *createEntryBlockAlloca(llvm::Function *fn,
-                        const std::string &varName, llvm::Type *varType);
+                                         const std::string &varName,
+                                         llvm::Type *varType);
 
 #endif // CODEGEN_H

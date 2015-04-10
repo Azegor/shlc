@@ -21,36 +21,40 @@
 
 // std::string GlobalContext::errorString;
 
-GlobalContext::GlobalContext() : llvm_context(llvm::getGlobalContext()),
-            module(new llvm::Module("my jit module", llvm_context)),
-            builder(llvm_context),
-            fpm(module),
-            errorString(),
-//             execEngine(llvm::EngineBuilder(std::unique_ptr<llvm::Module>(module)).setErrorStr(&errorString)
-            execEngine(llvm::EngineBuilder(module).setErrorStr(&errorString)
-//           .setMCJITMemoryManager(std::make_unique<llvm::SectionMemoryManager>())
-//           .setMCJITMemoryManager(new llvm::SectionMemoryManager)
+GlobalContext::GlobalContext()
+    : llvm_context(llvm::getGlobalContext()),
+      module(new llvm::Module("my jit module", llvm_context)),
+      builder(llvm_context),
+      fpm(module),
+      errorString(),
+      //             execEngine(llvm::EngineBuilder(std::unique_ptr<llvm::Module>(module)).setErrorStr(&errorString)
+      execEngine(
+        llvm::EngineBuilder(module)
+          .setErrorStr(&errorString)
+          //           .setMCJITMemoryManager(std::make_unique<llvm::SectionMemoryManager>())
+          //           .setMCJITMemoryManager(new
+          //           llvm::SectionMemoryManager)
           .create())
 {
-    if (!execEngine)
-        throw std::runtime_error("Could not create Execution Engine: " + errorString);
+  if (!execEngine)
+    throw std::runtime_error("Could not create Execution Engine: " +
+                             errorString);
 
+  // Set up the optimizer pipeline.  Start with registering info about how the
+  // target lays out data structures.
+  module->setDataLayout(execEngine->getDataLayout());
+  // Provide basic AliasAnalysis support for GVN.
+  fpm.add(llvm::createBasicAliasAnalysisPass());
+  // Promote allocas to registers.
+  fpm.add(llvm::createPromoteMemoryToRegisterPass());
+  // Do simple "peephole" optimizations and bit-twiddling optzns.
+  fpm.add(llvm::createInstructionCombiningPass());
+  // Reassociate expressions.
+  fpm.add(llvm::createReassociatePass());
+  // Eliminate Common SubExpressions.
+  fpm.add(llvm::createGVNPass());
+  // Simplify the control flow graph (deleting unreachable blocks, etc).
+  fpm.add(llvm::createCFGSimplificationPass());
 
-    // Set up the optimizer pipeline.  Start with registering info about how the
-    // target lays out data structures.
-    module->setDataLayout(execEngine->getDataLayout());
-    // Provide basic AliasAnalysis support for GVN.
-    fpm.add(llvm::createBasicAliasAnalysisPass());
-    // Promote allocas to registers.
-    fpm.add(llvm::createPromoteMemoryToRegisterPass());
-    // Do simple "peephole" optimizations and bit-twiddling optzns.
-    fpm.add(llvm::createInstructionCombiningPass());
-    // Reassociate expressions.
-    fpm.add(llvm::createReassociatePass());
-    // Eliminate Common SubExpressions.
-    fpm.add(llvm::createGVNPass());
-    // Simplify the control flow graph (deleting unreachable blocks, etc).
-    fpm.add(llvm::createCFGSimplificationPass());
-
-    fpm.doInitialization();
+  fpm.doInitialization();
 }

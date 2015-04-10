@@ -18,183 +18,199 @@
 #include "lexer.h"
 
 std::unordered_map<std::string, Token::TokenType> Lexer::identifierTokens{
-    {"if", Token::id_if},
-    {"elif", Token::id_elif},
-    {"el", Token::id_el},
-    {"for", Token::id_for},
-    {"whl", Token::id_whl},
-    {"do", Token::id_do},
-    {"brk", Token::id_brk},
-    {"cnt", Token::id_cnt},
-    {"var", Token::id_var},
-    {"int", Token::id_int},
-    {"flt", Token::id_flt},
-    {"boo", Token::id_boo},
-    {"str", Token::id_str},
-    {"vac", Token::id_vac},
-    {"chr", Token::id_chr},
-    {"T", Token::id_T},
-    {"F", Token::id_F},
-    {"nil", Token::id_nil},
-    {"use", Token::id_use},
-    {"fn", Token::id_fn},
-    {"main", Token::id_main},
-    {"ret", Token::id_ret},
-    {"native", Token::id_native}};
+  {"if", Token::id_if},
+  {"elif", Token::id_elif},
+  {"el", Token::id_el},
+  {"for", Token::id_for},
+  {"whl", Token::id_whl},
+  {"do", Token::id_do},
+  {"brk", Token::id_brk},
+  {"cnt", Token::id_cnt},
+  {"var", Token::id_var},
+  {"int", Token::id_int},
+  {"flt", Token::id_flt},
+  {"boo", Token::id_boo},
+  {"str", Token::id_str},
+  {"vac", Token::id_vac},
+  {"chr", Token::id_chr},
+  {"T", Token::id_T},
+  {"F", Token::id_F},
+  {"nil", Token::id_nil},
+  {"use", Token::id_use},
+  {"fn", Token::id_fn},
+  {"main", Token::id_main},
+  {"ret", Token::id_ret},
+  {"native", Token::id_native}};
 
 std::unordered_map<char, char> Lexer::escapeCharacters{
-    {'\'', '\''}, // --------------
-    {'"', '\"'},
-    {'?', '\?'},
-    {'\\', '\\'},
-    {'0', '\0'},
-    {'a', '\a'},
-    {'b', '\b'},
-    {'f', '\f'},
-    {'n', '\n'},
-    {'r', '\r'},
-    {'t', '\t'},
-    {'v', '\v'}};
+  {'\'', '\''}, // --------------
+  {'"', '\"'},
+  {'?', '\?'},
+  {'\\', '\\'},
+  {'0', '\0'},
+  {'a', '\a'},
+  {'b', '\b'},
+  {'f', '\f'},
+  {'n', '\n'},
+  {'r', '\r'},
+  {'t', '\t'},
+  {'v', '\v'}};
 
 std::unordered_map<int, std::string> Lexer::tokenNames{
-    {Token::none, "none"},
-    {Token::eof, "eof"},
-    {Token::identifier, "identifier"},
-    {Token::dq_string, "dq_string"},
-    {Token::sq_string, "sq_string"},
-    {Token::dec_number, "dec_number"},
-    {Token::hex_number, "hex_number"},
-    {Token::bin_number, "bin_number"},
-    {Token::oct_number, "oct_number"},
+  {Token::none, "none"},
+  {Token::eof, "eof"},
+  {Token::identifier, "identifier"},
+  {Token::dq_string, "dq_string"},
+  {Token::sq_string, "sq_string"},
+  {Token::dec_number, "dec_number"},
+  {Token::hex_number, "hex_number"},
+  {Token::bin_number, "bin_number"},
+  {Token::oct_number, "oct_number"},
 
-    // arithmetic operators:
-    {Token::add_assign, "add_assign"},
-    {Token::sub_assign, "sub_assign"},
-    {Token::mul_assign, "mul_assign"},
-    {Token::div_assign, "div_assign"},
-    {Token::mod_assign, "mod_assign"},
-    {Token::pow_assign, "pow_assign"},
-    {Token::increment, "increment"},
-    {Token::decrement, "decrement"},
-    {Token::power, "power"},
+  // arithmetic operators:
+  {Token::add_assign, "add_assign"},
+  {Token::sub_assign, "sub_assign"},
+  {Token::mul_assign, "mul_assign"},
+  {Token::div_assign, "div_assign"},
+  {Token::mod_assign, "mod_assign"},
+  {Token::pow_assign, "pow_assign"},
+  {Token::increment, "increment"},
+  {Token::decrement, "decrement"},
+  {Token::power, "power"},
 
-    // bool operators
-    {Token::lte, "lte"},
-    {Token::gte, "gte"},
-    {Token::eq, "eq"},
-    {Token::neq, "neq"},
-    {Token::log_and, "log_and"},
-    {Token::log_or, "log_or"},
+  // bool operators
+  {Token::lte, "lte"},
+  {Token::gte, "gte"},
+  {Token::eq, "eq"},
+  {Token::neq, "neq"},
+  {Token::log_and, "log_and"},
+  {Token::log_or, "log_or"},
 
-    // bit operations
-    {Token::lshift, "lshift"},
-    {Token::rshift, "rshift"},
-    {Token::lshift_assign, "lshift_assign"},
-    {Token::rshift_assign, "rshift_assign"},
-    {Token::bit_and_assign, "bit_and_assign"},
-    {Token::bit_or_assign, "bit_or_assign"},
-    {Token::bit_complement_assign, "bit_complement_assign"},
-    {Token::bit_xor_assign, "bit_xor_assign"},
+  // bit operations
+  {Token::lshift, "lshift"},
+  {Token::rshift, "rshift"},
+  {Token::lshift_assign, "lshift_assign"},
+  {Token::rshift_assign, "rshift_assign"},
+  {Token::bit_and_assign, "bit_and_assign"},
+  {Token::bit_or_assign, "bit_or_assign"},
+  {Token::bit_complement_assign, "bit_complement_assign"},
+  {Token::bit_xor_assign, "bit_xor_assign"},
 
-    //  identifiers:
-    {Token::id_if, "id_if"},
-    {Token::id_elif, "id_elif"},
-    {Token::id_el, "id_el"},
-    {Token::id_for, "id_for"},
-    {Token::id_whl, "id_whl"},
-    {Token::id_do, "id_do"},
-    {Token::id_brk, "id_brk"},
-    {Token::id_cnt, "id_cnt"},
-    {Token::id_T, "id_T"},
-    {Token::id_F, "id_F"},
-    {Token::id_nil, "id_nil"},
-    {Token::id_use, "id_use"},
-    {Token::id_fn, "id_fn"},
-    {Token::id_main, "id_main"},
-    {Token::id_ret, "id_ret"},
-    {Token::id_native, "id_native"},
-    {Token::id_op, "id_op"},
+  //  identifiers:
+  {Token::id_if, "id_if"},
+  {Token::id_elif, "id_elif"},
+  {Token::id_el, "id_el"},
+  {Token::id_for, "id_for"},
+  {Token::id_whl, "id_whl"},
+  {Token::id_do, "id_do"},
+  {Token::id_brk, "id_brk"},
+  {Token::id_cnt, "id_cnt"},
+  {Token::id_T, "id_T"},
+  {Token::id_F, "id_F"},
+  {Token::id_nil, "id_nil"},
+  {Token::id_use, "id_use"},
+  {Token::id_fn, "id_fn"},
+  {Token::id_main, "id_main"},
+  {Token::id_ret, "id_ret"},
+  {Token::id_native, "id_native"},
+  {Token::id_op, "id_op"},
 
-    // type IDs
-    {Token::id_var, "id_var"},
-    {Token::id_vac, "id_vac"},
-    // valid var types:
-    {Token::id_int, "id_int"},
-    {Token::id_flt, "id_flt"},
-    {Token::id_boo, "id_boo"},
-    {Token::id_str, "id_str"},
-    {Token::id_chr, "id_chr"}, };
+  // type IDs
+  {Token::id_var, "id_var"},
+  {Token::id_vac, "id_vac"},
+  // valid var types:
+  {Token::id_int, "id_int"},
+  {Token::id_flt, "id_flt"},
+  {Token::id_boo, "id_boo"},
+  {Token::id_str, "id_str"},
+  {Token::id_chr, "id_chr"},
+};
 
 int Lexer::readNext()
 {
-  static enum { normal, cr, lf, crlf } lineState = normal;
+  static enum
+  {
+    normal,
+    cr,
+    lf,
+    crlf
+  } lineState = normal;
 
   lastChar = input->get();
 
-  switch (lineState) {
-  case normal: {
-    switch (lastChar) {
-    case '\r':
-      lineState = cr;
-      break;
-    case '\n':
-      lineState = lf;
-      break;
-    default:
-      // lineState = normal;
+  switch (lineState)
+  {
+    case normal:
+    {
+      switch (lastChar)
+      {
+        case '\r':
+          lineState = cr;
+          break;
+        case '\n':
+          lineState = lf;
+          break;
+        default:
+          // lineState = normal;
+          break;
+      }
       break;
     }
-    break;
-  }
-  case cr: {
-    switch (lastChar) {
-    case '\r':
-      // lineState = cr;
-      goto newline;
-    case '\n':
-      lineState = crlf;
+    case cr:
+    {
+      switch (lastChar)
+      {
+        case '\r':
+          // lineState = cr;
+          goto newline;
+        case '\n':
+          lineState = crlf;
+          break;
+        default:
+          lineState = normal;
+          goto newline;
+      }
       break;
-    default:
-      lineState = normal;
-      goto newline;
     }
-    break;
-  }
-  case lf: {
-    switch (lastChar) {
-    case '\r':
-      lineState = cr;
-      goto newline;
-    case '\n':
-      // lineState = lf;
-      goto newline;
-    default:
-      lineState = normal;
-      goto newline;
+    case lf:
+    {
+      switch (lastChar)
+      {
+        case '\r':
+          lineState = cr;
+          goto newline;
+        case '\n':
+          // lineState = lf;
+          goto newline;
+        default:
+          lineState = normal;
+          goto newline;
+      }
+      break;
     }
-    break;
-  }
-  case crlf: {
-    switch (lastChar) {
-    case '\r':
-      lineState = cr;
-      goto newline;
-    case '\n':
-      lineState = lf;
-      goto newline;
-    default:
-      lineState = normal;
-      goto newline;
+    case crlf:
+    {
+      switch (lastChar)
+      {
+        case '\r':
+          lineState = cr;
+          goto newline;
+        case '\n':
+          lineState = lf;
+          goto newline;
+        default:
+          lineState = normal;
+          goto newline;
+      }
+      break;
     }
-    break;
-  }
-  newline:
-    currentLine.clear();
-    if (lastChar != '\r' && lastChar != '\n' && !input->eof())
-      currentLine += lastChar;
-    column = 1;
-    ++line;
-    return lastChar;
+    newline:
+      currentLine.clear();
+      if (lastChar != '\r' && lastChar != '\n' && !input->eof())
+        currentLine += lastChar;
+      column = 1;
+      ++line;
+      return lastChar;
   }
 
   if (lastChar != '\r' && lastChar != '\n' && !input->eof())
@@ -216,8 +232,7 @@ Token Lexer::nextToken()
   if (lastChar == '"') {
     return readString('"', Token::dq_string);
   }
-  if (lastChar == '\'')
-    return readString('\'', Token::sq_string);
+  if (lastChar == '\'') return readString('\'', Token::sq_string);
 
   // identifiers [_a-zA-Z][_a-zA-Z0-9]*
   if (std::isalpha(lastChar) || lastChar == '_') {
@@ -226,14 +241,12 @@ Token Lexer::nextToken()
       tokenString += lastChar;
 
     auto res = identifierTokens.find(tokenString);
-    if (res != identifierTokens.end())
-      return makeToken(res->second);
+    if (res != identifierTokens.end()) return makeToken(res->second);
     return makeToken(Token::identifier);
   }
 
   // leading 0:
-  if (lastChar == '0')
-    return readLeadingZeroNumber();
+  if (lastChar == '0') return readLeadingZeroNumber();
 
   // leading .:
   if (lastChar == '.') {
@@ -242,51 +255,37 @@ Token Lexer::nextToken()
   }
 
   // leading 1-9:
-  if (std::isdigit(lastChar))
-    return readDecNumber();
+  if (std::isdigit(lastChar)) return readDecNumber();
 
   //-----------
   // operators
-  if (lastChar == '/')
-    return readDivideOperatorOrComment();
+  if (lastChar == '/') return readDivideOperatorOrComment();
 
-  if (lastChar == '*')
-    return readMultiplyOperator();
+  if (lastChar == '*') return readMultiplyOperator();
 
-  if (lastChar == '+')
-    return readPlusOperator();
+  if (lastChar == '+') return readPlusOperator();
 
-  if (lastChar == '-')
-    return readMinusOperator();
+  if (lastChar == '-') return readMinusOperator();
 
-  if (lastChar == '<')
-    return readLTOperator();
+  if (lastChar == '<') return readLTOperator();
 
-  if (lastChar == '>')
-    return readGTOperator();
+  if (lastChar == '>') return readGTOperator();
 
-  if (lastChar == '&')
-    return readAndOperator();
+  if (lastChar == '&') return readAndOperator();
 
-  if (lastChar == '|')
-    return readOrOperator();
+  if (lastChar == '|') return readOrOperator();
 
-  if (lastChar == '~')
-    return readBitComplOperator();
+  if (lastChar == '~') return readBitComplOperator();
 
-  if (lastChar == '^')
-    return readBitXorOperator();
+  if (lastChar == '^') return readBitXorOperator();
 
-  if (lastChar == '=')
-    return readEq();
+  if (lastChar == '=') return readEq();
 
-  if (lastChar == '!')
-    return readBang();
+  if (lastChar == '!') return readBang();
 
   // -----------
   // end of file
-  if (input->eof())
-    return makeToken(Token::eof);
+  if (input->eof()) return makeToken(Token::eof);
 
   // remaining single characters as tokens (i.e. operator symbols)
   tokenString = lastChar;
@@ -298,40 +297,48 @@ Token Lexer::nextToken()
 inline Token Lexer::readString(char sep, int tokenType)
 {
   tokenString = ""; // skip opening '"'
-  while (readNext() != sep && !input->eof()) {
+  while (readNext() != sep && !input->eof())
+  {
     if (lastChar == '\\') { // escape character
       if (readNext() == 'x') {
         std::string nr;
-        for (int i = 0; i < 2; ++i) {
+        for (int i = 0; i < 2; ++i)
+        {
           nr += readNext();
           if (!std::isxdigit(lastChar))
             error(std::string("unexpected '") + ((char)lastChar) +
                   "' in hex escape sequence");
         }
         tokenString += (char)std::stoi(nr, nullptr, 16);
-      } else if ('0' <= lastChar && lastChar <= '9') {
+      }
+      else if ('0' <= lastChar && lastChar <= '9')
+      {
         std::string nr;
         nr += lastChar;
-        for (int i = 0; i < 2; ++i) {
+        for (int i = 0; i < 2; ++i)
+        {
           nr += readNext();
           if (lastChar < '0' || '9' < lastChar)
             error(std::string("unexpected '") + ((char)lastChar) +
                   "' in octal escape sequence");
         }
         tokenString += (char)std::stoi(nr, nullptr, 8);
-      } else {
+      }
+      else
+      {
         auto pos = escapeCharacters.find(lastChar);
         if (pos == escapeCharacters.end())
           error(std::string("Unknown Escape sequence '\\") + ((char)lastChar) +
                 '\'');
         tokenString += pos->second;
       }
-    } else {
+    }
+    else
+    {
       tokenString += lastChar;
     }
   }
-  if (input->eof())
-    error("unterminated string at end of file");
+  if (input->eof()) error("unterminated string at end of file");
   readNext(); // skip closing '"'
   return makeToken(tokenType);
 }
@@ -343,10 +350,8 @@ inline Token Lexer::readLeadingZeroNumber()
   // octal numbers 0[0-9]+
 
   tokenString = '0';
-  if (readNext() == '.')
-    return readDotOrNumberDotPart();
-  if (lastChar == 'e' || lastChar == 'E')
-    return readNumberExponentPart();
+  if (readNext() == '.') return readDotOrNumberDotPart();
+  if (lastChar == 'e' || lastChar == 'E') return readNumberExponentPart();
 
   // hex numbers:
   if (lastChar == 'x' || lastChar == 'X') {
@@ -413,8 +418,7 @@ inline Token Lexer::readDotOrNumberDotPart()
             "' in number literal");
     return makeToken(Token::dec_flt_number);
   }
-  if (tokenString.front() == '.')
-    return makeToken('.');                 // dot operator
+  if (tokenString.front() == '.') return makeToken('.'); // dot operator
   return makeToken(Token::dec_flt_number); // number ending with '.'
 }
 
@@ -442,26 +446,35 @@ inline Token Lexer::readDivideOperatorOrComment()
       if (lastChar == '\r' && readNext() == '\n') // crlf
         readNext();
       if (!input->eof())
-        return nextToken(); // recursive call TODO replace with goto top? nope! (tail call?)
+        return nextToken(); // recursive call TODO replace with goto top? nope!
+                            // (tail call?)
     }
     return makeToken(Token::eof);
-  } else if (lastChar == '*') {
+  }
+  else if (lastChar == '*')
+  {
     readNext();
-    while (!input->eof()) {
+    while (!input->eof())
+    {
       if (lastChar == '*') {
         if (readNext() == '/') {
           readNext();         // eat '/'
           return nextToken(); // recursive call
-        } else
+        }
+        else
           continue; // skip readNext() for cases like '**/'
       }
       readNext();
     }
     error("unexpected end of file in multi line comment");
-  } else if (lastChar == '=') {
+  }
+  else if (lastChar == '=')
+  {
     appendAndNext();
     return makeToken(Token::div_assign);
-  } else {
+  }
+  else
+  {
     return makeToken('/');
   }
 }
