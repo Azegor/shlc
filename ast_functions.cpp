@@ -51,21 +51,48 @@ llvm::Function *FunctionHead::codegen(Context &ctx)
 
 llvm::Function *FunctionHead::getLLVMFunction(GlobalContext &gl_ctx)
 {
-  std::vector<llvm::Type *> argumentTypes;
-  argumentTypes.reserve(args.size());
-  for (auto &arg : args)
+  std::string mangled_name = getMangledName();
+  auto range = gl_ctx.declaredFunctions.equal_range(mangled_name);
+  if (range.first == range.second)
   {
-    argumentTypes.push_back(getLLVMTypeFromType(gl_ctx, arg.first));
+      throw CodeGenError(this, "can't find function in function table");
   }
+  auto second = range.first;
+  ++second;
+//   if (second != range.second)
+  if (std::distance(range.first, range.second) > 1)
+  {
+      throw CodeGenError(this, "too many functions (overloading not supported yet)");
+  }
+  if (range.first->second.fnHead->llvm_fn != 0)
+  {
+      llvm_fn = range.first->second.fnHead->llvm_fn;
+      return llvm_fn;
+  }
+  else
+  {
+    std::vector<llvm::Type *> argumentTypes;
+    argumentTypes.reserve(args.size());
+    for (auto &arg : args)
+    {
+        argumentTypes.push_back(getLLVMTypeFromType(gl_ctx, arg.first));
+    }
 
-  llvm::FunctionType *ft = llvm::FunctionType::get(
-      getLLVMTypeFromType(gl_ctx, retType), argumentTypes, false);
+    llvm::FunctionType *ft = llvm::FunctionType::get(
+        getLLVMTypeFromType(gl_ctx, retType), argumentTypes, false);
 
-  llvm::Function *f = llvm::Function::Create(
-      ft, llvm::Function::ExternalLinkage, name, gl_ctx.module);
-  llvm_fn = f;
+    // TODO: maybe change linkage for internal functions to something fast?
+    auto linkage = llvm::Function::ExternalLinkage;
+//     if (binding == Binding::Intern)
+//     {
+//         linkage = llvm::Function::PrivateLinkage;
+//     }
+    llvm::Function *f = llvm::Function::Create(
+        ft, linkage, getMangledName(), gl_ctx.module);
+    llvm_fn = f;
 
-  return f;
+    return f;
+  }
 }
 
 void FunctionHead::createArgumentAllocas(Context &ctx, llvm::Function *fn)
@@ -174,45 +201,46 @@ llvm::Function *FunctionDecl::codegen(GlobalContext &gl_ctx)
 
 void FunctionHead::addToFunctionTable(GlobalContext &ctx, FnReg regType)
 {
-    auto range = ctx.declaredFunctions.equal_range(name);
+    std::string mangled_name = getMangledName();
+    auto range = ctx.declaredFunctions.equal_range(mangled_name);
     if (range.first == range.second) // no other fns
     {
-        ctx.declaredFunctions.insert({name, {regType, this}});
+        ctx.declaredFunctions.insert({mangled_name, {regType, this}});
         return;
     }
     // already functions with same name
     for (auto fn = range.first; fn != range.second; ++fn) // should only be one element for now
     {
+        std::cout << mangled_name << std::endl;
         if (args == fn->second.fnHead->args) // cannot have function with same args again
         {
             if (regType == FnReg::Declare || fn->second.regType == FnReg::Declare)
             {
                 if (retType != fn->second.fnHead->retType) // same signature, other return type
                     throw CodeGenError(this, "invalid overload of function (with different return type)");
+                return; // already exist -> exit
             }
             else
             {
                 throw CodeGenError(this, "invalid redeclaration of function");
             }
         }
-        else
-        {
-            throw CodeGenError(this, "function overloading not supported yet");
-        }
     }
-    ctx.declaredFunctions.insert({name, {regType, this}});
+    throw CodeGenError(this, "function overloading not supported yet");
+    ctx.declaredFunctions.insert({mangled_name, {regType, this}});
 }
 
 std::string FunctionHead::getMangledName() const
 {
     if (binding == Binding::Intern)
     {
-    std::string res = name + '(';
+    std::string res = name + '_';
     for (auto& arg : args)
     {
         res += getMangleName(arg.first);
     }
-    res += ')' + getMangleName(retType);
+    res += '_';
+    res += getMangleName(retType);
     return res;
     }
     if (binding == Binding::Extern_C)

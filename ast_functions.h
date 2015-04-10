@@ -70,6 +70,7 @@ public:
   llvm::Function *codegen(Context &ctx);
   llvm::Function *getLLVMFunction(GlobalContext &gl_ctx);
   void createArgumentAllocas(Context &ctx, llvm::Function* fn);
+  void setBinding(Binding b) { binding = b; }
 };
 
 using FunctionHeadPtr = std::unique_ptr<FunctionHead>;
@@ -92,7 +93,9 @@ public:
 class NativeFunction : public Function
 {
 public:
-  NativeFunction(FunctionHeadPtr head) : Function(std::move(head)) {}
+  NativeFunction(FunctionHeadPtr h) : Function(std::move(h)) {
+      head->setBinding(FunctionHead::Binding::Extern_C);
+  }
   void print(int indent = 0) override;
   llvm::Function *codegen(GlobalContext &gl_ctx) override;
 };
@@ -102,9 +105,11 @@ class NormalFunction : public Function
   BlockStmtPtr body;
 
 public:
-  NormalFunction(FunctionHeadPtr head, BlockStmtPtr body)
-      : Function(std::move(head)), body(std::move(body))
+  NormalFunction(FunctionHeadPtr h, BlockStmtPtr body)
+      : Function(std::move(h)), body(std::move(body))
   {
+      if (head->getName() == "main")
+          head->setBinding(FunctionHead::Binding::Extern_C); // no mangling!
   }
   void print(int indent = 0) override;
   llvm::Function *codegen(GlobalContext &gl_ctx) override;
