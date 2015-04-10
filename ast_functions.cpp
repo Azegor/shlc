@@ -37,19 +37,7 @@ void FunctionHead::print(int indent)
 
 llvm::Function *FunctionHead::codegen(Context &ctx)
 {
-  // Make the function type:  double(double,double) etc.
-  std::vector<llvm::Type *> argumentTypes;
-  argumentTypes.reserve(args.size());
-  for (auto &arg : args)
-  {
-    argumentTypes.push_back(getLLVMTypeFromType(ctx.global, arg.first));
-  }
-
-  llvm::FunctionType *ft = llvm::FunctionType::get(
-      getLLVMTypeFromType(ctx.global, retType), argumentTypes, false);
-
-  llvm::Function *f = llvm::Function::Create(
-      ft, llvm::Function::ExternalLinkage, name, ctx.global.module);
+  llvm::Function *f = getLLVMFunction(ctx.global);
 
   // Set names for all arguments.
   size_t idx = 0;
@@ -58,6 +46,25 @@ llvm::Function *FunctionHead::codegen(Context &ctx)
   {
     ai->setName(args[idx].second);
   }
+  return f;
+}
+
+llvm::Function *FunctionHead::getLLVMFunction(GlobalContext &gl_ctx)
+{
+  std::vector<llvm::Type *> argumentTypes;
+  argumentTypes.reserve(args.size());
+  for (auto &arg : args)
+  {
+    argumentTypes.push_back(getLLVMTypeFromType(gl_ctx, arg.first));
+  }
+
+  llvm::FunctionType *ft = llvm::FunctionType::get(
+      getLLVMTypeFromType(gl_ctx, retType), argumentTypes, false);
+
+  llvm::Function *f = llvm::Function::Create(
+      ft, llvm::Function::ExternalLinkage, name, gl_ctx.module);
+  llvm_fn = f;
+
   return f;
 }
 
@@ -101,7 +108,7 @@ void NormalFunction::print(int indent)
 llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
 {
   Context ctx(gl_ctx);
-  head->addToFunctionTable(gl_ctx, false);
+  head->addToFunctionTable(gl_ctx, FunctionHead::FnReg::Define);
   auto fn = head->codegen(ctx);
 
   // Create a new basic block to start insertion into.
@@ -144,7 +151,7 @@ void NativeFunction::print(int indent)
 llvm::Function *NativeFunction::codegen(GlobalContext &gl_ctx)
 {
   Context ctx(gl_ctx);
-  head->addToFunctionTable(gl_ctx, false); // register before codegen -> allows self-recursion
+  head->addToFunctionTable(gl_ctx, FunctionHead::FnReg::Native); // register before codegen -> allows self-recursion
   return head->codegen(ctx);
 }
 
@@ -160,27 +167,27 @@ void FunctionDecl::print(int indent)
 llvm::Function *FunctionDecl::codegen(GlobalContext &gl_ctx)
 {
   Context ctx(gl_ctx);
-  head->addToFunctionTable(gl_ctx, true);
-//   return head->codegen(ctx); // TODO: don't codegen for declaration!
-  return nullptr;
+  head->addToFunctionTable(gl_ctx, FunctionHead::FnReg::Declare);
+  return head->codegen(ctx); // TODO: don't codegen for declaration!
+//   return nullptr;
 }
 
-void FunctionHead::addToFunctionTable(GlobalContext &ctx, bool declareOnly)
+void FunctionHead::addToFunctionTable(GlobalContext &ctx, FnReg regType)
 {
     auto range = ctx.declaredFunctions.equal_range(name);
     if (range.first == range.second) // no other fns
     {
-        ctx.declaredFunctions.insert({name, {declareOnly, this}});
+        ctx.declaredFunctions.insert({name, {regType, this}});
         return;
     }
     // already functions with same name
-    for (auto fn = range.first; fn != range.second; ++fn)
+    for (auto fn = range.first; fn != range.second; ++fn) // should only be one element for now
     {
-        if (args == (*fn).second.second->args) // cannot have function with same args again
+        if (args == fn->second.fnHead->args) // cannot have function with same args again
         {
-            if (declareOnly || (*fn).second.first)
+            if (regType == FnReg::Declare || fn->second.regType == FnReg::Declare)
             {
-                if (retType != (*fn).second.second->retType) // same signature, other return type
+                if (retType != fn->second.fnHead->retType) // same signature, other return type
                     throw CodeGenError(this, "invalid overload of function (with different return type)");
             }
             else
@@ -188,6 +195,29 @@ void FunctionHead::addToFunctionTable(GlobalContext &ctx, bool declareOnly)
                 throw CodeGenError(this, "invalid redeclaration of function");
             }
         }
+        else
+        {
+            throw CodeGenError(this, "function overloading not supported yet");
+        }
     }
-    ctx.declaredFunctions.insert({name, {declareOnly, this}});
+    ctx.declaredFunctions.insert({name, {regType, this}});
+}
+
+std::string FunctionHead::getMangledName() const
+{
+    if (binding == Binding::Intern)
+    {
+    std::string res = name + '(';
+    for (auto& arg : args)
+    {
+        res += getMangleName(arg.first);
+    }
+    res += ')' + getMangleName(retType);
+    return res;
+    }
+    if (binding == Binding::Extern_C)
+    {
+        return name;
+    }
+    throw CodeGenError(this, "unknown function binding type");
 }

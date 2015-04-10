@@ -17,6 +17,18 @@ std::string getTypeName(Type t)
   return names[t];
 }
 
+char getMangleName(Type t)
+{
+  static std::map<Type, char> names = {
+      {Type::int_t, 'i'},
+      {Type::flt_t, 'f'},
+      {Type::chr_t, 'c'},
+      {Type::boo_t, 'b'},
+      {Type::str_t, 's'},
+      {Type::vac_t, 'v'}};
+  return names[t];
+}
+
 Type getTypeFromToken(int tok)
 {
   static std::unordered_map<int, Type> types = {
