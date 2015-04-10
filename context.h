@@ -98,7 +98,12 @@ public:
     std::string errorString;
     llvm::ExecutionEngine *execEngine;
 
-    std::unordered_multimap<std::string, std::pair<bool, FunctionHead *>> declaredFunctions;
+    struct Fn {
+        FunctionHead::FnReg regType;
+        FunctionHead * fnHead;
+//         Fn(FunctionHead::FnReg reg, FunctionHead *fh) : regType(reg), fnHead(fh) {}
+    };
+    std::unordered_multimap<std::string, Fn> declaredFunctions;
 
     GlobalContext();
 };

@@ -114,7 +114,7 @@ class CodeGenError : public std::exception
 public:
   const AstNode* node;
   const std::string reason, errorLine;
-  CodeGenError(AstNode* node, std::string what)
+  CodeGenError(const AstNode* node, std::string what)
       : node(std::move(node)), reason(std::move(what))
   {
   }

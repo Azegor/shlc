@@ -33,6 +33,7 @@ namespace types {
 }
 
 std::string getTypeName(Type t);
+char getMangleName(Type t);
 Type getTypeFromToken(int tok);
 
 #endif // TYPE_H

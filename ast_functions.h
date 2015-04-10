@@ -27,19 +27,25 @@ using ArgVector = std::vector<std::pair<Type, std::string>>;
 
 class FunctionHead : public AstNode
 {
+public:
+  enum class Binding { Intern, Extern_C };
+
+private:
   std::string name;
   ArgVector args;
   Type retType;
+  Binding binding;
+  llvm::Function *llvm_fn = nullptr;
 
 public:
-  FunctionHead(std::string name, ArgVector args, Type retType)
-      : name(std::move(name)), args(std::move(args)), retType(retType)
+  FunctionHead(std::string name, ArgVector args, Type retType, Binding bind = Binding::Intern)
+      : name(std::move(name)), args(std::move(args)), retType(retType), binding(bind)
   {
   }
 
   bool operator ==(const FunctionHead &o) const
   {
-      return name == o.name && args == o.args && retType == o.retType;
+      return name == o.name && args == o.args && retType == o.retType && binding == o.binding;
   }
   // relative ordering for maps/sets
   bool operator <(const FunctionHead &o) const
@@ -49,15 +55,20 @@ public:
       if (args < o.args) return true;
       if (args > o.args) return false;
       if (retType < o.retType) return true;
+      if (retType > o.retType) return false;
+      if (binding < o.binding) return true;
       return false;
   }
 
-  void addToFunctionTable(GlobalContext & ctx, bool declareOnly);
+  enum class FnReg {Declare, Define, Native};
+  void addToFunctionTable(GlobalContext & ctx, FnReg regType);
 
   void print(int indent = 0) override;
   const std::string &getName() const {return name; }
+  std::string getMangledName() const;
   Type getReturnType() const { return retType; }
   llvm::Function *codegen(Context &ctx);
+  llvm::Function *getLLVMFunction(GlobalContext &gl_ctx);
   void createArgumentAllocas(Context &ctx, llvm::Function* fn);
 };
 
