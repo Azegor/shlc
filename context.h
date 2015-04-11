@@ -18,7 +18,7 @@
 #ifndef CONTEXT_H
 #define CONTEXT_H
 
-#include <stack>
+#include <vector>
 #include <map>
 #include <memory>
 #include <set>
@@ -67,13 +67,9 @@ class VariableNotDefinedError : public CodeGenError
 {
 public:
   const std::string variableName;
-  VariableNotDefinedError(std::string name)
-      : CodeGenError(nullptr, std::move(name)) // implement row/col later
+  VariableNotDefinedError(const std::string &name)
+      : CodeGenError(nullptr, "Variable '" + name + "' was not defined") // implement row/col later
   {
-  }
-  const char *what() const noexcept override
-  {
-    return ("Variable '" + variableName + "' was not defined").c_str();
   }
 
   /*
@@ -115,15 +111,16 @@ public:
 
 struct ContextFrame
 {
+  struct VarInfo {Type type; llvm::AllocaInst *alloca; };
   //   std::map<std::pair<std::string, llvm::Type>, llvm::AllocaInst *>
   //   variables;
-  std::map<std::string, llvm::AllocaInst *> variables;
+  std::map<std::string, VarInfo> variables;
 };
 
 class Context
 {
   // put parameters in lowest level frame
-  std::stack<ContextFrame> frames;
+  std::vector<ContextFrame> frames;
   ContextFrame *top = nullptr;
 
 public:
@@ -135,28 +132,36 @@ public:
   Context(GlobalContext &gl_ctx) : global(gl_ctx) { pushFrame(); }
   void pushFrame()
   {
-    frames.emplace();
-    top = &frames.top();
+    frames.emplace_back();
+    top = &frames.back();
   }
   void popFrame()
   {
-    frames.pop();
+    frames.pop_back();
     if (frames.empty())
       top = nullptr;
     else
-      top = &frames.top();
+      top = &frames.back();
   }
-  void putVar(const std::string &name, llvm::AllocaInst *aInst)
+  void putVar(const std::string &name, Type type, llvm::AllocaInst *aInst)
   {
-    if (top->variables[name]) throw VariableAlreadyDefinedError(name);
-    top->variables[name] = aInst;
+    if (top->variables.find(name) != top->variables.end())
+      throw VariableAlreadyDefinedError(name);
+    top->variables[name] = {type, aInst};
   }
-  llvm::AllocaInst *getVar(const std::string &name) const
+  const ContextFrame::VarInfo &getVar(const std::string &name) const
   {
-    auto var = top->variables.find(name);
-    if (var == top->variables.end()) throw VariableNotDefinedError(name);
-    return var->second;
+    for(auto frame = frames.rbegin(); frame != frames.rend(); ++frame)
+    {
+      auto var = frame->variables.find(name);
+      if (var != frame->variables.end())
+        return var->second;
+    }
+    throw VariableNotDefinedError(name);
   }
+
+  llvm::AllocaInst *getVarAlloca(const std::string &name) const { return getVar(name).alloca; }
+  Type getVariableType(const std::string &name) const { return getVar(name).type; }
 
   int frameCount() const { return frames.size(); }
   // currentBlock() etc...

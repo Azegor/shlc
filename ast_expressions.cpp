@@ -142,3 +142,15 @@ llvm::Value *FunctionCallExpr::codegen(Context &ctx)
     llvm::ArrayRef<llvm::Value *>(params.get(), args.size()));
   return nullptr;
 }
+
+
+
+Type VariableExpr::getType(Context &ctx )
+{
+  return ctx.getVariableType(name);
+}
+
+llvm::Value *VariableExpr::codegen(Context &ctx)
+{
+  return ctx.global.builder.CreateLoad(ctx.getVarAlloca(name), name);
+}
