@@ -132,7 +132,60 @@ llvm::Value *ReturnStmt::codegen(Context &ctx)
   return nullptr;
 }
 
-llvm::Value *WhileStmt::codegen(Context &ctx) { return nullptr; }
+llvm::Value *WhileStmt::codegen(Context &ctx) {
+    ctx.pushFrame();
+
+//     auto alloca = createEntryBlockAlloca(); // use, if variable definitions are allowed here
+
+    if (cond->getType(ctx) != Type::boo_t)
+    {
+        throw CodeGenError(this, "non-boolean expression in while statement condition");
+        // TODO maybe do conversion to bool instead
+    }
+
+    auto& builder = ctx.global.builder;
+
+    auto headBB = llvm::BasicBlock::Create(ctx.global.llvm_context, "whlhead", ctx.currentFn);
+    auto loopBB = llvm::BasicBlock::Create(ctx.global.llvm_context, "whlloop", ctx.currentFn);
+    auto endBB = llvm::BasicBlock::Create(ctx.global.llvm_context, "whlend", ctx.currentFn);
+
+    builder.CreateBr(headBB);
+    builder.SetInsertPoint(headBB);
+    auto condVal = cond->codegen(ctx);
+    builder.CreateCondBr(condVal, loopBB, endBB);
+    builder.SetInsertPoint(loopBB);
+    body->codegen(ctx);
+    builder.CreateBr(headBB);
+    builder.SetInsertPoint(endBB);
+
+    ctx.popFrame();
+    return nullptr;
+}
+
+llvm::Value *DoWhileStmt::codegen(Context &ctx) {
+    ctx.pushFrame();
+
+    if (cond->getType(ctx) != Type::boo_t)
+    {
+        throw CodeGenError(this, "non-boolean expression in while statement condition");
+        // TODO maybe do conversion to bool instead
+    }
+
+    auto& builder = ctx.global.builder;
+
+    auto loopBB = llvm::BasicBlock::Create(ctx.global.llvm_context, "doloop", ctx.currentFn);
+    auto endBB = llvm::BasicBlock::Create(ctx.global.llvm_context, "doend", ctx.currentFn);
+
+    builder.CreateBr(loopBB);
+    builder.SetInsertPoint(loopBB);
+    body->codegen(ctx);
+    auto condVal = cond->codegen(ctx);
+    builder.CreateCondBr(condVal, loopBB, endBB);
+    builder.SetInsertPoint(endBB);
+
+    ctx.popFrame();
+    return nullptr;
+}
 
 llvm::Value *ExprStmt::codegen(Context &ctx)
 {
