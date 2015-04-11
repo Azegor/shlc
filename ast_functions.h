@@ -23,7 +23,7 @@
 
 class GlobalContext;
 
-using ArgVector = std::vector<std::pair<Type, std::string> >;
+using ArgVector = std::vector<std::pair<Type, std::string>>;
 
 class FunctionHead : public AstNode
 {
@@ -82,9 +82,12 @@ public:
   std::string getMangledName() const;
   Type getReturnType() const { return retType; }
   llvm::Function *codegen(Context &ctx);
-  llvm::Function *getLLVMFunction(GlobalContext &gl_ctx);
   void createArgumentAllocas(Context &ctx, llvm::Function *fn);
   void setBinding(Binding b) { binding = b; }
+  llvm::Function *get_llvm_fn() { return llvm_fn; }
+
+private:
+  llvm::Function *createLLVMFunction(GlobalContext &gl_ctx);
 };
 
 using FunctionHeadPtr = std::unique_ptr<FunctionHead>;

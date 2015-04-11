@@ -37,7 +37,7 @@ void FunctionHead::print(int indent)
 
 llvm::Function *FunctionHead::codegen(Context &ctx)
 {
-  llvm::Function *f = getLLVMFunction(ctx.global);
+  llvm::Function *f = createLLVMFunction(ctx.global);
 
   // Set names for all arguments.
   size_t idx = 0;
@@ -49,10 +49,9 @@ llvm::Function *FunctionHead::codegen(Context &ctx)
   return f;
 }
 
-llvm::Function *FunctionHead::getLLVMFunction(GlobalContext &gl_ctx)
+llvm::Function *FunctionHead::createLLVMFunction(GlobalContext &gl_ctx)
 {
-  std::string mangled_name = getMangledName();
-  auto range = gl_ctx.declaredFunctions.equal_range(mangled_name);
+  auto range = gl_ctx.declaredFunctions.equal_range(name);
   if (range.first == range.second) {
     throw CodeGenError(this, "can't find function in function table");
   }
@@ -201,21 +200,18 @@ llvm::Function *FunctionDecl::codegen(GlobalContext &gl_ctx)
 
 void FunctionHead::addToFunctionTable(GlobalContext &ctx, FnReg regType)
 {
-  std::string mangled_name = getMangledName();
-  auto range = ctx.declaredFunctions.equal_range(mangled_name);
+  auto range = ctx.declaredFunctions.equal_range(name);
   if (range.first == range.second) // no other fns
   {
-    ctx.declaredFunctions.insert({mangled_name, {regType, this}});
+    ctx.declaredFunctions.insert({name, {regType, this}});
     return;
   }
   // already functions with same name
   for (auto fn = range.first; fn != range.second;
        ++fn) // should only be one element for now
   {
-    std::cout << mangled_name << std::endl;
-    if (args ==
-        fn->second.fnHead->args) // cannot have function with same args again
-    {
+    // cannot have function with same args again
+    if (args == fn->second.fnHead->args) {
       if (regType == FnReg::Declare || fn->second.regType == FnReg::Declare) {
         if (retType !=
             fn->second.fnHead->retType) // same signature, other return type
@@ -230,7 +226,7 @@ void FunctionHead::addToFunctionTable(GlobalContext &ctx, FnReg regType)
     }
   }
   throw CodeGenError(this, "function overloading not supported yet");
-  ctx.declaredFunctions.insert({mangled_name, {regType, this}});
+  //   ctx.declaredFunctions.insert({name, {regType, this}});
 }
 
 std::string FunctionHead::getMangledName() const

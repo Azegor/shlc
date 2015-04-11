@@ -104,7 +104,7 @@ void ContinueStmt::print(int indent)
   std::cout << "[Continue]" << std::endl;
 }
 
-void ExprStmt::print(int indent) {}
+void ExprStmt::print(int indent) { expr->print(indent); }
 
 llvm::Value *ReturnStmt::codegen(Context &ctx)
 {
@@ -133,3 +133,9 @@ llvm::Value *ReturnStmt::codegen(Context &ctx)
 }
 
 llvm::Value *WhileStmt::codegen(Context &ctx) { return nullptr; }
+
+llvm::Value *ExprStmt::codegen(Context &ctx)
+{
+  expr->codegen(ctx);
+  return nullptr;
+}

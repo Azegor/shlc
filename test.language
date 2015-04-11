@@ -1,13 +1,25 @@
+fn write(chr i) native;
+
+fn hi(){write('X');}
+//fn hi(){hi();}
+
+fn testabc(int i) native;
+
 fn main() {
   hi();
   4;
   3+4+3+4+2+5+234;
   1+2*3+4;
+  //testabc(3+4);
 }
+
+fn yo(){}
 
 fn test(int a) {
   yo();
 }
+
+fn exit(int i) native;
 
 fn bla(int a, b) {
   exit(1);
@@ -33,7 +45,7 @@ fn sin(flt val) native;
 fn cos(flt val) native;
 fn tan(flt val) native;
 
-fn putc(chr c) native;
+//fn putc(chr c) native;
 
 fn complex()
 {

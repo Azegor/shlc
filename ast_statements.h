@@ -23,7 +23,7 @@
 class VarDeclStmt : public Statement
 {
 public:
-  using VarEnties = std::vector<std::pair<std::string, ExprPtr> >;
+  using VarEnties = std::vector<std::pair<std::string, ExprPtr>>;
 
 private:
   Type type;
@@ -122,6 +122,7 @@ class ExprStmt : public Statement
 public:
   ExprStmt(ExprPtr expr) : expr(std::move(expr)) {}
   void print(int indent = 0) override;
+  llvm::Value *codegen(Context &ct) override;
 };
 
 #endif // ASTSTATEMENTS_H

@@ -1,6 +1,8 @@
 #include <iostream>
 #include <fstream>
 
+#include <cstdio>
+
 #include <unordered_set>
 
 #include <llvm/IR/Function.h>
@@ -227,3 +229,5 @@ int main(int argc, char **argv)
   testCodeGen(filename);
   return 0;
 }
+
+void write(char c) { std::putc(c, stdout); }

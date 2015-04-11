@@ -108,6 +108,8 @@ public:
   };
   std::unordered_multimap<std::string, Fn> declaredFunctions;
 
+  FunctionHead *getFunction(const std::string &name);
+
   GlobalContext();
 };
 
