@@ -42,6 +42,8 @@ void BlockStmt::print(int indent)
 llvm::Value *BlockStmt::codegen(Context &ctx)
 {
   for (auto &&stmt : block)
+  {
     stmt->codegen(ctx);
+  }
   return nullptr;
 }

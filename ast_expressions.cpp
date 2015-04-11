@@ -24,6 +24,7 @@
 
 #include "ast.h"
 #include "context.h"
+#include "ast_functions.h"
 
 void VariableExpr::print(int indent)
 {
@@ -118,4 +119,26 @@ llvm::Value *FltNumberExpr::codegen(Context &ctx)
 llvm::Value *BoolConstExpr::codegen(Context &ctx)
 {
   return llvm::ConstantInt::get(ctx.global.llvm_context, llvm::APInt(1, value));
+}
+
+Type FunctionCallExpr::getType(Context &)
+{
+  if (!fnHead) throw CodeGenError(this, "Missing function for call");
+  return fnHead->getReturnType();
+}
+
+llvm::Value *FunctionCallExpr::codegen(Context &ctx)
+{
+  std::cout << "HI THERE" << std::endl;
+  fnHead = ctx.global.getFunction(name);
+  if (!fnHead) throw CodeGenError(this, "no viable function found for " + name);
+  auto params = std::make_unique<llvm::Value *[]>(args.size());
+  for (int i = 0; i < args.size(); ++i)
+  {
+    params[i] = args[i]->codegen(ctx);
+  }
+  ctx.global.builder.CreateCall(
+    fnHead->get_llvm_fn(),
+    llvm::ArrayRef<llvm::Value *>(params.get(), args.size()));
+  return nullptr;
 }

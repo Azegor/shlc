@@ -22,6 +22,8 @@
 
 #include <string>
 
+class FunctionHead;
+
 class VariableExpr : public Expr
 {
   std::string name;
@@ -39,6 +41,7 @@ class FunctionCallExpr : public Expr
 {
   std::string name;
   ExprList args;
+  FunctionHead *fnHead;
 
 public:
   FunctionCallExpr(std::string name, ExprList args)
@@ -46,10 +49,8 @@ public:
   {
   }
   void print(int indent = 0) override;
-  Type getType(Context &) override
-  {
-    return Type::none; // TODO consult function table here
-  }
+  Type getType(Context &) override;
+  llvm::Value *codegen(Context &ctx) override;
 };
 
 class ConstantExpr : public Expr
