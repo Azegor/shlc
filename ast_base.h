@@ -80,6 +80,12 @@ public:
   BlockStmt(StmtList block) : block(std::move(block)) {}
   void print(int indent = 0) override;
   llvm::Value *codegen(Context &ctx) override;
+
+  // 'const' access to individual statements
+//  const Statement *front() const {return block.front().get(); }
+//  const Statement *back() const {return block.back().get(); }
+//  StmtList::const_iterator begin() const { return block.cbegin(); }
+//  StmtList::const_iterator end() const { return block.cend(); }
 };
 
 using BlockStmtPtr = std::unique_ptr<BlockStmt>;

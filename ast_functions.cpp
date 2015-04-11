@@ -132,15 +132,23 @@ void NormalFunction::print(int indent)
 llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
 {
   Context ctx(gl_ctx);
+  auto& builder = gl_ctx.builder;
   head->addToFunctionTable(gl_ctx, FunctionHead::FnReg::Define);
   auto fn = head->codegen(ctx);
+
+  ctx.currentFn = fn;
 
   // Create a new basic block to start insertion into.
   llvm::BasicBlock *bb =
     llvm::BasicBlock::Create(gl_ctx.llvm_context, "entry", fn);
-  gl_ctx.builder.SetInsertPoint(bb);
+  builder.SetInsertPoint(bb);
 
   head->createArgumentAllocas(ctx, fn);
+
+  // make main block, leave entry for allocas only
+  auto mainBB = llvm::BasicBlock::Create(gl_ctx.llvm_context, "fnbody", fn);
+  builder.CreateBr(mainBB);
+  builder.SetInsertPoint(mainBB);
 
   ctx.pushFrame();
 
@@ -152,13 +160,23 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
     throw CodeGenError(this, "variable frame count inconsistent (" +
                                std::to_string(ctx.frameCount()) + " != 1)");
 
-  if (ctx.returnType == Type::none) // missing return statement
+
+  // TODO: check if last stmt is a return; if not & void -> insert, else error
+//   auto lastStmt = body->back();
+//   if (typeid(lastStmt) != typeid(ReturnStmt)) // no final return
+
+  // if void function add trailing return (even if already existing)
+  if (head->getReturnType() == Type::vac_t) // add default return
   {
-    if (head->getReturnType() == Type::vac_t) // add default return
-      ReturnStmt().codegen(ctx);
-    else
-      throw CodeGenError(this, "missing return statement in non-void function");
+    ReturnStmt().codegen(ctx);
   }
+  else if (ctx.returnType == Type::none) // missing return statement
+  {
+    // TODO: doesn't handle the fact that a return may be conditional
+    throw CodeGenError(this, "missing return statement in non-void function");
+  }
+
+//   gl_ctx.fpm.run(*fn); // disable when unoptimized output is wanted
 
   return fn;
 }

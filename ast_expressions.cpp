@@ -18,6 +18,7 @@
 #include "ast_expressions.h"
 
 #include <iostream>
+#include <memory>
 
 #include <llvm/IR/Constants.h>
 #include <llvm/ADT/APInt.h>
@@ -129,7 +130,6 @@ Type FunctionCallExpr::getType(Context &)
 
 llvm::Value *FunctionCallExpr::codegen(Context &ctx)
 {
-  std::cout << "HI THERE" << std::endl;
   fnHead = ctx.global.getFunction(name);
   if (!fnHead) throw CodeGenError(this, "no viable function found for " + name);
   auto params = std::make_unique<llvm::Value *[]>(args.size());

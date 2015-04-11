@@ -129,6 +129,7 @@ class Context
 public:
   GlobalContext &global;
   Type returnType = Type::none;
+  llvm::Function *currentFn;
 
 public:
   Context(GlobalContext &gl_ctx) : global(gl_ctx) { pushFrame(); }

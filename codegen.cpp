@@ -48,6 +48,6 @@ llvm::AllocaInst *createEntryBlockAlloca(llvm::Function *fn,
                                          const std::string &varName,
                                          llvm::Type *varType)
 {
-  llvm::IRBuilder<> TmpB(&fn->getEntryBlock(), fn->getEntryBlock().begin());
+  llvm::IRBuilder<> TmpB(&fn->getEntryBlock(), fn->getEntryBlock().end());
   return TmpB.CreateAlloca(varType, 0, varName.c_str());
 }
