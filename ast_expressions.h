@@ -31,10 +31,8 @@ class VariableExpr : public Expr
 public:
   VariableExpr(std::string name) : name(std::move(name)) {}
   void print(int indent = 0) override;
-  Type getType(Context &) override
-  {
-    return Type::none; // TODO consult variable table here
-  }
+  Type getType(Context &ctx) override;
+  llvm::Value *codegen(Context &ctx) override;
 };
 
 class FunctionCallExpr : public Expr

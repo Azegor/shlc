@@ -80,3 +80,5 @@ fn duplicate();
 fn duplicate();
 
 //fn double(flt f) : flt { ret f; }
+
+fn returnParam(int i) : int {ret i; }

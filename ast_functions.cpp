@@ -106,7 +106,7 @@ void FunctionHead::createArgumentAllocas(Context &ctx, llvm::Function *fn)
     ctx.global.builder.CreateStore(ai, alloca);
 
     // Add arguments to variable symbol table.
-    ctx.putVar(args[idx].second, alloca);
+    ctx.putVar(args[idx].second, args[idx].first, alloca);
   }
 }
 
