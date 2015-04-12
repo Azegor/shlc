@@ -143,16 +143,21 @@ fn break_test(boo b)
   ret;
 }
 
-// fn if_test(boo b)
+fn if_test(boo b)
+{
+  do {
+    if b {
+      cnt;
+//     } elif !b {
+    } elif b ^ b {
+      brk;
+    } el {
+      ret;
+    }
+  } whl b;
+}
+
+// fn wrong_return() : flt
 // {
-//   do {
-//     if b {
-//       cnt;
-// //     } elif !b {
-//     } elif b ^ b {
-//       brk;
-//     } el {
-//       ret;
-//     }
-//   } whl b;
+//   ret 42;
 // }

@@ -49,11 +49,11 @@ public:
 class IfStmt : public Statement
 {
   ExprPtr cond;
-  BlockStmtPtr thenExpr;
-  BlockStmtPtr elseExpr;
+  StmtPtr thenExpr;
+  StmtPtr elseExpr;
 
 public:
-  IfStmt(ExprPtr cond, BlockStmtPtr thenE, BlockStmtPtr elseE)
+  IfStmt(ExprPtr cond, StmtPtr thenE, StmtPtr elseE)
       : cond(std::move(cond)),
         thenExpr(std::move(thenE)),
         elseExpr(std::move(elseE))
@@ -66,13 +66,13 @@ public:
 class WhileStmt : public LoopStmt
 {
   ExprPtr cond;
-  BlockStmtPtr body;
+  StmtPtr body;
 
   llvm::BasicBlock *contBB = nullptr;
   llvm::BasicBlock *breakBB = nullptr;
 
 public:
-  WhileStmt(ExprPtr cond, BlockStmtPtr body)
+  WhileStmt(ExprPtr cond, StmtPtr body)
       : cond(std::move(cond)), body(std::move(body))
   {
   }
@@ -86,13 +86,13 @@ public:
 class DoWhileStmt : public LoopStmt
 {
   ExprPtr cond;
-  BlockStmtPtr body;
+  StmtPtr body;
 
   llvm::BasicBlock *contBB = nullptr;
   llvm::BasicBlock *breakBB = nullptr;
 
 public:
-  DoWhileStmt(ExprPtr cond, BlockStmtPtr body)
+  DoWhileStmt(ExprPtr cond, StmtPtr body)
       : cond(std::move(cond)), body(std::move(body))
   {
   }
@@ -106,13 +106,13 @@ public:
 class ForStmt : public LoopStmt
 {
   ExprPtr init, cond, incr;
-  BlockStmtPtr body;
+  StmtPtr body;
 
   llvm::BasicBlock *contBB = nullptr;
   llvm::BasicBlock *breakBB = nullptr;
 
 public:
-  ForStmt(ExprPtr init, ExprPtr cond, ExprPtr incr, BlockStmtPtr body)
+  ForStmt(ExprPtr init, ExprPtr cond, ExprPtr incr, StmtPtr body)
       : init(std::move(init)),
         cond(std::move(cond)),
         incr(std::move(incr)),

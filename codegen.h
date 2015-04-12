@@ -70,7 +70,7 @@ llvm::Constant *createDefaultValueConst(Context &ctx, Type type);
 
 inline bool isBinOp(int op)
 {
-  static constexpr const char *sc_binops = "+-*/%";
+  static constexpr const char *sc_binops = "+-*/%|&^";
   return (op >= Token::TokenType::increment &&
           op <= Token::TokenType::rshift) ||
          std::strchr(sc_binops, op) != nullptr;
