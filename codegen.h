@@ -18,11 +18,16 @@
 #ifndef CODEGEN_H
 #define CODEGEN_H
 
+#include <cstring>
+
 #include <llvm/IR/Type.h>
 
-#include "context.h"
 #include "ast.h"
 #include "type.h"
+
+class Context;
+class GlobalContext;
+class VariableExpr;
 
 llvm::Type *getLLVMTypeFromType(GlobalContext &ctx, Type tokID);
 
@@ -42,7 +47,8 @@ CastMode castMode(Type from, Type to);
 
 inline bool canImplicitlyCast(Type from, Type to)
 {
-  return castMode(from, to) == CastMode::Implicit;
+  auto mode = castMode(from, to);
+  return mode == CastMode::Implicit || mode == CastMode::Same;
 }
 
 inline bool canCast(Type from, Type to)
@@ -54,5 +60,33 @@ inline bool canCast(Type from, Type to)
 
 llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type from, Type to,
                           const llvm::Twine &valName = "");
+
+Type commonType(Type t1, Type t2);
+
+llvm::Constant *getIntConst(Context &ctx, Type intType, int val);
+
+llvm::Constant *createDefaultValueConst(Context &ctx, Type type);
+
+inline bool isBinOp(int op)
+{
+  static constexpr const char *sc_binops = "+-*/%";
+  return (op >= Token::TokenType::increment &&
+          op <= Token::TokenType::rshift) ||
+         std::strchr(sc_binops, op) != nullptr;
+}
+
+inline bool isCompAssign(int op)
+{
+  return op >= Token::TokenType::add_assign &&
+         op <= Token::TokenType::bit_xor_assign;
+}
+
+int getCompAssigOpBaseOp(int op);
+
+llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
+                         llvm::Value *lhs, llvm::Value *rhs);
+
+llvm::Value *createAssignment(Context &ctx, llvm::Value *val,
+                              VariableExpr *var);
 
 #endif // CODEGEN_H

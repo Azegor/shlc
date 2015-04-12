@@ -64,17 +64,27 @@ struct Token
     bin_number,
     oct_number,
 
-    // arithmetic operators:
+    // --- assignment operations ---
+    // arithmetic:
     add_assign,
     sub_assign,
     mul_assign,
     div_assign,
     mod_assign,
     pow_assign,
+    // bit operation
+    lshift_assign,
+    rshift_assign,
+    bit_and_assign,
+    bit_or_assign,
+    bit_complement_assign,
+    bit_xor_assign,
+
+    // --- binary operations ---
+    // arithmetic operators:
     increment,
     decrement,
     power,
-
     // bool operators
     lte,
     gte,
@@ -82,16 +92,9 @@ struct Token
     neq,
     log_and,
     log_or,
-
     // bit operations
     lshift,
     rshift,
-    lshift_assign,
-    rshift_assign,
-    bit_and_assign,
-    bit_or_assign,
-    bit_complement_assign,
-    bit_xor_assign,
 
     //  identifiers:
     id_if,

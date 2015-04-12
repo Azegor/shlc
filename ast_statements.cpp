@@ -26,10 +26,16 @@
 void ReturnStmt::print(int indent)
 {
   printIndent(indent);
-  std::cout << "Return: [" << std::endl;
-  expr->print(indent + 1);
-  printIndent(indent);
-  std::cout << ']' << std::endl;
+  if (expr) {
+    std::cout << "Return: [" << std::endl;
+    expr->print(indent + 1);
+    printIndent(indent);
+    std::cout << ']' << std::endl;
+  }
+  else
+  {
+    std::cout << "Return void" << std::endl;
+  }
 }
 
 void CastExpr::print(int indent)
@@ -37,6 +43,7 @@ void CastExpr::print(int indent)
   printIndent(indent);
   std::cout << "Cast: [" << std::endl;
   expr->print(indent + 1);
+  std::cout << std::endl;
   printIndent(indent);
   std::cout << "] to " << getTypeName(newType) << std::endl;
 }
@@ -106,7 +113,11 @@ void ContinueStmt::print(int indent)
   std::cout << "[Continue]" << std::endl;
 }
 
-void ExprStmt::print(int indent) { expr->print(indent); }
+void ExprStmt::print(int indent)
+{
+  expr->print(indent);
+  std::cout << std::endl;
+}
 
 llvm::Value *ReturnStmt::codegen(Context &ctx)
 {
@@ -212,5 +223,47 @@ llvm::Value *DoWhileStmt::codegen(Context &ctx)
 llvm::Value *ExprStmt::codegen(Context &ctx)
 {
   expr->codegen(ctx);
+  return nullptr;
+}
+
+Type VarDeclStmt::getType(Context &ctx)
+{
+  if (type == Type::inferred) {
+    Type t = Type::none;
+    for (auto &var : vars)
+    {
+      Type varType = var.second->getType(ctx);
+      if (t == Type::none) {
+        t = varType;
+      }
+      else if (t != varType)
+      {
+        throw CodeGenError(this, "mismatching types for variable declaration");
+      }
+    }
+    type = t;
+  }
+  return type;
+}
+
+llvm::Value *VarDeclStmt::codegen(Context &ctx)
+{
+  auto llvm_type = getLLVMTypeFromType(ctx.global, getType(ctx));
+  for (auto &var : vars)
+  {
+    auto alloca = createEntryBlockAlloca(ctx.currentFn, var.first, llvm_type);
+    ctx.putVar(var.first, type, alloca);
+    llvm::Value *init;
+    if (var.second) // has initializer
+    {
+      init = var.second->codegen(ctx);
+    }
+    else
+    {
+      init = createDefaultValueConst(ctx, type);
+    }
+    VariableExpr tmpVarExp(var.first);
+    createAssignment(ctx, init, &tmpVarExp);
+  }
   return nullptr;
 }

@@ -33,7 +33,6 @@ void BlockStmt::print(int indent)
   for (auto &stmt : block)
   {
     if (stmt) stmt->print(indent + 1);
-    std::cout << std::endl;
   }
   printIndent(indent);
   std::cout << '}' << std::endl;
