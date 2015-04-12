@@ -1,13 +1,20 @@
-fn writec(chr i) native;
+fn prt(chr i) native "prt_c";
 
 fn hi()
 {
-  write('H');
-  write('i');
+  prt('H');
+  prt('i');
+  prt('\n');
 }
-//fn hi(){hi();}
 
 fn testabc(int i) native;
+
+fn loop()
+{
+//   whl T {
+//     prt('.');
+//   }
+}
 
 fn main() {
   hi();
@@ -15,6 +22,7 @@ fn main() {
   3+4+3+4+2+5+234;
   1+2*3+4;
   //testabc(3+4);
+  loop();
 }
 
 fn testasdfasdf(int i)
