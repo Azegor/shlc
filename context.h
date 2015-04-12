@@ -68,7 +68,8 @@ class VariableNotDefinedError : public CodeGenError
 public:
   const std::string variableName;
   VariableNotDefinedError(const std::string &name)
-      : CodeGenError(nullptr, "Variable '" + name + "' was not defined") // implement row/col later
+      : CodeGenError(nullptr, "Variable '" + name +
+                                "' was not defined") // implement row/col later
   {
   }
 
@@ -111,7 +112,11 @@ public:
 
 struct ContextFrame
 {
-  struct VarInfo {Type type; llvm::AllocaInst *alloca; };
+  struct VarInfo
+  {
+    Type type;
+    llvm::AllocaInst *alloca;
+  };
   //   std::map<std::pair<std::string, llvm::Type>, llvm::AllocaInst *>
   //   variables;
   std::map<std::string, VarInfo> variables;
@@ -151,17 +156,22 @@ public:
   }
   const ContextFrame::VarInfo &getVar(const std::string &name) const
   {
-    for(auto frame = frames.rbegin(); frame != frames.rend(); ++frame)
+    for (auto frame = frames.rbegin(); frame != frames.rend(); ++frame)
     {
       auto var = frame->variables.find(name);
-      if (var != frame->variables.end())
-        return var->second;
+      if (var != frame->variables.end()) return var->second;
     }
     throw VariableNotDefinedError(name);
   }
 
-  llvm::AllocaInst *getVarAlloca(const std::string &name) const { return getVar(name).alloca; }
-  Type getVariableType(const std::string &name) const { return getVar(name).type; }
+  llvm::AllocaInst *getVarAlloca(const std::string &name) const
+  {
+    return getVar(name).alloca;
+  }
+  Type getVariableType(const std::string &name) const
+  {
+    return getVar(name).type;
+  }
 
   int frameCount() const { return frames.size(); }
   // currentBlock() etc...

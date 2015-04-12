@@ -43,6 +43,7 @@ GlobalContext::GlobalContext()
   // Set up the optimizer pipeline.  Start with registering info about how the
   // target lays out data structures.
   module->setDataLayout(execEngine->getDataLayout());
+#if 1
   // Provide basic AliasAnalysis support for GVN.
   fpm.add(llvm::createBasicAliasAnalysisPass());
   // Promote allocas to registers.
@@ -55,6 +56,11 @@ GlobalContext::GlobalContext()
   fpm.add(llvm::createGVNPass());
   // Simplify the control flow graph (deleting unreachable blocks, etc).
   fpm.add(llvm::createCFGSimplificationPass());
+
+  // some other passes:
+  fpm.add(llvm::createLoopSimplifyPass());
+//   fpm.add(llvm::createTailCallEliminationPass());
+#endif
 
   fpm.doInitialization();
 }

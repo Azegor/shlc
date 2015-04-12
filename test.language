@@ -1,6 +1,10 @@
 fn write(chr i) native;
 
-fn hi(){write('X');}
+fn hi()
+{
+  write('H');
+  write('i');
+}
 //fn hi(){hi();}
 
 fn testabc(int i) native;
@@ -82,3 +86,28 @@ fn duplicate();
 //fn double(flt f) : flt { ret f; }
 
 fn returnParam(int i) : int {ret i; }
+
+fn whlVarTest(boo b; int i; flt f)
+{
+  whl b {
+    ret;
+  }
+  whl i {
+    ret;
+  }
+  whl f {
+    ret;
+  }
+  4 : flt;
+}
+
+fn int_flt_cast(int i) : flt { ret i : flt; }
+fn flt_int_cast(flt f) : int { ret f : int; }
+fn int_chr_cast(int i) : chr { ret i : chr; }
+fn chr_flt_cast(chr c) : flt { ret c : flt; }
+fn chr_int_cast(chr c) : int { ret c : int; }
+fn boo_int_cast(boo b) : int { ret b : int; }
+fn boo_flt_cast(boo b) : flt { ret b : flt; }
+fn chr_boo_cast(chr c) : boo { ret c : boo; }
+fn flt_boo_cast(flt f) : boo { ret f : boo; }
+// TODO: missing implicit cast for return statement??? let RetExpr check this!

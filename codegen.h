@@ -22,11 +22,37 @@
 
 #include "context.h"
 #include "ast.h"
+#include "type.h"
 
 llvm::Type *getLLVMTypeFromType(GlobalContext &ctx, Type tokID);
 
 llvm::AllocaInst *createEntryBlockAlloca(llvm::Function *fn,
                                          const std::string &varName,
                                          llvm::Type *varType);
+
+enum class CastMode
+{
+  None,
+  Explicit,
+  Implicit,
+  Same
+};
+
+CastMode castMode(Type from, Type to);
+
+inline bool canImplicitlyCast(Type from, Type to)
+{
+  return castMode(from, to) == CastMode::Implicit;
+}
+
+inline bool canCast(Type from, Type to)
+{
+  auto mode = castMode(from, to);
+  return mode == CastMode::Explicit || mode == CastMode::Implicit ||
+         mode == CastMode::Same;
+}
+
+llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type from, Type to,
+                          const llvm::Twine &valName = "");
 
 #endif // CODEGEN_H

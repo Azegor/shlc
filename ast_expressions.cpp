@@ -26,6 +26,7 @@
 #include "ast.h"
 #include "context.h"
 #include "ast_functions.h"
+#include "codegen.h"
 
 void VariableExpr::print(int indent)
 {
@@ -143,14 +144,21 @@ llvm::Value *FunctionCallExpr::codegen(Context &ctx)
   return nullptr;
 }
 
-
-
-Type VariableExpr::getType(Context &ctx )
-{
-  return ctx.getVariableType(name);
-}
+Type VariableExpr::getType(Context &ctx) { return ctx.getVariableType(name); }
 
 llvm::Value *VariableExpr::codegen(Context &ctx)
 {
   return ctx.global.builder.CreateLoad(ctx.getVarAlloca(name), name);
+}
+
+llvm::Value *CastExpr::codegen(Context &ctx)
+{
+  auto from = expr->getType(ctx);
+  if (!canCast(from, newType))
+    throw CodeGenError(this, "invalid cast from type '" + getTypeName(from) +
+                               "' to '" + getTypeName(newType) + '\'');
+  auto val = expr->codegen(ctx);
+  auto valName = val->getName();
+  auto castName = valName + "_cst_" + getTypeName(newType);
+  return generateCast(ctx, val, from, newType, castName);
 }
