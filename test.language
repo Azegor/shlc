@@ -17,6 +17,11 @@ fn main() {
   //testabc(3+4);
 }
 
+fn testasdfasdf(int i)
+{
+  i = 3+4+3+4+2+5+234*3+4*(5+6);
+}
+
 fn yo(){}
 
 fn test(int a) {
@@ -51,14 +56,14 @@ fn tan(flt val) native;
 
 //fn putc(chr c) native;
 
-fn complex()
+fn complex(int i)
 {
   //ret 2*(3+4)*(5*6+7*8);
   whl T {
 //     ret 42;
     ret;
   }
-  var i : int;
+//   var i : int;
   do {
     i = 7;
   } whl F;
@@ -111,3 +116,19 @@ fn boo_flt_cast(boo b) : flt { ret b : flt; }
 fn chr_boo_cast(chr c) : boo { ret c : boo; }
 fn flt_boo_cast(flt f) : boo { ret f : boo; }
 // TODO: missing implicit cast for return statement??? let RetExpr check this!
+
+fn assign_test(int i, j, k) : int
+{
+  i = k;
+  i += j;
+  // i += j += k; // broken, because wrong associativity for now! (FIXME)
+  k = i + j * k;
+  ret k;
+}
+
+fn local_vars() : flt {
+  var a : int;
+  var b = 7;
+  var c = 4.5;
+  ret a * b + c;
+}

@@ -22,6 +22,7 @@
 #include <llvm/IR/IRBuilder.h>
 
 #include "codegen.h"
+#include "context.h"
 #include "ast_statements.h"
 
 void FunctionHead::print(int indent)

@@ -32,6 +32,8 @@ private:
 public:
   VarDeclStmt(Type type, VarEnties vars) : type(type), vars(std::move(vars)) {}
   void print(int indent = 0) override;
+  Type getType(Context &ctx);
+  llvm::Value *codegen(Context &ctx) override;
 };
 
 class ReturnStmt : public Statement

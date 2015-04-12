@@ -18,9 +18,12 @@
 #ifndef ASTEXPRESSIONS_H
 #define ASTEXPRESSIONS_H
 
-#include "ast_base.h"
-
 #include <string>
+
+#include <llvm/IR/Constant.h>
+
+#include "ast_base.h"
+#include "codegen.h"
 
 class FunctionHead;
 
@@ -32,6 +35,7 @@ public:
   VariableExpr(std::string name) : name(std::move(name)) {}
   void print(int indent = 0) override;
   Type getType(Context &ctx) override;
+  llvm::AllocaInst *getAlloca(Context &ctx);
   llvm::Value *codegen(Context &ctx) override;
 };
 
@@ -68,7 +72,7 @@ class IntNumberExpr : public ConstantExpr
 public:
   IntNumberExpr(long long val) : ConstantExpr(Type::int_t), value(val) {}
   void print(int indent = 0) override;
-  llvm::Value *codegen(Context &ctx) override;
+  llvm::Constant *codegen(Context &ctx) override;
 };
 
 class CharConstExpr : public ConstantExpr
@@ -78,7 +82,7 @@ class CharConstExpr : public ConstantExpr
 public:
   CharConstExpr(char val) : ConstantExpr(Type::chr_t), value(val) {}
   void print(int indent = 0) override;
-  llvm::Value *codegen(Context &ctx) override;
+  llvm::Constant *codegen(Context &ctx) override;
 };
 
 class FltNumberExpr : public ConstantExpr
@@ -88,7 +92,7 @@ class FltNumberExpr : public ConstantExpr
 public:
   FltNumberExpr(long double val) : ConstantExpr(Type::flt_t), value(val) {}
   void print(int indent = 0) override;
-  llvm::Value *codegen(Context &ctx) override;
+  llvm::Constant *codegen(Context &ctx) override;
 };
 
 class BoolConstExpr : public ConstantExpr
@@ -98,7 +102,7 @@ class BoolConstExpr : public ConstantExpr
 public:
   BoolConstExpr(bool val) : ConstantExpr(Type::boo_t), value(val) {}
   void print(int indent = 0) override;
-  llvm::Value *codegen(Context &ctx) override;
+  llvm::Constant *codegen(Context &ctx) override;
 };
 
 class StringConstExpr : public ConstantExpr
@@ -124,11 +128,8 @@ public:
   {
   }
   void print(int indent = 0) override;
-  Type getType(Context &ctx) override
-  {
-    // TODO check implicit cast, throw errors, etc...
-    return lhs->getType(ctx);
-  }
+  Type getType(Context &ctx) override;
+  llvm::Value *codegen(Context &ctx) override;
 };
 
 class CastExpr : public Expr

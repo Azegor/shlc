@@ -99,26 +99,26 @@ void BinOpExpr::print(int indent)
   std::cout << ']' << std::endl;
 }
 
-llvm::Value *IntNumberExpr::codegen(Context &ctx)
+llvm::Constant *IntNumberExpr::codegen(Context &ctx)
 {
   return llvm::ConstantInt::get(ctx.global.llvm_context,
                                 llvm::APInt(64, value, true));
 }
 
-llvm::Value *CharConstExpr::codegen(Context &ctx)
+llvm::Constant *CharConstExpr::codegen(Context &ctx)
 {
   return llvm::ConstantInt::get(ctx.global.llvm_context,
                                 llvm::APInt(8, value, true));
 }
 
-llvm::Value *FltNumberExpr::codegen(Context &ctx)
+llvm::Constant *FltNumberExpr::codegen(Context &ctx)
 {
   // TODO do something about this (double) cast, or change back no short double
   return llvm::ConstantFP::get(ctx.global.llvm_context,
                                llvm::APFloat((double)value));
 }
 
-llvm::Value *BoolConstExpr::codegen(Context &ctx)
+llvm::Constant *BoolConstExpr::codegen(Context &ctx)
 {
   return llvm::ConstantInt::get(ctx.global.llvm_context, llvm::APInt(1, value));
 }
@@ -151,6 +151,11 @@ llvm::Value *VariableExpr::codegen(Context &ctx)
   return ctx.global.builder.CreateLoad(ctx.getVarAlloca(name), name);
 }
 
+llvm::AllocaInst *VariableExpr::getAlloca(Context &ctx)
+{
+  return ctx.getVarAlloca(name);
+}
+
 llvm::Value *CastExpr::codegen(Context &ctx)
 {
   auto from = expr->getType(ctx);
@@ -161,4 +166,64 @@ llvm::Value *CastExpr::codegen(Context &ctx)
   auto valName = val->getName();
   auto castName = valName + "_cst_" + getTypeName(newType);
   return generateCast(ctx, val, from, newType, castName);
+}
+
+Type BinOpExpr::getType(Context &ctx)
+{
+  auto t1 = lhs->getType(ctx);
+  auto t2 = rhs->getType(ctx);
+  auto ct = commonType(t1, t2);
+  if (ct == Type::none)
+    throw CodeGenError(this, "no common type for types " + getTypeName(t1) +
+                               " and " + getTypeName(t2));
+  if (!canImplicitlyCast(t1, ct))
+    throw CodeGenError(
+      this, "cannot implicitly convert right argument of binop '" +
+              Lexer::getTokenName(op) + "' of type '" + getTypeName(t1) +
+              "' to type '" + getTypeName(ct) + '\'');
+  if (!canImplicitlyCast(t2, ct))
+    throw CodeGenError(
+      this, "cannot implicitly convert right argument of binop '" +
+              Lexer::getTokenName(op) + "' of type '" + getTypeName(t2) +
+              "' to type '" + getTypeName(ct) + '\'');
+  return ct;
+}
+
+llvm::Value *BinOpExpr::codegen(Context &ctx)
+{
+  if (isBinOp(op)) {
+    auto commonType = getType(ctx);
+    lhs = make_EPtr<CastExpr>(std::move(lhs), commonType);
+    rhs = make_EPtr<CastExpr>(std::move(rhs), commonType);
+    return createBinOp(ctx, op, commonType, lhs->codegen(ctx),
+                       rhs->codegen(ctx));
+  }
+  if (isCompAssign(op)) {
+    auto varexpr = dynamic_cast<VariableExpr *>(lhs.get());
+    if (!varexpr)
+      throw CodeGenError(this,
+                         "left hand side of assignment must be a variable");
+
+    int assign_op = getCompAssigOpBaseOp(op);
+    auto rightType = rhs->getType(ctx);
+    auto targetType = lhs->getType(ctx);
+    if (!canImplicitlyCast(rhs->getType(ctx), targetType))
+      throw CodeGenError(this,
+                         "cannot implicitly convert right argument of binop '" +
+                           Lexer::getTokenName(op) + "' of type '" +
+                           getTypeName(rightType) + "' to type '" +
+                           getTypeName(targetType) + '\'');
+    auto assignVal = createBinOp(ctx, assign_op, targetType, lhs->codegen(ctx),
+                                 rhs->codegen(ctx));
+    return createAssignment(ctx, assignVal, varexpr);
+  }
+  if (op == '=') // normal assignment
+  {
+    auto varexpr = dynamic_cast<VariableExpr *>(lhs.get());
+    if (!varexpr)
+      throw CodeGenError(this,
+                         "left hand side of assignment must be a variable");
+    return createAssignment(ctx, rhs->codegen(ctx), varexpr);
+  }
+  throw CodeGenError(this, "invalid operation " + Lexer::getTokenName(op));
 }
