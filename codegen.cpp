@@ -386,7 +386,7 @@ int getCompAssigOpBaseOp(int op)
 
 llvm::Value *createUnOp(Context &ctx, int op, Type type, llvm::Value *rhs)
 {
-//   using Tok = Token::TokenType;
+  //   using Tok = Token::TokenType;
   // valid unops:
   /* !
    * ~
@@ -394,29 +394,29 @@ llvm::Value *createUnOp(Context &ctx, int op, Type type, llvm::Value *rhs)
 
   auto &builder = ctx.global.builder;
 
-    switch (op)
-    {
-      case '!':
-        switch (type)
-        {
-          case Type::boo_t:
-            return builder.CreateNot(rhs, "not");
+  switch (op)
+  {
+    case '!':
+      switch (type)
+      {
+        case Type::boo_t:
+          return builder.CreateNot(rhs, "not");
           OP_NOT_SUPPORTED(op, type);
-        }
-      case '~':
-        switch (type)
-        {
-          case Type::int_t:
-          case Type::chr_t:
-          case Type::boo_t:
-            return builder.CreateXor(rhs, getIntConst(ctx, type, -1), "bitcmpl");
+      }
+    case '~':
+      switch (type)
+      {
+        case Type::int_t:
+        case Type::chr_t:
+        case Type::boo_t:
+          return builder.CreateXor(rhs, getIntConst(ctx, type, -1), "bitcmpl");
           OP_NOT_SUPPORTED(op, type);
-        }
+      }
     default:
       CodeGenError("type '" + getTypeName(type) +
                    "' doesnt support unary operations");
-    }
-    return nullptr;
+  }
+  return nullptr;
 }
 
 llvm::Value *createBinOp(Context &ctx, int op, Type commonType,

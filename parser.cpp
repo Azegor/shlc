@@ -187,7 +187,11 @@ FunctionPtr Parser::parseFunctionDef()
       error("unexpected '" + curTok.str + "', expected 'native' '{' or ';'");
       break;
     case Token::id_native: // native function
-      if (readNextToken().type != ';')
+      if (readNextToken().type == Token::dq_string) {
+        head->setBindName(curTok.str);
+        readNextToken();
+      }
+      if (curTok.type != ';')
         error("unexpected '" + curTok.str + "', expected ';'");
       readNextToken();
       return FunctionPtr{new NativeFunction{std::move(head)}};

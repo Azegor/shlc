@@ -267,7 +267,7 @@ std::string FunctionHead::getMangledName() const
     return res;
   }
   if (binding == Binding::Extern_C) {
-    return name;
+    return bindName;
   }
   throw CodeGenError("unknown function binding type", this);
 }

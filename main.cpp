@@ -225,7 +225,7 @@ int main(int argc, char **argv)
   init_llvm();
   auto filename = argc == 2 ? argv[1] : "../test.language";
   //   testLexer(filename);
-  testParser(filename);
+  //   testParser(filename);
   testCodeGen(filename);
   return 0;
 }
