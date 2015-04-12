@@ -478,6 +478,12 @@ llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
         case Tok::log_or:
 
         // bit operations
+        case '|':
+          return builder.CreateOr(lhs, rhs, "bitor");
+        case '&':
+          return builder.CreateAnd(lhs, rhs, "bitand");
+        case '^':
+          return builder.CreateXor(lhs, rhs, "bitxor");
         case Tok::lshift:
           if (commonType == Type::boo_t)
             throw CodeGenError("cannot bitshift boolean type");

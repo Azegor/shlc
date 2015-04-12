@@ -159,7 +159,7 @@ FunctionPtr Parser::parseFunctionDef()
   if (curTok.type == ':') // with return type
   {
     readNextToken();
-    if (!isVarTypeId(curTok.type))
+    if (!isVarTypeId(curTok.type) && curTok.type != Token::TokenType::id_vac)
       error("unexpected '" + curTok.str + "', expected type");
     retType = getTypeFromToken(curTok.type);
     readNextToken();
@@ -398,14 +398,14 @@ ExprPtr Parser::parseParenExpr()
 }
 StmtPtr Parser::parseIfStmt()
 {
-  readNextToken();
+  readNextToken(); // eat 'if' or 'elif'
   auto cond = parseExpr();
   if (curTok.type != '{')
     error("unexpected '" + curTok.str + "', expected '{'");
-  BlockStmtPtr thenExpr = parseStmtBlock();
-  BlockStmtPtr elseExpr;
+  StmtPtr thenExpr = parseStmtBlock();
+  StmtPtr elseExpr;
   if (curTok.type == Token::id_elif) {
-    auto elsePart = parseIfStmt();
+    elseExpr = parseIfStmt();
   }
   else if (curTok.type == Token::id_el)
   {

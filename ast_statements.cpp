@@ -135,10 +135,7 @@ llvm::Value *ReturnStmt::codegen(Context &ctx)
     ctx.global.builder.CreateRet(val);
     type = expr->getType(ctx);
   }
-  if (ctx.returnType == Type::none) {
-    ctx.returnType = type;
-  }
-  else if (ctx.returnType != type)
+  if (ctx.returnType != type)
   {
     throw CodeGenError("incompatible return types '" + getTypeName(type) +
                          "' and '" + getTypeName(ctx.returnType) + '\'',
@@ -149,7 +146,44 @@ llvm::Value *ReturnStmt::codegen(Context &ctx)
 
 llvm::Value *IfStmt::codegen(Context &ctx)
 {
-  throw CodeGenError("implement ifstmt::codegen()!");
+  ctx.pushFrame();
+
+  auto condType = cond->getType(ctx);
+  if (condType != Type::boo_t) {
+    if (canCast(condType, Type::boo_t)) {
+      cond = make_EPtr<CastExpr>(std::move(cond), Type::boo_t);
+    }
+    else
+    {
+      throw CodeGenError("non-boolean or boolean-castable expression in "
+                         "if statement condition",
+                         this);
+    }
+  }
+
+  auto &builder = ctx.global.builder;
+  auto thenBB =
+    llvm::BasicBlock::Create(ctx.global.llvm_context, "then", ctx.currentFn);
+  auto elseBB =
+    llvm::BasicBlock::Create(ctx.global.llvm_context, "else", ctx.currentFn);
+  auto endBB =
+    llvm::BasicBlock::Create(ctx.global.llvm_context, "ifend", ctx.currentFn);
+
+  auto condVal = cond->codegen(ctx);
+  builder.CreateCondBr(condVal, thenBB, elseBB);
+
+  builder.SetInsertPoint(thenBB);
+  thenExpr->codegen(ctx);
+  builder.CreateBr(endBB);
+
+  builder.SetInsertPoint(elseBB);
+  if (elseExpr)
+    elseExpr->codegen(ctx);
+  builder.CreateBr(endBB);
+
+  builder.SetInsertPoint(endBB);
+
+  ctx.popFrame();
   return nullptr;
 }
 
@@ -222,10 +256,10 @@ llvm::Value *DoWhileStmt::codegen(Context &ctx)
 
   auto &builder = ctx.global.builder;
 
-  auto headBB =
-    llvm::BasicBlock::Create(ctx.global.llvm_context, "dohead", ctx.currentFn);
   auto loopBB =
     llvm::BasicBlock::Create(ctx.global.llvm_context, "doloop", ctx.currentFn);
+  auto headBB =
+    llvm::BasicBlock::Create(ctx.global.llvm_context, "dohead", ctx.currentFn);
   auto endBB =
     llvm::BasicBlock::Create(ctx.global.llvm_context, "doend", ctx.currentFn);
 

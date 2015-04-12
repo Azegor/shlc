@@ -138,6 +138,7 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
   auto fn = head->codegen(ctx);
 
   ctx.currentFn = fn;
+  ctx.returnType = head->getReturnType();
 
   // Create a new basic block to start insertion into.
   llvm::BasicBlock *entryBB =
