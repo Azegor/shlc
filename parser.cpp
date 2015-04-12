@@ -17,14 +17,20 @@
 
 #include "parser.h"
 
-#include "lexer.h"
-
 #include <vector>
+#include <unordered_map>
+#include <unordered_set>
+
+#include "lexer.h"
 
 static inline bool isVarTypeId(int tokenType)
 {
   return Token::id_int <= tokenType && tokenType <= Token::id_chr;
 }
+
+std::unordered_set<int> unaryOperators{
+  '!', '~',
+};
 
 std::unordered_map<int, int> binOpPrecedence{
   // Install standard binary operators.
@@ -37,6 +43,7 @@ std::unordered_map<int, int> binOpPrecedence{
   {Token::mul_assign, 2},
   {Token::div_assign, 2},
   {Token::mod_assign, 2},
+  {Token::pow_assign, 2},
   {Token::bit_and_assign, 2},
   {Token::bit_or_assign, 2},
   {Token::bit_xor_assign, 2},
@@ -87,6 +94,12 @@ std::unordered_map<int, int> unOpPrecedence{
     {Token::decrement, 150},
 }
 */
+
+bool Parser::inUnaryOperator(int type)
+{
+  if (unaryOperators.find(type) == unaryOperators.end()) return false;
+  return true;
+}
 
 int Parser::getTokenPrecedence(int type)
 {
@@ -265,8 +278,7 @@ StmtPtr Parser::parseTLExpr(bool &isBlock)
 
 ExprPtr Parser::parseExpr()
 {
-  auto res =
-    parseBinOpRHS(0, parsePrimaryExpr()); // use parseUnary() here later!
+  auto res = parseBinOpRHS(0, parseUnaryExpr());
 
   return res;
 }
@@ -283,7 +295,7 @@ ExprPtr Parser::parseBinOpRHS(int exprPrec, ExprPtr lhs)
     auto binOp = curTok.type;
     readNextToken(); // eat binop
 
-    auto rhs = parsePrimaryExpr();
+    auto rhs = parseUnaryExpr();
 
     int nextPrec = getTokenPrecedence(curTok.type);
     // if new op binds less tightly take current op as its RHS
@@ -291,6 +303,15 @@ ExprPtr Parser::parseBinOpRHS(int exprPrec, ExprPtr lhs)
 
     lhs = make_EPtr<BinOpExpr>(binOp, std::move(lhs), std::move(rhs));
   }
+}
+
+ExprPtr Parser::parseUnaryExpr()
+{
+  if (!inUnaryOperator(curTok.type)) return parsePrimaryExpr();
+
+  int op = curTok.type;
+  readNextToken();
+  return make_EPtr<UnOpExpr>(op, parseUnaryExpr());
 }
 
 ExprPtr Parser::parsePrimaryExpr()

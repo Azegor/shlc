@@ -135,8 +135,7 @@ llvm::Value *ReturnStmt::codegen(Context &ctx)
     ctx.global.builder.CreateRet(val);
     type = expr->getType(ctx);
   }
-  if (ctx.returnType != type)
-  {
+  if (ctx.returnType != type) {
     throw CodeGenError("incompatible return types '" + getTypeName(type) +
                          "' and '" + getTypeName(ctx.returnType) + '\'',
                        this);
@@ -177,8 +176,7 @@ llvm::Value *IfStmt::codegen(Context &ctx)
   builder.CreateBr(endBB);
 
   builder.SetInsertPoint(elseBB);
-  if (elseExpr)
-    elseExpr->codegen(ctx);
+  if (elseExpr) elseExpr->codegen(ctx);
   builder.CreateBr(endBB);
 
   builder.SetInsertPoint(endBB);

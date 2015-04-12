@@ -99,6 +99,17 @@ void BinOpExpr::print(int indent)
   std::cout << ']' << std::endl;
 }
 
+void UnOpExpr::print(int indent)
+{
+  printIndent(indent);
+  std::cout << "UnOp: [" << std::endl;
+  printIndent(indent + 1);
+  std::cout << Lexer::getTokenName(op) << ' ';
+  rhs->print(indent + 1);
+  printIndent(indent);
+  std::cout << ']' << std::endl;
+}
+
 llvm::Constant *IntNumberExpr::codegen(Context &ctx)
 {
   return llvm::ConstantInt::get(ctx.global.llvm_context,
@@ -235,4 +246,15 @@ llvm::Value *BinOpExpr::codegen(Context &ctx)
     return createAssignment(ctx, rhs->codegen(ctx), varexpr);
   }
   throw CodeGenError("invalid operation " + Lexer::getTokenName(op), this);
+}
+
+Type UnOpExpr::getType(Context &ctx)
+{
+  return rhs->getType(ctx); // for now, some might change type!?!
+}
+
+llvm::Value *UnOpExpr::codegen(Context &ctx)
+{
+  throw CodeGenError("TODO: impement unary operations");
+  return nullptr;
 }

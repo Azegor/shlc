@@ -134,6 +134,18 @@ public:
   llvm::Value *codegen(Context &ctx) override;
 };
 
+class UnOpExpr : public Expr
+{
+  int op;
+  ExprPtr rhs;
+
+public:
+  UnOpExpr(int op, ExprPtr rhs) : op(op), rhs(std::move(rhs)) {}
+  void print(int indent = 0) override;
+  Type getType(Context &ctx) override;
+  llvm::Value *codegen(Context &ctx) override;
+};
+
 class CastExpr : public Expr
 {
   ExprPtr expr;

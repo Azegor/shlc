@@ -77,7 +77,7 @@ struct Token
     rshift_assign,
     bit_and_assign,
     bit_or_assign,
-    bit_complement_assign,
+    //     bit_complement_assign,
     bit_xor_assign,
 
     // --- binary operations ---

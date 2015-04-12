@@ -369,8 +369,8 @@ int getCompAssigOpBaseOp(int op)
       return '&';
     case Tok::bit_or_assign:
       return '|';
-    case Tok::bit_complement_assign:
-      return '~';
+    //     case Tok::bit_complement_assign:
+    //       return '~';
     case Tok::bit_xor_assign:
       return '^';
     default:
