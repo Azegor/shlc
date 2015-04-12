@@ -132,7 +132,7 @@ void NormalFunction::print(int indent)
 llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
 {
   Context ctx(gl_ctx);
-  auto& builder = gl_ctx.builder;
+  auto &builder = gl_ctx.builder;
   head->addToFunctionTable(gl_ctx, FunctionHead::FnReg::Define);
   auto fn = head->codegen(ctx);
 
@@ -160,10 +160,9 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
     throw CodeGenError(this, "variable frame count inconsistent (" +
                                std::to_string(ctx.frameCount()) + " != 1)");
 
-
   // TODO: check if last stmt is a return; if not & void -> insert, else error
-//   auto lastStmt = body->back();
-//   if (typeid(lastStmt) != typeid(ReturnStmt)) // no final return
+  //   auto lastStmt = body->back();
+  //   if (typeid(lastStmt) != typeid(ReturnStmt)) // no final return
 
   // if void function add trailing return (even if already existing)
   if (head->getReturnType() == Type::vac_t) // add default return
@@ -176,7 +175,7 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
     throw CodeGenError(this, "missing return statement in non-void function");
   }
 
-//   gl_ctx.fpm.run(*fn); // disable when unoptimized output is wanted
+  gl_ctx.fpm.run(*fn); // disable when unoptimized output is wanted
 
   return fn;
 }

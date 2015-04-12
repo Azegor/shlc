@@ -142,6 +142,7 @@ public:
   }
   void print(int indent = 0) override;
   Type getType(Context &) override { return newType; }
+  llvm::Value *codegen(Context &ctx) override;
 };
 
 #endif // ASTEXPRESSIONS_H
