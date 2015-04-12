@@ -63,6 +63,7 @@ public:
   ConstantExpr(Type type) : type(type) {}
   void print(int indent = 0) override;
   Type getType(Context &) override { return type; }
+  llvm::Constant *codegen(Context &ctx) override = 0;
 };
 
 class IntNumberExpr : public ConstantExpr
@@ -115,6 +116,7 @@ public:
   {
   }
   void print(int indent = 0) override;
+  llvm::Constant *codegen(Context &ctx) override;
 };
 
 class BinOpExpr : public Expr

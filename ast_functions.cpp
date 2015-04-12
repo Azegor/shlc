@@ -54,14 +54,14 @@ llvm::Function *FunctionHead::createLLVMFunction(GlobalContext &gl_ctx)
 {
   auto range = gl_ctx.declaredFunctions.equal_range(name);
   if (range.first == range.second) {
-    throw CodeGenError(this, "can't find function in function table");
+    throw CodeGenError("can't find function in function table", this);
   }
   auto second = range.first;
   ++second;
   //   if (second != range.second)
   if (std::distance(range.first, range.second) > 1) {
-    throw CodeGenError(this,
-                       "too many functions (overloading not supported yet)");
+    throw CodeGenError("too many functions (overloading not supported yet)",
+                       this);
   }
   if (range.first->second.fnHead->llvm_fn != 0) {
     llvm_fn = range.first->second.fnHead->llvm_fn;
@@ -163,8 +163,9 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
   builder.SetInsertPoint(currentInsBlock, currentInsPos);
 
   if (ctx.frameCount() != 1)
-    throw CodeGenError(this, "variable frame count inconsistent (" +
-                               std::to_string(ctx.frameCount()) + " != 1)");
+    throw CodeGenError("variable frame count inconsistent (" +
+                         std::to_string(ctx.frameCount()) + " != 1)",
+                       this);
 
   // TODO: check if last stmt is a return; if not & void -> insert, else error
   //   auto lastStmt = body->back();
@@ -178,7 +179,7 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
   else if (ctx.returnType == Type::none) // missing return statement
   {
     // TODO: doesn't handle the fact that a return may be conditional
-    throw CodeGenError(this, "missing return statement in non-void function");
+    throw CodeGenError("missing return statement in non-void function", this);
   }
 
   gl_ctx.fpm.run(*fn); // disable when unoptimized output is wanted
@@ -239,16 +240,16 @@ void FunctionHead::addToFunctionTable(GlobalContext &ctx, FnReg regType)
         if (retType !=
             fn->second.fnHead->retType) // same signature, other return type
           throw CodeGenError(
-            this, "invalid overload of function (with different return type)");
+            "invalid overload of function (with different return type)", this);
         return; // already exist -> exit
       }
       else
       {
-        throw CodeGenError(this, "invalid redeclaration of function");
+        throw CodeGenError("invalid redeclaration of function", this);
       }
     }
   }
-  throw CodeGenError(this, "function overloading not supported yet");
+  throw CodeGenError("function overloading not supported yet", this);
   //   ctx.declaredFunctions.insert({name, {regType, this}});
 }
 
@@ -267,5 +268,5 @@ std::string FunctionHead::getMangledName() const
   if (binding == Binding::Extern_C) {
     return name;
   }
-  throw CodeGenError(this, "unknown function binding type");
+  throw CodeGenError("unknown function binding type", this);
 }

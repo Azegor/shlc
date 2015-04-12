@@ -60,12 +60,16 @@ public:
   {
   }
   void print(int indent = 0) override;
+  llvm::Value *codegen(Context &ctx) override;
 };
 
-class WhileStmt : public Statement
+class WhileStmt : public LoopStmt
 {
   ExprPtr cond;
   BlockStmtPtr body;
+
+  llvm::BasicBlock *contBB = nullptr;
+  llvm::BasicBlock *breakBB = nullptr;
 
 public:
   WhileStmt(ExprPtr cond, BlockStmtPtr body)
@@ -74,12 +78,18 @@ public:
   }
   void print(int indent = 0) override;
   llvm::Value *codegen(Context &ctx) override;
+
+  llvm::BasicBlock *continueTarget() const override { return contBB; }
+  llvm::BasicBlock *breakTarget() const override { return breakBB; }
 };
 
-class DoWhileStmt : public Statement
+class DoWhileStmt : public LoopStmt
 {
   ExprPtr cond;
   BlockStmtPtr body;
+
+  llvm::BasicBlock *contBB = nullptr;
+  llvm::BasicBlock *breakBB = nullptr;
 
 public:
   DoWhileStmt(ExprPtr cond, BlockStmtPtr body)
@@ -88,12 +98,18 @@ public:
   }
   void print(int indent = 0) override;
   llvm::Value *codegen(Context &ctx) override;
+
+  llvm::BasicBlock *continueTarget() const override { return contBB; }
+  llvm::BasicBlock *breakTarget() const override { return breakBB; }
 };
 
-class ForStmt : public Statement
+class ForStmt : public LoopStmt
 {
   ExprPtr init, cond, incr;
   BlockStmtPtr body;
+
+  llvm::BasicBlock *contBB = nullptr;
+  llvm::BasicBlock *breakBB = nullptr;
 
 public:
   ForStmt(ExprPtr init, ExprPtr cond, ExprPtr incr, BlockStmtPtr body)
@@ -104,18 +120,24 @@ public:
   {
   }
   void print(int indent = 0) override;
+  llvm::Value *codegen(Context &ctx) override;
+
+  llvm::BasicBlock *continueTarget() const override { return contBB; }
+  llvm::BasicBlock *breakTarget() const override { return breakBB; }
 };
 
-class BreakStmt : public Statement
+class BreakStmt : public LoopCtrlStmt
 {
 public:
   void print(int indent = 0) override;
+  llvm::Value *codegen(Context &ctx) override;
 };
 
-class ContinueStmt : public Statement
+class ContinueStmt : public LoopCtrlStmt
 {
 public:
   void print(int indent = 0) override;
+  llvm::Value *codegen(Context &ctx) override;
 };
 
 class ExprStmt : public Statement

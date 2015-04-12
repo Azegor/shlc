@@ -68,8 +68,8 @@ class VariableNotDefinedError : public CodeGenError
 public:
   const std::string variableName;
   VariableNotDefinedError(const std::string &name)
-      : CodeGenError(nullptr, "Variable '" + name +
-                                "' was not defined") // implement row/col later
+      : CodeGenError("Variable '" + name +
+                     "' was not defined") // implement row/col later
   {
   }
 
@@ -132,6 +132,7 @@ public:
   GlobalContext &global;
   Type returnType = Type::none;
   llvm::Function *currentFn;
+  std::vector<LoopStmt *> currentLoops;
 
 public:
   Context(GlobalContext &gl_ctx) : global(gl_ctx) { pushFrame(); }
@@ -174,7 +175,19 @@ public:
   }
 
   int frameCount() const { return frames.size(); }
-  // currentBlock() etc...
+
+  void pushLoop(LoopStmt *loop) { currentLoops.push_back(loop); }
+  bool popLoop()
+  {
+    if (currentLoops.empty()) return false;
+    currentLoops.pop_back();
+    return true;
+  }
+  LoopStmt *currentLoop() const
+  {
+    if (currentLoops.empty()) throw CodeGenError("currently not in a loop");
+    return currentLoops.back();
+  }
 };
 
 #endif // CONTEXT_H

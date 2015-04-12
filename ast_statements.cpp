@@ -121,6 +121,7 @@ void ExprStmt::print(int indent)
 
 llvm::Value *ReturnStmt::codegen(Context &ctx)
 {
+  // TODO: consult return type of current function -> cast if possible
   Type type = Type::none;
   if (!expr) // void
   {
@@ -130,7 +131,7 @@ llvm::Value *ReturnStmt::codegen(Context &ctx)
   else
   {
     auto val = expr->codegen(ctx);
-    if (!val) throw CodeGenError(this, "missing value for return statement");
+    if (!val) throw CodeGenError("missing value for return statement", this);
     ctx.global.builder.CreateRet(val);
     type = expr->getType(ctx);
   }
@@ -139,9 +140,16 @@ llvm::Value *ReturnStmt::codegen(Context &ctx)
   }
   else if (ctx.returnType != type)
   {
-    throw CodeGenError(this, "incompatible return types '" + getTypeName(type) +
-                               "' and '" + getTypeName(ctx.returnType) + '\'');
+    throw CodeGenError("incompatible return types '" + getTypeName(type) +
+                         "' and '" + getTypeName(ctx.returnType) + '\'',
+                       this);
   }
+  return nullptr;
+}
+
+llvm::Value *IfStmt::codegen(Context &ctx)
+{
+  throw CodeGenError("implement ifstmt::codegen()!");
   return nullptr;
 }
 
@@ -159,8 +167,9 @@ llvm::Value *WhileStmt::codegen(Context &ctx)
     }
     else
     {
-      throw CodeGenError(this, "non-boolean or boolean-castable expression in "
-                               "while statement condition");
+      throw CodeGenError("non-boolean or boolean-castable expression in "
+                         "while statement condition",
+                         this);
     }
   }
 
@@ -173,13 +182,21 @@ llvm::Value *WhileStmt::codegen(Context &ctx)
   auto endBB =
     llvm::BasicBlock::Create(ctx.global.llvm_context, "whlend", ctx.currentFn);
 
+  contBB = headBB;
+  breakBB = endBB;
+
   builder.CreateBr(headBB);
+
   builder.SetInsertPoint(headBB);
   auto condVal = cond->codegen(ctx);
   builder.CreateCondBr(condVal, loopBB, endBB);
+
+  ctx.pushLoop(this);
   builder.SetInsertPoint(loopBB);
   body->codegen(ctx);
   builder.CreateBr(headBB);
+  ctx.popLoop();
+
   builder.SetInsertPoint(endBB);
 
   ctx.popFrame();
@@ -197,26 +214,57 @@ llvm::Value *DoWhileStmt::codegen(Context &ctx)
     }
     else
     {
-      throw CodeGenError(this, "non-boolean or boolean-castable expression in "
-                               "do while statement condition");
+      throw CodeGenError("non-boolean or boolean-castable expression in "
+                         "do while statement condition",
+                         this);
     }
   }
 
   auto &builder = ctx.global.builder;
 
+  auto headBB =
+    llvm::BasicBlock::Create(ctx.global.llvm_context, "dohead", ctx.currentFn);
   auto loopBB =
     llvm::BasicBlock::Create(ctx.global.llvm_context, "doloop", ctx.currentFn);
   auto endBB =
     llvm::BasicBlock::Create(ctx.global.llvm_context, "doend", ctx.currentFn);
 
+  contBB = headBB;
+  breakBB = endBB;
+
   builder.CreateBr(loopBB);
+
+  ctx.pushLoop(this);
   builder.SetInsertPoint(loopBB);
   body->codegen(ctx);
+  builder.CreateBr(headBB);
+  ctx.popLoop();
+
+  builder.SetInsertPoint(headBB);
   auto condVal = cond->codegen(ctx);
   builder.CreateCondBr(condVal, loopBB, endBB);
+
   builder.SetInsertPoint(endBB);
 
   ctx.popFrame();
+  return nullptr;
+}
+
+llvm::Value *ForStmt::codegen(Context &ctx)
+{
+  throw CodeGenError("implement ForStmt::codegen()!");
+  return nullptr;
+}
+
+llvm::Value *BreakStmt::codegen(Context &ctx)
+{
+  ctx.global.builder.CreateBr(ctx.currentLoop()->breakTarget());
+  return nullptr;
+}
+
+llvm::Value *ContinueStmt::codegen(Context &ctx)
+{
+  ctx.global.builder.CreateBr(ctx.currentLoop()->continueTarget());
   return nullptr;
 }
 
@@ -238,7 +286,7 @@ Type VarDeclStmt::getType(Context &ctx)
       }
       else if (t != varType)
       {
-        throw CodeGenError(this, "mismatching types for variable declaration");
+        throw CodeGenError("mismatching types for variable declaration", this);
       }
     }
     type = t;

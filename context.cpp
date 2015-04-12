@@ -70,6 +70,6 @@ FunctionHead *GlobalContext::getFunction(const std::string &name)
   auto range = declaredFunctions.equal_range(name);
   if (range.first == range.second) return nullptr;
   if (std::distance(range.first, range.second) > 1) // multiple overloads
-    throw CodeGenError(nullptr, "Function overloading not supported yet");
+    throw CodeGenError("Function overloading not supported yet");
   return range.first->second.fnHead;
 }

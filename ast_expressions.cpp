@@ -123,16 +123,21 @@ llvm::Constant *BoolConstExpr::codegen(Context &ctx)
   return llvm::ConstantInt::get(ctx.global.llvm_context, llvm::APInt(1, value));
 }
 
+llvm::Constant *StringConstExpr::codegen(Context &ctx)
+{
+  throw CodeGenError("strings not implemented yet");
+}
+
 Type FunctionCallExpr::getType(Context &)
 {
-  if (!fnHead) throw CodeGenError(this, "Missing function for call");
+  if (!fnHead) throw CodeGenError("Missing function for call", this);
   return fnHead->getReturnType();
 }
 
 llvm::Value *FunctionCallExpr::codegen(Context &ctx)
 {
   fnHead = ctx.global.getFunction(name);
-  if (!fnHead) throw CodeGenError(this, "no viable function found for " + name);
+  if (!fnHead) throw CodeGenError("no viable function found for " + name, this);
   auto params = std::make_unique<llvm::Value *[]>(args.size());
   for (int i = 0; i < args.size(); ++i)
   {
@@ -160,8 +165,9 @@ llvm::Value *CastExpr::codegen(Context &ctx)
 {
   auto from = expr->getType(ctx);
   if (!canCast(from, newType))
-    throw CodeGenError(this, "invalid cast from type '" + getTypeName(from) +
-                               "' to '" + getTypeName(newType) + '\'');
+    throw CodeGenError("invalid cast from type '" + getTypeName(from) +
+                         "' to '" + getTypeName(newType) + '\'',
+                       this);
   auto val = expr->codegen(ctx);
   auto valName = val->getName();
   auto castName = valName + "_cst_" + getTypeName(newType);
@@ -174,18 +180,21 @@ Type BinOpExpr::getType(Context &ctx)
   auto t2 = rhs->getType(ctx);
   auto ct = commonType(t1, t2);
   if (ct == Type::none)
-    throw CodeGenError(this, "no common type for types " + getTypeName(t1) +
-                               " and " + getTypeName(t2));
+    throw CodeGenError("no common type for types " + getTypeName(t1) + " and " +
+                         getTypeName(t2),
+                       this);
   if (!canImplicitlyCast(t1, ct))
-    throw CodeGenError(
-      this, "cannot implicitly convert right argument of binop '" +
-              Lexer::getTokenName(op) + "' of type '" + getTypeName(t1) +
-              "' to type '" + getTypeName(ct) + '\'');
+    throw CodeGenError("cannot implicitly convert right argument of binop '" +
+                         Lexer::getTokenName(op) + "' of type '" +
+                         getTypeName(t1) + "' to type '" + getTypeName(ct) +
+                         '\'',
+                       this);
   if (!canImplicitlyCast(t2, ct))
-    throw CodeGenError(
-      this, "cannot implicitly convert right argument of binop '" +
-              Lexer::getTokenName(op) + "' of type '" + getTypeName(t2) +
-              "' to type '" + getTypeName(ct) + '\'');
+    throw CodeGenError("cannot implicitly convert right argument of binop '" +
+                         Lexer::getTokenName(op) + "' of type '" +
+                         getTypeName(t2) + "' to type '" + getTypeName(ct) +
+                         '\'',
+                       this);
   return ct;
 }
 
@@ -201,18 +210,18 @@ llvm::Value *BinOpExpr::codegen(Context &ctx)
   if (isCompAssign(op)) {
     auto varexpr = dynamic_cast<VariableExpr *>(lhs.get());
     if (!varexpr)
-      throw CodeGenError(this,
-                         "left hand side of assignment must be a variable");
+      throw CodeGenError("left hand side of assignment must be a variable",
+                         this);
 
     int assign_op = getCompAssigOpBaseOp(op);
     auto rightType = rhs->getType(ctx);
     auto targetType = lhs->getType(ctx);
     if (!canImplicitlyCast(rhs->getType(ctx), targetType))
-      throw CodeGenError(this,
-                         "cannot implicitly convert right argument of binop '" +
+      throw CodeGenError("cannot implicitly convert right argument of binop '" +
                            Lexer::getTokenName(op) + "' of type '" +
                            getTypeName(rightType) + "' to type '" +
-                           getTypeName(targetType) + '\'');
+                           getTypeName(targetType) + '\'',
+                         this);
     auto assignVal = createBinOp(ctx, assign_op, targetType, lhs->codegen(ctx),
                                  rhs->codegen(ctx));
     return createAssignment(ctx, assignVal, varexpr);
@@ -221,9 +230,9 @@ llvm::Value *BinOpExpr::codegen(Context &ctx)
   {
     auto varexpr = dynamic_cast<VariableExpr *>(lhs.get());
     if (!varexpr)
-      throw CodeGenError(this,
-                         "left hand side of assignment must be a variable");
+      throw CodeGenError("left hand side of assignment must be a variable",
+                         this);
     return createAssignment(ctx, rhs->codegen(ctx), varexpr);
   }
-  throw CodeGenError(this, "invalid operation " + Lexer::getTokenName(op));
+  throw CodeGenError("invalid operation " + Lexer::getTokenName(op), this);
 }
