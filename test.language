@@ -67,10 +67,10 @@ fn complex(int i)
   do {
     i = 7;
   } whl F;
-  for j = 0; j < 7; j+=1
-  {
-    i += 2;
-  }
+//   for j = 0; j < 7; j+=1
+//   {
+//     i += 2;
+//   }
 }
 
 fn double() : flt {ret 1.2345;}
@@ -126,9 +126,33 @@ fn assign_test(int i, j, k) : int
   ret k;
 }
 
-fn local_vars() : flt {
+fn local_vars(boo bl) : flt {
   var a : int;
   var b = 7;
   var c = 4.5;
-  ret a * b + c;
+  ret (bl*a+1) * (bl*b) + (bl*c);
 }
+
+fn break_test(boo b)
+{
+  whl b {
+    brk;
+    cnt;
+    ret;
+  }
+  ret;
+}
+
+// fn if_test(boo b)
+// {
+//   do {
+//     if b {
+//       cnt;
+// //     } elif !b {
+//     } elif b ^ b {
+//       brk;
+//     } el {
+//       ret;
+//     }
+//   } whl b;
+// }

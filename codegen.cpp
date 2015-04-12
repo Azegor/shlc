@@ -42,7 +42,7 @@ llvm::Type *getLLVMTypeFromType(GlobalContext &ctx, Type type)
     case Type::chr_t:
       return llvm::Type::getInt8Ty(ctx.llvm_context); // no unicode
     default:
-      throw CodeGenError(nullptr, "Unknown type id" + getTypeName(type));
+      throw CodeGenError("Unknown type id" + getTypeName(type));
   }
 }
 
@@ -319,7 +319,7 @@ llvm::Constant *getIntConst(Context &ctx, Type intType, int val)
       is_signed = false;
       break;
     default:
-      throw CodeGenError(nullptr, "invalid int type " + getTypeName(intType));
+      throw CodeGenError("invalid int type " + getTypeName(intType));
   }
   return llvm::ConstantInt::get(ctx.global.llvm_context,
                                 llvm::APInt(bits, val, is_signed));
@@ -339,8 +339,7 @@ llvm::Constant *createDefaultValueConst(Context &ctx, Type type)
       return BoolConstExpr(false).codegen(ctx);
     case Type::str_t:
     default:
-      throw CodeGenError(nullptr,
-                         "no default value for type " + getTypeName(type));
+      throw CodeGenError("no default value for type " + getTypeName(type));
   }
 }
 
@@ -375,16 +374,15 @@ int getCompAssigOpBaseOp(int op)
     case Tok::bit_xor_assign:
       return '^';
     default:
-      throw CodeGenError(nullptr, "invalid compound assigment operator " +
-                                    Lexer::getTokenName(op));
+      throw CodeGenError("invalid compound assigment operator " +
+                         Lexer::getTokenName(op));
   }
 }
 
 #define OP_NOT_SUPPORTED(op, ty)                                               \
   default:                                                                     \
-    throw CodeGenError(nullptr, "operation '" + Lexer::getTokenName(op) +      \
-                                  "' not supported for type '" +               \
-                                  getTypeName(ty) + "'");
+    throw CodeGenError("operation '" + Lexer::getTokenName(op) +               \
+                       "' not supported for type '" + getTypeName(ty) + "'");
 
 llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
                          llvm::Value *lhs, llvm::Value *rhs)
@@ -411,7 +409,7 @@ llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
    * rshift,
    */
   if (!isBinOp(op)) // no binop
-    throw CodeGenError(nullptr, "invalid binop " + Lexer::getTokenName(op));
+    throw CodeGenError("invalid binop " + Lexer::getTokenName(op));
 
   auto &builder = ctx.global.builder;
 
@@ -432,13 +430,13 @@ llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
         case '/':
           if (commonType == Type::boo_t)
             // return builder.CreateUDiv(lhs, rhs, "quot");
-            throw CodeGenError(nullptr, "cannot divide two booleans");
+            throw CodeGenError("cannot divide two booleans");
           else
             return builder.CreateSDiv(lhs, rhs, "quot");
         case '%':
           if (commonType == Type::boo_t)
             // return builder.CreateURem(lhs, rhs, "rem");
-            throw CodeGenError(nullptr, "cannot calculate rem of two booleans");
+            throw CodeGenError("cannot calculate rem of two booleans");
           else
             return builder.CreateSRem(lhs, rhs, "rem");
         case Tok::increment:
@@ -446,7 +444,7 @@ llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
         case Tok::decrement:
           return builder.CreateSub(lhs, getIntConst(ctx, commonType, 1), "dec");
         case Tok::power:
-          throw CodeGenError(nullptr, "power not implemented yet");
+          throw CodeGenError("power not implemented yet");
         //           return builder.CreateCall()
 
         // boolean operations
@@ -482,12 +480,12 @@ llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
         // bit operations
         case Tok::lshift:
           if (commonType == Type::boo_t)
-            throw CodeGenError(nullptr, "cannot bitshift boolean type");
+            throw CodeGenError("cannot bitshift boolean type");
           else
             return builder.CreateShl(lhs, rhs, "shl");
         case Tok::rshift:
           if (commonType == Type::boo_t)
-            throw CodeGenError(nullptr, "cannot bitshift boolean type");
+            throw CodeGenError("cannot bitshift boolean type");
           else
             return builder.CreateAShr(lhs, rhs, "shr");
 
@@ -509,7 +507,7 @@ llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
         case '%':
           return builder.CreateFRem(lhs, rhs, "rem");
         case Tok::power:
-          throw CodeGenError(nullptr, "power not implemented yet");
+          throw CodeGenError("power not implemented yet");
         //           return builder.CreateCall()
 
         // boolean operations
@@ -555,8 +553,8 @@ llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
         OP_NOT_SUPPORTED(op, commonType);
       }
     default:
-      CodeGenError(nullptr, "type '" + getTypeName(commonType) +
-                              "' doesnt support binary operations");
+      CodeGenError("type '" + getTypeName(commonType) +
+                   "' doesnt support binary operations");
   }
   return nullptr;
 }

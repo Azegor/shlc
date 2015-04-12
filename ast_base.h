@@ -29,6 +29,16 @@
 #include "type.h"
 
 class Context;
+namespace llvm
+{
+class BasicBlock;
+}
+
+class SourceLocation
+{
+  Token referenceToken;
+  // reference file here
+};
 
 // TODO: might not be neccessary!
 class AstNode
@@ -49,7 +59,7 @@ public:
   Statement() = default;
   virtual ~Statement() {}
   // TODO remove default make abstract
-  virtual llvm::Value *codegen(Context &ctx) { return nullptr; }
+  virtual llvm::Value *codegen(Context &ctx) = 0;
 };
 
 using StmtPtr = std::unique_ptr<Statement>;
@@ -66,7 +76,7 @@ public:
   virtual ~Expr() {}
   virtual Type getType(Context &cc) = 0;
   // TODO remove default make abstract
-  virtual llvm::Value *codegen(Context &ctx) { return nullptr; }
+  virtual llvm::Value *codegen(Context &ctx) = 0;
 };
 
 using ExprPtr = std::unique_ptr<Expr>;
@@ -90,6 +100,16 @@ public:
 
 using BlockStmtPtr = std::unique_ptr<BlockStmt>;
 using BlockStmtList = std::vector<BlockStmtPtr>;
+
+class LoopStmt : public Statement
+{
+public:
+  virtual llvm::BasicBlock *continueTarget() const = 0;
+  virtual llvm::BasicBlock *breakTarget() const = 0;
+};
+class LoopCtrlStmt : public Statement
+{
+};
 
 template <typename St, typename... Args> StmtPtr make_SPtr(Args &&... args)
 {
@@ -120,10 +140,10 @@ void printList(L &list, Callback callback)
 class CodeGenError : public std::exception
 {
 public:
-  const AstNode *node;
   const std::string reason, errorLine;
-  CodeGenError(const AstNode *node, std::string what)
-      : node(std::move(node)), reason(std::move(what))
+  const AstNode *node;
+  CodeGenError(std::string what, const AstNode *node = nullptr)
+      : reason(std::move(what)), node(std::move(node))
   {
   }
   const char *what() const noexcept override { return reason.c_str(); }
