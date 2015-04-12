@@ -255,6 +255,5 @@ Type UnOpExpr::getType(Context &ctx)
 
 llvm::Value *UnOpExpr::codegen(Context &ctx)
 {
-  throw CodeGenError("TODO: impement unary operations");
-  return nullptr;
+  return createUnOp(ctx, op, getType(ctx), rhs->codegen(ctx));
 }

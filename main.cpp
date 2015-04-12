@@ -229,5 +229,3 @@ int main(int argc, char **argv)
   testCodeGen(filename);
   return 0;
 }
-
-void write(char c) { std::putc(c, stdout); }

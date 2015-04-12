@@ -95,7 +95,7 @@ std::unordered_map<int, int> unOpPrecedence{
 }
 */
 
-bool Parser::inUnaryOperator(int type)
+bool Parser::isUnaryOperator(int type)
 {
   if (unaryOperators.find(type) == unaryOperators.end()) return false;
   return true;
@@ -307,7 +307,7 @@ ExprPtr Parser::parseBinOpRHS(int exprPrec, ExprPtr lhs)
 
 ExprPtr Parser::parseUnaryExpr()
 {
-  if (!inUnaryOperator(curTok.type)) return parsePrimaryExpr();
+  if (!isUnaryOperator(curTok.type)) return parsePrimaryExpr();
 
   int op = curTok.type;
   readNextToken();

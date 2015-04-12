@@ -20,18 +20,21 @@
 #include "ast.h"
 
 #include <iostream>
+extern "C" {
 
-void prt(types::int_t i) { std::cout << i; }
-void prtln(types::int_t i) { std::cout << i << std::endl; }
+void prt_i(types::int_t i) { std::cout << i; }
+void prtln_i(types::int_t i) { std::cout << i << std::endl; }
 
-void prt(types::flt_t f) { std::cout << f; }
-void prtln(types::flt_t f) { std::cout << f << std::endl; }
+void prt_f(types::flt_t f) { std::cout << f; }
+void prtln_f(types::flt_t f) { std::cout << f << std::endl; }
 
-void prt(types::chr_t c) { std::cout << c; }
-void prtln(types::chr_t c) { std::cout << c << std::endl; }
+void prt_c(types::chr_t c) { std::cout << c; }
+void prtln_c(types::chr_t c) { std::cout << c << std::endl; }
 
-void prt(types::boo_t b) { std::cout << b; }
-void prtln(types::boo_t b) { std::cout << b << std::endl; }
+void prt_b(types::boo_t b) { std::cout << b; }
+void prtln_b(types::boo_t b) { std::cout << b << std::endl; }
 
-void prt(types::str_t s) { std::cout << s; }
-void prtln(types::str_t s) { std::cout << s << std::endl; }
+void prt_s(types::str_t s) { std::cout << s; }
+void prtln_s(types::str_t s) { std::cout << s << std::endl; }
+
+}

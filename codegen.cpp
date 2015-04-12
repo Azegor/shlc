@@ -384,6 +384,41 @@ int getCompAssigOpBaseOp(int op)
     throw CodeGenError("operation '" + Lexer::getTokenName(op) +               \
                        "' not supported for type '" + getTypeName(ty) + "'");
 
+llvm::Value *createUnOp(Context &ctx, int op, Type type, llvm::Value *rhs)
+{
+//   using Tok = Token::TokenType;
+  // valid unops:
+  /* !
+   * ~
+   */
+
+  auto &builder = ctx.global.builder;
+
+    switch (op)
+    {
+      case '!':
+        switch (type)
+        {
+          case Type::boo_t:
+            return builder.CreateNot(rhs, "not");
+          OP_NOT_SUPPORTED(op, type);
+        }
+      case '~':
+        switch (type)
+        {
+          case Type::int_t:
+          case Type::chr_t:
+          case Type::boo_t:
+            return builder.CreateXor(rhs, getIntConst(ctx, type, -1), "bitcmpl");
+          OP_NOT_SUPPORTED(op, type);
+        }
+    default:
+      CodeGenError("type '" + getTypeName(type) +
+                   "' doesnt support unary operations");
+    }
+    return nullptr;
+}
+
 llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
                          llvm::Value *lhs, llvm::Value *rhs)
 {
