@@ -93,7 +93,7 @@ std::unordered_map<int, std::string> Lexer::tokenNames{
   {Token::rshift_assign, "rshift_assign"},
   {Token::bit_and_assign, "bit_and_assign"},
   {Token::bit_or_assign, "bit_or_assign"},
-  {Token::bit_complement_assign, "bit_complement_assign"},
+  //   {Token::bit_complement_assign, "bit_complement_assign"},
   {Token::bit_xor_assign, "bit_xor_assign"},
 
   //  identifiers:
@@ -600,10 +600,10 @@ inline Token Lexer::readOrOperator()
 inline Token Lexer::readBitComplOperator()
 {
   tokenString = '~';
-  if (readNext() == '=') {
-    appendAndNext();
-    return makeToken(Token::bit_complement_assign);
-  }
+  //   if (readNext() == '=') {
+  //     appendAndNext();
+  //     return makeToken(Token::bit_complement_assign);
+  //   }
   return makeToken('~');
 }
 

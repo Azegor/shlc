@@ -69,6 +69,7 @@ class Parser
 
   Token &readNextToken() { return curTok = currentLexer->nextToken(); }
 
+  static bool inUnaryOperator(int type);
   static int getTokenPrecedence(int type);
 
   // these functions expect the first token to already be in curTok
@@ -77,6 +78,7 @@ class Parser
   StmtPtr parseTLExpr(bool &isBlock);
   ExprPtr parseExpr();
   ExprPtr parseBinOpRHS(int prec, ExprPtr rhs);
+  ExprPtr parseUnaryExpr();
   ExprPtr parsePrimaryExpr();
 
   // Expressions:

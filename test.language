@@ -148,8 +148,8 @@ fn if_test(boo b)
   do {
     if b {
       cnt;
-//     } elif !b {
-    } elif b ^ b {
+    } elif !b {
+//     } elif b ^ b {
       brk;
     } el {
       ret;
