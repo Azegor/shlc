@@ -70,6 +70,7 @@ llvm::Constant *createDefaultValueConst(Context &ctx, Type type);
 
 inline bool isBinOp(int op)
 {
+//   return Parser::getTokenPrecedence(op) > 0;
   static constexpr const char *sc_binops = "+-*/%|&^";
   return (op >= Token::TokenType::increment &&
           op <= Token::TokenType::rshift) ||
@@ -83,6 +84,8 @@ inline bool isCompAssign(int op)
 }
 
 int getCompAssigOpBaseOp(int op);
+
+llvm::Value *createUnOp(Context &ctx, int op, Type type, llvm::Value *rhs);
 
 llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
                          llvm::Value *lhs, llvm::Value *rhs);

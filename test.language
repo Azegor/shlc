@@ -1,4 +1,4 @@
-fn write(chr i) native;
+fn writec(chr i) native;
 
 fn hi()
 {
@@ -157,7 +157,7 @@ fn if_test(boo b)
   } whl b;
 }
 
-// fn wrong_return() : flt
-// {
-//   ret 42;
-// }
+fn test_bitcomp(int i; chr c; boo b) : int
+{
+  ret ~i | ~c&(b:chr) | (~b|i);
+}

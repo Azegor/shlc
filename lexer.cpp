@@ -600,6 +600,7 @@ inline Token Lexer::readOrOperator()
 inline Token Lexer::readBitComplOperator()
 {
   tokenString = '~';
+  readNext();
   //   if (readNext() == '=') {
   //     appendAndNext();
   //     return makeToken(Token::bit_complement_assign);

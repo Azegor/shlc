@@ -69,7 +69,7 @@ class Parser
 
   Token &readNextToken() { return curTok = currentLexer->nextToken(); }
 
-  static bool inUnaryOperator(int type);
+  static bool isUnaryOperator(int type);
   static int getTokenPrecedence(int type);
 
   // these functions expect the first token to already be in curTok
