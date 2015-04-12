@@ -140,15 +140,14 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
   ctx.currentFn = fn;
 
   // Create a new basic block to start insertion into.
-  llvm::BasicBlock *bb =
+  llvm::BasicBlock *entryBB =
     llvm::BasicBlock::Create(gl_ctx.llvm_context, "entry", fn);
-  builder.SetInsertPoint(bb);
+  builder.SetInsertPoint(entryBB);
 
   head->createArgumentAllocas(ctx, fn);
 
   // make main block, leave entry for allocas only
   auto mainBB = llvm::BasicBlock::Create(gl_ctx.llvm_context, "fnbody", fn);
-  builder.CreateBr(mainBB);
   builder.SetInsertPoint(mainBB);
 
   ctx.pushFrame();
@@ -156,6 +155,12 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
   body->codegen(ctx);
 
   ctx.popFrame();
+
+  auto currentInsBlock = builder.GetInsertBlock();
+  auto currentInsPos = builder.GetInsertPoint();
+  builder.SetInsertPoint(entryBB, entryBB->end());
+  builder.CreateBr(mainBB);
+  builder.SetInsertPoint(currentInsBlock, currentInsPos);
 
   if (ctx.frameCount() != 1)
     throw CodeGenError(this, "variable frame count inconsistent (" +

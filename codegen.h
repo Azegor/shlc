@@ -21,6 +21,7 @@
 #include <cstring>
 
 #include <llvm/IR/Type.h>
+#include <llvm/IR/Instructions.h>
 
 #include "ast.h"
 #include "type.h"
