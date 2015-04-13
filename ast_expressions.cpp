@@ -176,7 +176,8 @@ std::vector<Type> FunctionCallExpr::getArgType(Context &ctx) const
 
 llvm::Value *FunctionCallExpr::codegen(Context &ctx)
 {
-  fnHead = ctx.global.getFunctionOverload(name, getArgType(ctx));
+  auto callArgs = getArgType(ctx);
+  fnHead = ctx.global.getFunctionOverload(name, callArgs);
   if (!fnHead) throw CodeGenError("no viable function found for " + name, this);
   std::vector<Type> argTypes;
   argTypes.reserve(args.size());
@@ -188,8 +189,11 @@ llvm::Value *FunctionCallExpr::codegen(Context &ctx)
                        " with given parameters");
 
   auto params = std::make_unique<llvm::Value *[]>(args.size());
+  auto functionArgs = fnHead->getArgTypes();
   for (int i = 0; i < args.size(); ++i)
   {
+    if (callArgs[i] != functionArgs[i])
+      args[i] = make_EPtr<CastExpr>(std::move(args[i]), functionArgs[i]);
     params[i] = args[i]->codegen(ctx);
   }
   ctx.global.builder.CreateCall(

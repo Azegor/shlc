@@ -1,4 +1,25 @@
-fn prt(chr i) native "prt_c";
+
+// >>>>>>> stdlib declarations:
+
+fn prt(int i) native "prt_i";
+fn prt_w(int i, w) native "prt_w_i";
+fn prtln(int i) native "prtln_i";
+
+fn prt(flt f) native "prt_f";
+fn prt_w(flt f, w) native "prt_w_f";
+fn prtln(flt f) native "prtln_f";
+
+fn prt(chr c) native "prt_c";
+fn prtln(chr c) native "prtln_c";
+
+fn prt(boo b) native "prt_b";
+fn prtln(boo b) native "prtln_b";
+
+fn prt(str s) native "prt_s";
+fn prtln(str s) native "prtln_s";
+
+// <<<<<<<
+
 
 fn hi()
 {
@@ -168,29 +189,24 @@ fn stringtest() : str
   ret "somestringconst";
 }
 
-fn prt_s(str s) native "prt_s";
-fn prt_i(int i) native "prt_i";
 fn print_string()
 {
-  prt_s("hi there\n");
+  prt("hi there\n");
   var i : int;
   for i = 0; i < 100; i += 1 {
-    prt_s("<<");
-    prt_i(i*i);
-    prt_s(">>");
+    prt("<<");
+    prt(i*i);
+    prt(">>");
   }
   prt('\n');
 }
-
-fn prt_w_i(int i, w) native;
-fn prt_w_f(flt f; int w) native;
 
 fn print_mult_table()
 {
   var i, j : int;
   for i = 1; i <= 10; ++i {
     for j = 1; j <= 10; ++j {
-      prt_w_i(i*j, 3);
+      prt_w(i*j, 3);
       prt(' ');
     }
     prt('\n');
@@ -216,4 +232,11 @@ fn call_overload()
 {
   overload(1);
   overload(3.1415926535897932385636);
+}
+
+fn flt_call(flt f) {}
+
+fn call_imp_cast()
+{
+  flt_call(0);
 }
