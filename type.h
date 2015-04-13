@@ -40,7 +40,8 @@ using int_t = long long;
 using flt_t = long double;
 using chr_t = signed char;
 using boo_t = bool;
-using str_t = std::string;
+// using str_t = std::string;
+using str_t = char const *;
 }
 
 std::string getTypeName(Type t);

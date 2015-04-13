@@ -39,6 +39,18 @@ public:
   llvm::Value *codegen(Context &ctx) override;
 };
 
+class GlobalVarExpr : public Expr
+{
+  std::string name;
+
+public:
+  GlobalVarExpr(std::string name) : name(std::move(name)) {}
+  void print(int indent = 0) override;
+  Type getType(Context &ctx) override;
+  //   llvm::GlobalVariable *getGlobalVarInst(Context &ctx);
+  llvm::Value *codegen(Context &ctx) override;
+};
+
 class FunctionCallExpr : public Expr
 {
   std::string name;
@@ -63,7 +75,7 @@ public:
   ConstantExpr(Type type) : type(type) {}
   void print(int indent = 0) override;
   Type getType(Context &) override { return type; }
-  llvm::Constant *codegen(Context &ctx) override = 0;
+  llvm::Value *codegen(Context &ctx) override = 0;
 };
 
 class IntNumberExpr : public ConstantExpr
@@ -112,11 +124,11 @@ class StringConstExpr : public ConstantExpr
 
 public:
   StringConstExpr(std::string val)
-      : ConstantExpr(Type::boo_t), value(std::move(val))
+      : ConstantExpr(Type::str_t), value(std::move(val))
   {
   }
   void print(int indent = 0) override;
-  llvm::Constant *codegen(Context &ctx) override;
+  llvm::Value *codegen(Context &ctx) override;
 };
 
 class BinOpExpr : public Expr

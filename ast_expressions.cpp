@@ -34,6 +34,12 @@ void VariableExpr::print(int indent)
   std::cout << "[Variable: " << name << ']';
 }
 
+void GlobalVarExpr::print(int indent)
+{
+  printIndent(indent);
+  std::cout << "[Global Variable: " << name << ']';
+}
+
 void FunctionCallExpr::print(int indent)
 {
   printIndent(indent);
@@ -134,9 +140,20 @@ llvm::Constant *BoolConstExpr::codegen(Context &ctx)
   return llvm::ConstantInt::get(ctx.global.llvm_context, llvm::APInt(1, value));
 }
 
-llvm::Constant *StringConstExpr::codegen(Context &ctx)
+llvm::Value *StringConstExpr::codegen(Context &ctx)
 {
-  throw CodeGenError("strings not implemented yet");
+  llvm::StringRef str(value.c_str(), value.size());
+
+  llvm::Constant *str_const =
+    llvm::ConstantDataArray::getString(ctx.global.llvm_context, str);
+
+  auto *GV = new llvm::GlobalVariable(*ctx.global.module, str_const->getType(), true,
+                                      llvm::GlobalValue::PrivateLinkage, str_const, "str_const");
+  GV->setUnnamedAddr(true);
+
+  auto name = GV->getName();
+  ctx.putGlobalVar(name, Type::str_t, GV);
+  return GlobalVarExpr(name).codegen(ctx);
 }
 
 Type FunctionCallExpr::getType(Context &)
@@ -165,6 +182,13 @@ Type VariableExpr::getType(Context &ctx) { return ctx.getVariableType(name); }
 llvm::Value *VariableExpr::codegen(Context &ctx)
 {
   return ctx.global.builder.CreateLoad(ctx.getVarAlloca(name), name);
+}
+
+Type GlobalVarExpr::getType(Context &ctx) { return ctx.getGlobalVarType(name); }
+
+llvm::Value *GlobalVarExpr::codegen(Context &ctx)
+{
+  return ctx.global.builder.CreateConstGEP2_32(ctx.getGlobalVarInst(name), 0, 0);
 }
 
 llvm::AllocaInst *VariableExpr::getAlloca(Context &ctx)

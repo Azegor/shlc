@@ -16,6 +16,8 @@ fn loop()
 //   }
 }
 
+fn print_string();
+
 fn main() {
   hi();
   4;
@@ -23,6 +25,7 @@ fn main() {
   1+2*3+4;
   //testabc(3+4);
   loop();
+  print_string();
 }
 
 fn testasdfasdf(int i)
@@ -168,4 +171,22 @@ fn if_test(boo b)
 fn test_bitcomp(int i; chr c; boo b) : int
 {
   ret ~i | ~c&(b:chr) | (~b|i);
+}
+
+fn stringtest() : str
+{
+  var s = "yo";
+  ret s;
+  ret "somestringconst";
+}
+
+fn prt_s() native "prt_s";
+fn print_string()
+{
+  prt_s("hi there\n");
+  var i : int;
+//   for i = 0; i < 100; i += 1 {
+//     prt_s("<>");
+//   }
+  prt('\n');
 }
