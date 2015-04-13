@@ -16,18 +16,6 @@ fn loop()
 //   }
 }
 
-fn print_string();
-
-fn main() {
-  hi();
-  4;
-  3+4+3+4+2+5+234;
-  1+2*3+4;
-  //testabc(3+4);
-  loop();
-  print_string();
-}
-
 fn testasdfasdf(int i)
 {
   i = 3+4+3+4+2+5+234*3+4*(5+6);
@@ -192,4 +180,30 @@ fn print_string()
     prt_s(">>");
   }
   prt('\n');
+}
+
+fn prt_w_i(int i, w) native;
+fn prt_w_f(flt f; int w) native;
+
+fn print_mult_table()
+{
+  var i, j : int;
+  for i = 1; i <= 10; ++i {
+    for j = 1; j <= 10; ++j {
+      prt_w_i(i*j, 3);
+      prt(' ');
+    }
+    prt('\n');
+  }
+}
+
+fn main() {
+  hi();
+  4;
+  3+4+3+4+2+5+234;
+  1+2*3+4;
+  //testabc(3+4);
+  loop();
+  print_string();
+  print_mult_table();
 }

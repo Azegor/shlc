@@ -285,7 +285,7 @@ llvm::Value *DoWhileStmt::codegen(Context &ctx)
 llvm::Value *ForStmt::codegen(Context &ctx)
 {
 
-    ctx.pushFrame();
+  ctx.pushFrame();
 
   // 1. init (only once)
   // -> loop:

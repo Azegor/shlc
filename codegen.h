@@ -65,16 +65,21 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type from, Type to,
 Type commonType(Type t1, Type t2);
 
 llvm::Constant *getIntConst(Context &ctx, Type intType, int val);
+ExprPtr getIntConstExpr(Type intType, int val);
 
 llvm::Constant *createDefaultValueConst(Context &ctx, Type type);
 
 inline bool isBinOp(int op)
 {
-  //   return Parser::getTokenPrecedence(op) > 0;
   static constexpr const char *sc_binops = "+-*/%|&^<>";
-  return (op >= Token::TokenType::increment &&
-          op <= Token::TokenType::rshift) ||
+  return (op >= Token::TokenType::power && op <= Token::TokenType::rshift) ||
          std::strchr(sc_binops, op) != nullptr;
+}
+
+inline bool isUnOp(int op)
+{
+  static constexpr const char *sc_unops = "!~";
+  return std::strchr(sc_unops, op) != nullptr;
 }
 
 inline bool isCompAssign(int op)
@@ -84,6 +89,13 @@ inline bool isCompAssign(int op)
 }
 
 int getCompAssigOpBaseOp(int op);
+
+inline int getIncDecOpBaseOp(int op)
+{
+  if (op == Token::TokenType::increment) return Token::TokenType::add_assign;
+  if (op == Token::TokenType::decrement) return Token::TokenType::sub_assign;
+  throw CodeGenError("invalid inc/dec op " + Lexer::getTokenName(op));
+}
 
 llvm::Value *createUnOp(Context &ctx, int op, Type type, llvm::Value *rhs);
 
