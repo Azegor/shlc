@@ -223,11 +223,11 @@ llvm::Value *WhileStmt::codegen(Context &ctx)
   auto condVal = cond->codegen(ctx);
   builder.CreateCondBr(condVal, loopBB, endBB);
 
-  ctx.pushLoop(this);
   builder.SetInsertPoint(loopBB);
+  ctx.pushLoop(this);
   body->codegen(ctx);
-  builder.CreateBr(headBB);
   ctx.popLoop();
+  builder.CreateBr(headBB);
 
   builder.SetInsertPoint(endBB);
 
@@ -266,11 +266,11 @@ llvm::Value *DoWhileStmt::codegen(Context &ctx)
 
   builder.CreateBr(loopBB);
 
-  ctx.pushLoop(this);
   builder.SetInsertPoint(loopBB);
+  ctx.pushLoop(this);
   body->codegen(ctx);
-  builder.CreateBr(headBB);
   ctx.popLoop();
+  builder.CreateBr(headBB);
 
   builder.SetInsertPoint(headBB);
   auto condVal = cond->codegen(ctx);
@@ -284,7 +284,57 @@ llvm::Value *DoWhileStmt::codegen(Context &ctx)
 
 llvm::Value *ForStmt::codegen(Context &ctx)
 {
-  throw CodeGenError("implement ForStmt::codegen()!");
+
+    ctx.pushFrame();
+
+  // 1. init (only once)
+  // -> loop:
+  // 2. test
+  // 3.1 body
+  // 3.2 increment
+
+  auto condType = cond->getType(ctx);
+  if (condType != Type::boo_t) {
+    if (canCast(condType, Type::boo_t)) {
+      cond = make_EPtr<CastExpr>(std::move(cond), Type::boo_t);
+    }
+    else
+    {
+      throw CodeGenError("non-boolean or boolean-castable expression in "
+                         "while statement condition",
+                         this);
+    }
+  }
+
+  auto &builder = ctx.global.builder;
+
+  auto headBB =
+    llvm::BasicBlock::Create(ctx.global.llvm_context, "forhead", ctx.currentFn);
+  auto loopBB =
+    llvm::BasicBlock::Create(ctx.global.llvm_context, "forloop", ctx.currentFn);
+  auto endBB =
+    llvm::BasicBlock::Create(ctx.global.llvm_context, "forend", ctx.currentFn);
+
+  contBB = headBB;
+  breakBB = endBB;
+
+  init->codegen(ctx);
+  builder.CreateBr(headBB);
+
+  builder.SetInsertPoint(headBB);
+  auto condVal = cond->codegen(ctx);
+  builder.CreateCondBr(condVal, loopBB, endBB);
+
+  ctx.pushLoop(this);
+  builder.SetInsertPoint(loopBB);
+  body->codegen(ctx);
+  ctx.popLoop();
+  incr->codegen(ctx);
+  builder.CreateBr(headBB);
+
+  builder.SetInsertPoint(endBB);
+
+  ctx.popFrame();
   return nullptr;
 }
 
