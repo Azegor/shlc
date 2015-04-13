@@ -121,24 +121,29 @@ void ExprStmt::print(int indent)
 
 llvm::Value *ReturnStmt::codegen(Context &ctx)
 {
-  // TODO: consult return type of current function -> cast if possible
-  Type type = Type::none;
   if (!expr) // void
   {
+    if (ctx.returnType != Type::vac_t)
+      throw CodeGenError("cannot return value in void function", this);
     ctx.global.builder.CreateRetVoid();
-    type = Type::vac_t;
   }
   else
   {
+    Type type = expr->getType(ctx);
+    if (ctx.returnType != type) {
+      if (canImplicitlyCast(type, ctx.returnType)) {
+        expr = make_EPtr<CastExpr>(std::move(expr), ctx.returnType);
+      }
+      else
+      {
+        throw CodeGenError("incompatible return types '" + getTypeName(type) +
+                             "' and '" + getTypeName(ctx.returnType) + '\'',
+                           this);
+      }
+    }
     auto val = expr->codegen(ctx);
-    if (!val) throw CodeGenError("missing value for return statement", this);
+    assert(val);
     ctx.global.builder.CreateRet(val);
-    type = expr->getType(ctx);
-  }
-  if (ctx.returnType != type) {
-    throw CodeGenError("incompatible return types '" + getTypeName(type) +
-                         "' and '" + getTypeName(ctx.returnType) + '\'',
-                       this);
   }
   return nullptr;
 }
