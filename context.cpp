@@ -86,8 +86,9 @@ FunctionHead *GlobalContext::getFunctionOverload(
     if (overloadFit ==
         FunctionHead::OverloadFit::Perfect) // can only occure once!
       return i->second.fnHead;
-    needCastOverloads.push_back(i->second.fnHead);
+    if (overloadFit == FunctionHead::OverloadFit::Cast)
+      needCastOverloads.push_back(i->second.fnHead);
   }
-  if (needCastOverloads.size() == 1) return needCastOverloads[1];
+  if (needCastOverloads.size() == 1) return needCastOverloads[0];
   return nullptr;
 }
