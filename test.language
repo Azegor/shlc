@@ -323,3 +323,23 @@ fn cfr_test_for(boo b)
   }
   exit(1);
 }
+
+fn wrong_cf(boo b) : int
+{
+  if b {
+    ret 42;
+  } el {
+    ret 2;
+  }
+  // no final return !
+}
+
+fn wrong_cf2(boo b) : int
+{
+  if b {
+    ret 42;
+  } el {
+    exit(1);
+  }
+  ret 2222;
+}
