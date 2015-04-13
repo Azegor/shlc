@@ -3,6 +3,8 @@
 #include <map>
 #include <unordered_map>
 
+#include "ast_base.h"
+
 std::string getTypeName(Type t)
 {
   static std::map<Type, std::string> names = {{Type::none, "none"}, // *
@@ -24,7 +26,11 @@ char getMangleName(Type t)
                                        {Type::boo_t, 'b'},
                                        {Type::str_t, 's'},
                                        {Type::vac_t, 'v'}};
-  return names[t];
+  auto pos = names.find(t);
+  if (pos == names.end())
+    throw CodeGenError("invalid mangle name for type '" + getTypeName(t) +
+                       '\'');
+  return pos->second;
 }
 
 Type getTypeFromToken(int tok)
@@ -36,5 +42,8 @@ Type getTypeFromToken(int tok)
     {Token::id_boo, Type::boo_t},
     {Token::id_str, Type::str_t},
     {Token::id_vac, Type::vac_t}};
-  return types[tok];
+  auto pos = types.find(tok);
+  if (pos == types.end())
+    throw CodeGenError("token '" + Lexer::getTokenName(tok) + "' is no type");
+  return pos->second;
 }

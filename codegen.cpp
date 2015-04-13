@@ -36,13 +36,12 @@ llvm::Type *getLLVMTypeFromType(GlobalContext &ctx, Type type)
       return llvm::Type::getDoubleTy(ctx.llvm_context);
     case Type::boo_t:
       return llvm::Type::getInt1Ty(ctx.llvm_context);
-    //         case Type::str_t: return
-    //         llvm::Type::getInt8PtrTy(ctx.llvm_context); // TODO: do the right
-    //         thing here!!!
     case Type::chr_t:
       return llvm::Type::getInt8Ty(ctx.llvm_context); // no unicode
+    case Type::str_t:
+      return llvm::Type::getInt8PtrTy(ctx.llvm_context);
     default:
-      throw CodeGenError("Unknown type id" + getTypeName(type));
+      throw CodeGenError("Unknown type id " + getTypeName(type));
   }
 }
 
@@ -215,20 +214,15 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type from, Type to,
         case Type::str_t:
           NO_CAST;
       }
-    // TODO
     case Type::str_t:
       switch (to)
       {
-        case Type::int_t:
-          return nullptr;
-        case Type::flt_t:
-          return nullptr;
-        case Type::chr_t:
-          return nullptr;
-        case Type::boo_t:
-          return nullptr;
         case Type::str_t:
-          return nullptr;
+          return val;
+        case Type::int_t:
+        case Type::flt_t:
+        case Type::chr_t:
+        case Type::boo_t:
           NO_CAST;
       }
       NO_CAST;

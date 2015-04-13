@@ -34,6 +34,6 @@ void prtln_c(types::chr_t c) { std::printf("%c\n", c); }
 void prt_b(types::boo_t b) { std::printf("%d", b); }
 void prtln_b(types::boo_t b) { std::printf("%d\n", b); }
 
-// void prt_s(types::str_t s) { std::printf("%s", s.c_str()); }
-// void prtln_s(types::str_t s) { std::printf("%s\n", s.c_str()); }
+void prt_s(types::str_t s) { std::printf("%s", s); }
+void prtln_s(types::str_t s) { std::printf("%s\n", s); }
 }
