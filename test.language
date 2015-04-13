@@ -180,13 +180,16 @@ fn stringtest() : str
   ret "somestringconst";
 }
 
-fn prt_s() native "prt_s";
+fn prt_s(str s) native "prt_s";
+fn prt_i(int i) native "prt_i";
 fn print_string()
 {
   prt_s("hi there\n");
   var i : int;
-//   for i = 0; i < 100; i += 1 {
-//     prt_s("<>");
-//   }
+  for i = 0; i < 100; i += 1 {
+    prt_s("<<");
+    prt_i(i*i);
+    prt_s(">>");
+  }
   prt('\n');
 }
