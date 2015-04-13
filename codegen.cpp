@@ -117,7 +117,7 @@ CastMode castMode(Type from, Type to)
         case Type::flt_t:
           return CastMode::Implicit;
         case Type::chr_t:
-          return CastMode::Explicit;
+          return CastMode::Implicit;
         case Type::boo_t:
           return CastMode::Same;
         case Type::str_t:
