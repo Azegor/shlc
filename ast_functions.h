@@ -89,6 +89,9 @@ public:
   void setBinding(Binding b) { binding = b; }
   llvm::Function *get_llvm_fn() { return llvm_fn; }
 
+  bool canCallWithArgs(const std::vector<Type> &types) const;
+  std::string sigString() const;
+
 private:
   llvm::Function *createLLVMFunction(GlobalContext &gl_ctx);
 };

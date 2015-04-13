@@ -195,6 +195,7 @@ fn print_mult_table()
     }
     prt('\n');
   }
+//   prt_i("string");
 }
 
 fn main() {

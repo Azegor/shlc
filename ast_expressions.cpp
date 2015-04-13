@@ -167,6 +167,14 @@ llvm::Value *FunctionCallExpr::codegen(Context &ctx)
 {
   fnHead = ctx.global.getFunction(name);
   if (!fnHead) throw CodeGenError("no viable function found for " + name, this);
+  std::vector<Type> argTypes;
+  argTypes.reserve(args.size());
+  for (auto& arg : args)
+    argTypes.push_back(arg->getType(ctx));
+
+  if (!fnHead->canCallWithArgs(argTypes))
+    throw CodeGenError("cannot call function " + fnHead->sigString() + " with given parameters");
+
   auto params = std::make_unique<llvm::Value *[]>(args.size());
   for (int i = 0; i < args.size(); ++i)
   {

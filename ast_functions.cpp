@@ -111,6 +111,37 @@ void FunctionHead::createArgumentAllocas(Context &ctx, llvm::Function *fn)
   }
 }
 
+bool FunctionHead::canCallWithArgs(const std::vector<Type> &types) const
+{
+  if (types.size() != args.size()) return false;
+  for (int i = 0, s = args.size(); i < s; ++i)
+  {
+    if (!canImplicitlyCast(types[i], args[i].first))
+      return false;
+  }
+  return true;
+}
+
+std::string FunctionHead::sigString() const
+{
+  auto res = name + '(';
+  bool first = true;
+  for (auto& arg : args)
+  {
+    if (first)
+    {
+      res += getTypeName(arg.first);
+      first = false;
+    }
+    else
+    {
+      res += ", " + getTypeName(arg.first);
+    }
+  }
+  res += ')';
+  return res;
+}
+
 void Function::print(int indent)
 {
   printIndent(indent);
