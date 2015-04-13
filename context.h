@@ -105,9 +105,11 @@ public:
   };
   std::unordered_multimap<std::string, Fn> declaredFunctions;
 
-  FunctionHead *getFunction(const std::string &name);
-
   GlobalContext();
+
+  FunctionHead *getFunction(const std::string &name) const; // unused!
+  FunctionHead *getFunctionOverload(const std::string &name,
+                                    const std::vector<Type> &args) const;
 };
 
 struct ContextFrame

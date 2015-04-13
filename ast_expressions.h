@@ -33,7 +33,7 @@ class VariableExpr : public Expr
 
 public:
   VariableExpr(std::string name) : name(std::move(name)) {}
-  VariableExpr(const VariableExpr& o) : name(o.name) {}
+  VariableExpr(const VariableExpr &o) : name(o.name) {}
   void print(int indent = 0) override;
   Type getType(Context &ctx) override;
   llvm::AllocaInst *getAlloca(Context &ctx);
@@ -64,7 +64,8 @@ public:
   {
   }
   void print(int indent = 0) override;
-  Type getType(Context &) override;
+  Type getType(Context &ctx) override;
+  std::vector<Type> getArgType(Context &ctx) const;
   llvm::Value *codegen(Context &ctx) override;
 };
 

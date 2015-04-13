@@ -208,3 +208,12 @@ fn main() {
   print_string();
   print_mult_table();
 }
+
+fn overload(int i){}
+fn overload(flt f){}
+
+fn call_overload()
+{
+  overload(1);
+  overload(3.1415926535897932385636);
+}
