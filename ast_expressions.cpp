@@ -163,17 +163,29 @@ Type FunctionCallExpr::getType(Context &)
   return fnHead->getReturnType();
 }
 
+std::vector<Type> FunctionCallExpr::getArgType(Context &ctx) const
+{
+  std::vector<Type> res;
+  res.reserve(args.size());
+  for (auto &arg : args)
+  {
+    res.push_back(arg->getType(ctx));
+  }
+  return res;
+}
+
 llvm::Value *FunctionCallExpr::codegen(Context &ctx)
 {
-  fnHead = ctx.global.getFunction(name);
+  fnHead = ctx.global.getFunctionOverload(name, getArgType(ctx));
   if (!fnHead) throw CodeGenError("no viable function found for " + name, this);
   std::vector<Type> argTypes;
   argTypes.reserve(args.size());
-  for (auto& arg : args)
+  for (auto &arg : args)
     argTypes.push_back(arg->getType(ctx));
 
   if (!fnHead->canCallWithArgs(argTypes))
-    throw CodeGenError("cannot call function " + fnHead->sigString() + " with given parameters");
+    throw CodeGenError("cannot call function " + fnHead->sigString() +
+                       " with given parameters");
 
   auto params = std::make_unique<llvm::Value *[]>(args.size());
   for (int i = 0; i < args.size(); ++i)
@@ -300,7 +312,7 @@ llvm::Value *UnOpExpr::codegen(Context &ctx)
     if (!varexpr)
       throw CodeGenError("left hand side of assignment must be a variable",
                          this);
-      // the following is a bit of a hack, can be improved
+    // the following is a bit of a hack, can be improved
     return BinOpExpr(getIncDecOpBaseOp(op), make_EPtr<VariableExpr>(*varexpr),
                      getIntConstExpr(varexpr->getType(ctx), 1)).codegen(ctx);
   }

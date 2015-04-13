@@ -19,6 +19,8 @@
 
 #include <iostream>
 
+#include <cassert>
+
 #include <llvm/IR/IRBuilder.h>
 
 #include "codegen.h"
@@ -56,15 +58,22 @@ llvm::Function *FunctionHead::createLLVMFunction(GlobalContext &gl_ctx)
   if (range.first == range.second) {
     throw CodeGenError("can't find function in function table", this);
   }
-  auto second = range.first;
-  ++second;
-  //   if (second != range.second)
-  if (std::distance(range.first, range.second) > 1) {
-    throw CodeGenError("too many functions (overloading not supported yet)",
-                       this);
+  FunctionHead *correctOverloadFH = nullptr;
+  for (auto i = range.first; i != range.second; ++i)
+  {
+    if (hasSameArgsAs(*i->second.fnHead)) {
+      correctOverloadFH = i->second.fnHead;
+      break;
+    }
   }
-  if (range.first->second.fnHead->llvm_fn != 0) {
-    llvm_fn = range.first->second.fnHead->llvm_fn;
+  assert(correctOverloadFH != nullptr);
+  //   if (std::distance(range.first, range.second) > 1) {
+  //     throw CodeGenError("too many functions (overloading not supported
+  //     yet)",
+  //                        this);
+  //   }
+  if (correctOverloadFH->llvm_fn != 0) {
+    llvm_fn = correctOverloadFH->llvm_fn;
     return llvm_fn;
   }
   else
@@ -111,25 +120,52 @@ void FunctionHead::createArgumentAllocas(Context &ctx, llvm::Function *fn)
   }
 }
 
-bool FunctionHead::canCallWithArgs(const std::vector<Type> &types) const
+std::vector<Type> FunctionHead::getArgTypes() const
 {
-  if (types.size() != args.size()) return false;
+  std::vector<Type> res;
+  res.reserve(args.size());
+  for (auto &arg : args)
+    res.push_back(arg.first);
+  return res;
+}
+
+bool FunctionHead::hasSameArgsAs(const FunctionHead &o)
+{
+  if (args.size() != o.args.size()) return false;
   for (int i = 0, s = args.size(); i < s; ++i)
   {
-    if (!canImplicitlyCast(types[i], args[i].first))
-      return false;
+    if (args[i].first != o.args[i].first) return false;
   }
   return true;
+}
+
+bool FunctionHead::canCallWithArgs(const std::vector<Type> &types) const
+{
+  auto fit = getOverloadFit(types);
+  return fit == OverloadFit::Perfect || fit == OverloadFit::Cast;
+}
+
+FunctionHead::OverloadFit FunctionHead::getOverloadFit(
+  const std::vector<Type> &types) const
+{
+  if (types.size() != args.size()) return OverloadFit::None;
+  OverloadFit fit = OverloadFit::Perfect;
+  for (int i = 0, s = args.size(); i < s; ++i)
+  {
+    if (types[i] == args[i].first) continue;
+    if (!canImplicitlyCast(types[i], args[i].first)) return OverloadFit::None;
+    fit = OverloadFit::Cast;
+  }
+  return fit;
 }
 
 std::string FunctionHead::sigString() const
 {
   auto res = name + '(';
   bool first = true;
-  for (auto& arg : args)
+  for (auto &arg : args)
   {
-    if (first)
-    {
+    if (first) {
       res += getTypeName(arg.first);
       first = false;
     }
@@ -267,7 +303,8 @@ void FunctionHead::addToFunctionTable(GlobalContext &ctx, FnReg regType)
        ++fn) // should only be one element for now
   {
     // cannot have function with same args again
-    if (args == fn->second.fnHead->args) {
+    if (hasSameArgsAs(*fn->second.fnHead)) {
+      // not yet declared or this is a declaration
       if (regType == FnReg::Declare || fn->second.regType == FnReg::Declare) {
         if (retType !=
             fn->second.fnHead->retType) // same signature, other return type
@@ -281,8 +318,9 @@ void FunctionHead::addToFunctionTable(GlobalContext &ctx, FnReg regType)
       }
     }
   }
-  throw CodeGenError("function overloading not supported yet", this);
-  //   ctx.declaredFunctions.insert({name, {regType, this}});
+  // no conflicting declarations -> is (valid) overload
+  //   throw CodeGenError("function overloading not supported yet", this);
+  ctx.declaredFunctions.insert({name, {regType, this}});
 }
 
 std::string FunctionHead::getMangledName() const

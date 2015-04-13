@@ -65,11 +65,29 @@ GlobalContext::GlobalContext()
   fpm.doInitialization();
 }
 
-FunctionHead *GlobalContext::getFunction(const std::string &name)
+FunctionHead *GlobalContext::getFunction(const std::string &name) const
 {
   auto range = declaredFunctions.equal_range(name);
   if (range.first == range.second) return nullptr;
   if (std::distance(range.first, range.second) > 1) // multiple overloads
     throw CodeGenError("Function overloading not supported yet");
   return range.first->second.fnHead;
+}
+
+FunctionHead *GlobalContext::getFunctionOverload(
+  const std::string &name, const std::vector<Type> &args) const
+{
+  auto range = declaredFunctions.equal_range(name);
+  if (range.first == range.second) return nullptr;
+  std::vector<FunctionHead *> needCastOverloads;
+  for (auto i = range.first; i != range.second; ++i)
+  {
+    auto overloadFit = i->second.fnHead->getOverloadFit(args);
+    if (overloadFit ==
+        FunctionHead::OverloadFit::Perfect) // can only occure once!
+      return i->second.fnHead;
+    needCastOverloads.push_back(i->second.fnHead);
+  }
+  if (needCastOverloads.size() == 1) return needCastOverloads[1];
+  return nullptr;
 }

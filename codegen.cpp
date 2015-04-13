@@ -321,7 +321,7 @@ llvm::Constant *getIntConst(Context &ctx, Type intType, int val)
 
 ExprPtr getIntConstExpr(Type intType, int val)
 {
-    switch (intType)
+  switch (intType)
   {
     case Type::int_t:
       return make_EPtr<IntNumberExpr>(val);

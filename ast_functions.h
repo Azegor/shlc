@@ -33,6 +33,12 @@ public:
     Intern,
     Extern_C
   };
+  enum class OverloadFit
+  {
+    Perfect,
+    Cast,
+    None,
+  };
 
 private:
   std::string name;
@@ -89,7 +95,10 @@ public:
   void setBinding(Binding b) { binding = b; }
   llvm::Function *get_llvm_fn() { return llvm_fn; }
 
+  std::vector<Type> getArgTypes() const;
+  bool hasSameArgsAs(const FunctionHead &o);
   bool canCallWithArgs(const std::vector<Type> &types) const;
+  OverloadFit getOverloadFit(const std::vector<Type> &types) const;
   std::string sigString() const;
 
 private:
