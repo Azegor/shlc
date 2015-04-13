@@ -171,6 +171,9 @@ void testCodeGen(const char *filename)
       //             std::cout << r->getName() << ": nullptr" << std::endl;
       //         }
     }
+
+    gl_ctx.mpm.run(gl_ctx.module);
+
     std::cout << "===============================================" << std::endl;
     gl_ctx.module->dump();
 

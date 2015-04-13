@@ -29,6 +29,7 @@
 #include <llvm/IR/Module.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LegacyPassManager.h>
+#include <llvm/IR/PassManager.h>
 #include <llvm/Analysis/Passes.h>
 #include <llvm/Transforms/Scalar.h> // for createPromoteMemoryToRegisterPass()
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
@@ -93,6 +94,7 @@ public:
   llvm::Module *const module;
   llvm::IRBuilder<> builder;
   llvm::legacy::FunctionPassManager fpm;
+  llvm::ModulePassManager mpm;
   std::string errorString;
   llvm::ExecutionEngine *execEngine;
 

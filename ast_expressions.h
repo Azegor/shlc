@@ -65,8 +65,11 @@ public:
   }
   void print(int indent = 0) override;
   Type getType(Context &ctx) override;
-  std::vector<Type> getArgType(Context &ctx) const;
+  std::vector<Type> getArgTypes(Context &ctx) const;
   llvm::Value *codegen(Context &ctx) override;
+
+private:
+  void findFunction(Context &ctx);
 };
 
 class ConstantExpr : public Expr

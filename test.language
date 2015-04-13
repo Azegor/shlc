@@ -244,3 +244,19 @@ fn call_imp_cast()
 {
   flt_call(0);
 }
+
+fn fib(int i) : int
+{
+  if i < 2 {
+    ret 1;
+  }
+  ret fib(i-1)+fib(i-2);
+}
+
+fn test_fib()
+{
+  var i : int;
+  for i = 0; i < 1000; ++i {
+    prtln(fib(i));
+  }
+}

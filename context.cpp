@@ -18,6 +18,7 @@
 #include "context.h"
 
 #include <llvm/ExecutionEngine/JIT.h> // needed because of error "JIT has not been linked in"
+#include <llvm/Transforms/IPO.h>
 
 // std::string GlobalContext::errorString;
 
@@ -26,6 +27,7 @@ GlobalContext::GlobalContext()
       module(new llvm::Module("my jit module", llvm_context)),
       builder(llvm_context),
       fpm(module),
+      mpm(),
       errorString(),
       //             execEngine(llvm::EngineBuilder(std::unique_ptr<llvm::Module>(module)).setErrorStr(&errorString)
       execEngine(
@@ -69,6 +71,11 @@ GlobalContext::GlobalContext()
 #endif
 
   fpm.doInitialization();
+
+  // Module passes
+//   mpm.addPass(llvm::createFunctionInliningPass());
+//   mpm.addPass(llvm::createGlobalOptimizerPass());
+//   mpm.addPass(llvm::createDeadArgEliminationPass());
 }
 
 FunctionHead *GlobalContext::getFunction(const std::string &name) const
