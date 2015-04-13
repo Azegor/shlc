@@ -147,8 +147,9 @@ llvm::Value *StringConstExpr::codegen(Context &ctx)
   llvm::Constant *str_const =
     llvm::ConstantDataArray::getString(ctx.global.llvm_context, str);
 
-  auto *GV = new llvm::GlobalVariable(*ctx.global.module, str_const->getType(), true,
-                                      llvm::GlobalValue::PrivateLinkage, str_const, "str_const");
+  auto *GV = new llvm::GlobalVariable(*ctx.global.module, str_const->getType(),
+                                      true, llvm::GlobalValue::PrivateLinkage,
+                                      str_const, "str_const");
   GV->setUnnamedAddr(true);
 
   auto name = GV->getName();
@@ -188,7 +189,8 @@ Type GlobalVarExpr::getType(Context &ctx) { return ctx.getGlobalVarType(name); }
 
 llvm::Value *GlobalVarExpr::codegen(Context &ctx)
 {
-  return ctx.global.builder.CreateConstGEP2_32(ctx.getGlobalVarInst(name), 0, 0);
+  return ctx.global.builder.CreateConstGEP2_32(ctx.getGlobalVarInst(name), 0,
+                                               0);
 }
 
 llvm::AllocaInst *VariableExpr::getAlloca(Context &ctx)
@@ -269,7 +271,8 @@ llvm::Value *BinOpExpr::codegen(Context &ctx)
                          this);
     return createAssignment(ctx, rhs->codegen(ctx), varexpr);
   }
-  throw CodeGenError("invalid operation " + Lexer::getTokenName(op), this);
+  throw CodeGenError("invalid binary operation " + Lexer::getTokenName(op),
+                     this);
 }
 
 Type UnOpExpr::getType(Context &ctx)
@@ -279,5 +282,20 @@ Type UnOpExpr::getType(Context &ctx)
 
 llvm::Value *UnOpExpr::codegen(Context &ctx)
 {
-  return createUnOp(ctx, op, getType(ctx), rhs->codegen(ctx));
+  if (isUnOp(op)) {
+    return createUnOp(ctx, op, getType(ctx), rhs->codegen(ctx));
+  }
+  else if (op == Token::TokenType::increment ||
+           op == Token::TokenType::decrement)
+  {
+    auto varexpr = dynamic_cast<VariableExpr *>(rhs.get());
+    if (!varexpr)
+      throw CodeGenError("left hand side of assignment must be a variable",
+                         this);
+      // the following is a bit of a hack, can be improved
+    return BinOpExpr(getIncDecOpBaseOp(op), make_EPtr<VariableExpr>(*varexpr),
+                     getIntConstExpr(varexpr->getType(ctx), 1)).codegen(ctx);
+  }
+  throw CodeGenError("invalid unary operation " + Lexer::getTokenName(op),
+                     this);
 }

@@ -319,6 +319,21 @@ llvm::Constant *getIntConst(Context &ctx, Type intType, int val)
                                 llvm::APInt(bits, val, is_signed));
 }
 
+ExprPtr getIntConstExpr(Type intType, int val)
+{
+    switch (intType)
+  {
+    case Type::int_t:
+      return make_EPtr<IntNumberExpr>(val);
+    case Type::chr_t:
+      return make_EPtr<CharConstExpr>(val);
+    case Type::boo_t:
+      return make_EPtr<BoolConstExpr>(val != 0);
+    default:
+      throw CodeGenError("invalid int type " + getTypeName(intType));
+  }
+}
+
 llvm::Constant *createDefaultValueConst(Context &ctx, Type type)
 {
   switch (type)
@@ -386,6 +401,8 @@ llvm::Value *createUnOp(Context &ctx, int op, Type type, llvm::Value *rhs)
    * ~
    */
 
+  using Tok = Token::TokenType;
+
   auto &builder = ctx.global.builder;
 
   switch (op)
@@ -406,9 +423,39 @@ llvm::Value *createUnOp(Context &ctx, int op, Type type, llvm::Value *rhs)
           return builder.CreateXor(rhs, getIntConst(ctx, type, -1), "bitcmpl");
           OP_NOT_SUPPORTED(op, type);
       }
+    //     case Tok::increment:
+    //       switch (type)
+    //       {
+    //         case Type::int_t:
+    //         case Type::chr_t:
+    //         case Type::boo_t:
+    //           auto varexpr = dynamic_cast<VariableExpr *>(rhs.get());
+    //           if (!varexpr)
+    //             throw CodeGenError("increment must operate on a variable",
+    //             this);
+    //           auto inc = builder.CreateAdd(rhs, getIntConst(ctx, type, 1),
+    //           "inc");
+    //           return createAssignment(ctx, inc, varexpr);
+    //           OP_NOT_SUPPORTED(op, type);
+    //       }
+    //     case Tok::decrement:
+    //       switch (type)
+    //       {
+    //         case Type::int_t:
+    //         case Type::chr_t:
+    //         case Type::boo_t:
+    //           auto varexpr = dynamic_cast<VariableExpr *>(rhs.get());
+    //           if (!varexpr)
+    //             throw CodeGenError("decrement must operate on a variable",
+    //             this);
+    //           auto inc = builder.CreateSub(rhs, getIntConst(ctx, type, 1),
+    //           "inc");
+    //           return createAssignment(ctx, inc, varexpr);
+    //           OP_NOT_SUPPORTED(op, type);
+    //       }
     default:
-      CodeGenError("type '" + getTypeName(type) +
-                   "' doesnt support unary operations");
+      throw CodeGenError("unary operation '" + Lexer::getTokenName(op) +
+                         "' not implemented yet");
   }
   return nullptr;
 }
@@ -468,10 +515,6 @@ llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
             throw CodeGenError("cannot calculate rem of two booleans");
           else
             return builder.CreateSRem(lhs, rhs, "rem");
-        case Tok::increment:
-          return builder.CreateAdd(lhs, getIntConst(ctx, commonType, 1), "inc");
-        case Tok::decrement:
-          return builder.CreateSub(lhs, getIntConst(ctx, commonType, 1), "dec");
         case Tok::power:
           throw CodeGenError("power not implemented yet");
         //           return builder.CreateCall()

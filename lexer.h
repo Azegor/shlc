@@ -82,10 +82,13 @@ struct Token
 
     // --- binary operations ---
     // arithmetic operators:
-    increment,
-    decrement,
+    // +
+    // -
+    // *
+    // /
+    // %
     power,
-    // bool operators
+    // bool operations
     lte,
     gte,
     eq,
@@ -95,6 +98,15 @@ struct Token
     // bit operations
     lshift,
     rshift,
+
+    // -- unary operations --
+    // arithmetic operations
+    increment,
+    decrement,
+    // bool operations
+    // !
+    // bit operations
+    // ~
 
     //  identifiers:
     id_if,
