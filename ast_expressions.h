@@ -56,7 +56,7 @@ class FunctionCallExpr : public Expr
 {
   std::string name;
   ExprList args;
-  FunctionHead *fnHead;
+  FunctionHead *fnHead = nullptr;
 
 public:
   FunctionCallExpr(std::string name, ExprList args)

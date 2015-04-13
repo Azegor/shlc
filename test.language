@@ -217,6 +217,8 @@ fn print_mult_table()
 //   prt_i("string");
 }
 
+fn test_fib();
+
 fn main() {
   hi();
   4;
@@ -226,6 +228,7 @@ fn main() {
   loop();
   print_string();
   print_mult_table();
+  test_fib();
   exit(0);
 }
 
@@ -247,7 +250,7 @@ fn call_imp_cast()
 
 fn fib(int i) : int
 {
-  if i < 2 {
+  if i <= 2 {
     ret 1;
   }
   ret fib(i-1)+fib(i-2);
@@ -256,7 +259,67 @@ fn fib(int i) : int
 fn test_fib()
 {
   var i : int;
-  for i = 0; i < 1000; ++i {
+  for i = 0; i < 100; ++i {
     prtln(fib(i));
   }
+}
+
+fn cfr_test_if1(boo b)
+{
+  if b {
+    ret;
+  }
+  exit(1);
+}
+
+fn cfr_test_if2(boo b)
+{
+  if b {
+    ret;
+  } el {
+    exit(0);
+  }
+  exit(1);
+}
+
+fn cfr_test_if3(boo b)
+{
+  if b {
+    exit(0);
+  } el {
+    ret;
+  }
+  exit(1);
+}
+
+fn cfr_test_if4(boo b)
+{
+  if b {
+    ret;
+  } el {
+    ret;
+  }
+  exit(1);
+}
+
+fn cfr_test_whl(boo b)
+{
+  whl b {
+    ret;
+  }
+  exit(1);
+}
+fn cfr_test_do_whl(boo b)
+{
+  do {
+    ret;
+  } whl b;
+  exit(1);
+}
+fn cfr_test_for(boo b)
+{
+  for ; b; {
+    ret;
+  }
+  exit(1);
 }

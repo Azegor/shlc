@@ -164,7 +164,6 @@ void FunctionCallExpr::findFunction(Context &ctx)
   if (!fnHead) throw CodeGenError("no viable function found for " + name, this);
 }
 
-
 Type FunctionCallExpr::getType(Context &ctx)
 {
   if (!fnHead) findFunction(ctx);
@@ -205,7 +204,7 @@ llvm::Value *FunctionCallExpr::codegen(Context &ctx)
   }
   return ctx.global.builder.CreateCall(
     fnHead->get_llvm_fn(),
-    llvm::ArrayRef<llvm::Value *>(params.get(), args.size()));
+    llvm::ArrayRef<llvm::Value *>(params.get(), args.size()), "callres");
 }
 
 Type VariableExpr::getType(Context &ctx) { return ctx.getVariableType(name); }

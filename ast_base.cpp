@@ -16,6 +16,7 @@
  */
 
 #include "ast_base.h"
+#include "ast_statements.h"
 
 void printIndent(int indent)
 {
@@ -45,4 +46,33 @@ llvm::Value *BlockStmt::codegen(Context &ctx)
     stmt->codegen(ctx);
   }
   return nullptr;
+}
+
+Statement::CodeFlowReturn BlockStmt::codeFlowReturn() const
+{
+  bool first = true;
+  Statement::CodeFlowReturn res = Statement::CodeFlowReturn::Always;
+  for (auto &&stmt : block)
+  {
+    // rest of block is skipped with these statements
+    // -> following return meaningless
+    // only works if there wasn't a possible return before
+    if (dynamic_cast<ContinueStmt *>(stmt.get()) ||
+        dynamic_cast<BreakStmt *>(stmt.get()))
+    {
+      if (res == Statement::CodeFlowReturn::Always) // no possible return before
+        return Statement::CodeFlowReturn::Always;   // can never reach a return
+                                                    // later
+    }
+
+    if (dynamic_cast<ReturnStmt *>(stmt.get())) {
+      // whatever happens before, after this stmt CF cannot continue
+      return Statement::CodeFlowReturn::Never;
+    }
+
+    // check other statements
+    auto cfr = stmt->codeFlowReturn();
+    res = Statement::combineCFR(res, cfr);
+  }
+  return res;
 }
