@@ -57,7 +57,8 @@ GlobalContext::GlobalContext()
   // Eliminate Common SubExpressions.
   fpm.add(llvm::createGVNPass());
   // Simplify the control flow graph (deleting unreachable blocks, etc).
-  fpm.add(llvm::createCFGSimplificationPass());
+  //   fpm.add(llvm::createFlattenCFGPass());
+  fpm.add(llvm::createCFGSimplificationPass()); // broken for if statements
 
   // some other passes:
   fpm.add(llvm::createLoopSimplifyPass());
@@ -70,12 +71,21 @@ GlobalContext::GlobalContext()
 //   fpm.add(llvm::createLoopDeletionPass());
 #endif
 
+  //   fpm.add(llvm::createPromoteMemoryToRegisterPass());
+  //   fpm.add(llvm::createInstructionCombiningPass());
+  //   fpm.add(llvm::createCFGSimplificationPass());
+  //   fpm.add(llvm::createTailCallEliminationPass());
+  //   fpm.add(llvm::createCFGSimplificationPass());
+  //   fpm.add(llvm::createReassociatePass());
+  //   fpm.add(llvm::createLoopRotatePass());
+  //   fpm.add(llvm::createInstructionCombiningPass());
+
   fpm.doInitialization();
 
   // Module passes
-//   mpm.addPass(llvm::createFunctionInliningPass());
-//   mpm.addPass(llvm::createGlobalOptimizerPass());
-//   mpm.addPass(llvm::createDeadArgEliminationPass());
+  //   mpm.addPass(llvm::createFunctionInliningPass());
+  //   mpm.addPass(llvm::createGlobalOptimizerPass());
+  //   mpm.addPass(llvm::createDeadArgEliminationPass());
 }
 
 FunctionHead *GlobalContext::getFunction(const std::string &name) const

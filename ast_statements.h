@@ -44,6 +44,10 @@ public:
   ReturnStmt(ExprPtr expr = {}) : expr(std::move(expr)) {}
   void print(int indent = 0) override;
   llvm::Value *codegen(Context &ctx) override;
+  Statement::CodeFlowReturn codeFlowReturn() const override
+  {
+    return Statement::CodeFlowReturn::Never;
+  }
 };
 
 class IfStmt : public Statement
@@ -61,6 +65,12 @@ public:
   }
   void print(int indent = 0) override;
   llvm::Value *codegen(Context &ctx) override;
+  Statement::CodeFlowReturn codeFlowReturn() const override
+  {
+    return Statement::combineCFR(thenExpr->codeFlowReturn(),
+                                 elseExpr ? elseExpr->codeFlowReturn()
+                                          : Statement::CodeFlowReturn::Always);
+  }
 };
 
 class WhileStmt : public LoopStmt
@@ -78,6 +88,10 @@ public:
   }
   void print(int indent = 0) override;
   llvm::Value *codegen(Context &ctx) override;
+  Statement::CodeFlowReturn codeFlowReturn() const override
+  {
+    return body->codeFlowReturn();
+  }
 
   llvm::BasicBlock *continueTarget() const override { return contBB; }
   llvm::BasicBlock *breakTarget() const override { return breakBB; }
@@ -98,6 +112,10 @@ public:
   }
   void print(int indent = 0) override;
   llvm::Value *codegen(Context &ctx) override;
+  Statement::CodeFlowReturn codeFlowReturn() const override
+  {
+    return body->codeFlowReturn();
+  }
 
   llvm::BasicBlock *continueTarget() const override { return contBB; }
   llvm::BasicBlock *breakTarget() const override { return breakBB; }
@@ -121,6 +139,10 @@ public:
   }
   void print(int indent = 0) override;
   llvm::Value *codegen(Context &ctx) override;
+  Statement::CodeFlowReturn codeFlowReturn() const override
+  {
+    return body->codeFlowReturn();
+  }
 
   llvm::BasicBlock *continueTarget() const override { return contBB; }
   llvm::BasicBlock *breakTarget() const override { return breakBB; }

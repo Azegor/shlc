@@ -168,21 +168,30 @@ llvm::Value *IfStmt::codegen(Context &ctx)
   auto &builder = ctx.global.builder;
   auto thenBB =
     llvm::BasicBlock::Create(ctx.global.llvm_context, "then", ctx.currentFn);
-  auto elseBB =
-    llvm::BasicBlock::Create(ctx.global.llvm_context, "else", ctx.currentFn);
+  llvm::BasicBlock *elseBB;
+  if (elseExpr)
+    elseBB =
+      llvm::BasicBlock::Create(ctx.global.llvm_context, "else", ctx.currentFn);
   auto endBB =
     llvm::BasicBlock::Create(ctx.global.llvm_context, "ifend", ctx.currentFn);
 
   auto condVal = cond->codegen(ctx);
-  builder.CreateCondBr(condVal, thenBB, elseBB);
+  if (elseExpr)
+    builder.CreateCondBr(condVal, thenBB, elseBB);
+  else
+    builder.CreateCondBr(condVal, thenBB, endBB);
 
   builder.SetInsertPoint(thenBB);
   thenExpr->codegen(ctx);
-  builder.CreateBr(endBB);
+  if (thenExpr->codeFlowReturn() != Statement::CodeFlowReturn::Never)
+    builder.CreateBr(endBB);
 
-  builder.SetInsertPoint(elseBB);
-  if (elseExpr) elseExpr->codegen(ctx);
-  builder.CreateBr(endBB);
+  if (elseExpr) {
+    builder.SetInsertPoint(elseBB);
+    elseExpr->codegen(ctx);
+    if (elseExpr->codeFlowReturn() != Statement::CodeFlowReturn::Never)
+      builder.CreateBr(endBB);
+  }
 
   builder.SetInsertPoint(endBB);
 
@@ -232,7 +241,8 @@ llvm::Value *WhileStmt::codegen(Context &ctx)
   ctx.pushLoop(this);
   body->codegen(ctx);
   ctx.popLoop();
-  builder.CreateBr(headBB);
+  if (body->codeFlowReturn() != Statement::CodeFlowReturn::Never)
+    builder.CreateBr(headBB);
 
   builder.SetInsertPoint(endBB);
 
@@ -275,8 +285,10 @@ llvm::Value *DoWhileStmt::codegen(Context &ctx)
   ctx.pushLoop(this);
   body->codegen(ctx);
   ctx.popLoop();
-  builder.CreateBr(headBB);
+  if (body->codeFlowReturn() != Statement::CodeFlowReturn::Never)
+    builder.CreateBr(headBB);
 
+  // INFO: if body never return CF, this doesn't need to be generated
   builder.SetInsertPoint(headBB);
   auto condVal = cond->codegen(ctx);
   builder.CreateCondBr(condVal, loopBB, endBB);
@@ -323,19 +335,26 @@ llvm::Value *ForStmt::codegen(Context &ctx)
   contBB = headBB;
   breakBB = endBB;
 
-  init->codegen(ctx);
+  if (init) init->codegen(ctx);
   builder.CreateBr(headBB);
 
   builder.SetInsertPoint(headBB);
-  auto condVal = cond->codegen(ctx);
-  builder.CreateCondBr(condVal, loopBB, endBB);
+  if (cond) {
+    auto condVal = cond->codegen(ctx);
+    builder.CreateCondBr(condVal, loopBB, endBB);
+  }
+  else
+  {
+    builder.CreateBr(loopBB); // assume true
+  }
 
   ctx.pushLoop(this);
   builder.SetInsertPoint(loopBB);
   body->codegen(ctx);
   ctx.popLoop();
-  incr->codegen(ctx);
-  builder.CreateBr(headBB);
+  if (incr) incr->codegen(ctx);
+  if (body->codeFlowReturn() != Statement::CodeFlowReturn::Never)
+    builder.CreateBr(headBB);
 
   builder.SetInsertPoint(endBB);
 

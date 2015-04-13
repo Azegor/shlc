@@ -60,6 +60,21 @@ public:
   virtual ~Statement() {}
   // TODO remove default make abstract
   virtual llvm::Value *codegen(Context &ctx) = 0;
+  enum class CodeFlowReturn
+  {
+    Never,
+    Sometimes,
+    Always
+  };
+  static CodeFlowReturn combineCFR(CodeFlowReturn c1, CodeFlowReturn c2)
+  {
+    if (c1 == c2) return c1;
+    return CodeFlowReturn::Sometimes;
+  }
+  virtual CodeFlowReturn codeFlowReturn() const
+  {
+    return Statement::CodeFlowReturn::Always; // default impl
+  }
 };
 
 using StmtPtr = std::unique_ptr<Statement>;
@@ -90,6 +105,7 @@ public:
   BlockStmt(StmtList block) : block(std::move(block)) {}
   void print(int indent = 0) override;
   llvm::Value *codegen(Context &ctx) override;
+  Statement::CodeFlowReturn codeFlowReturn() const override;
 
   // 'const' access to individual statements
   //  const Statement *front() const {return block.front().get(); }
