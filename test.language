@@ -30,9 +30,10 @@ fn hi()
 
 fn loop()
 {
-//   whl T {
-//     prt('.');
-//   }
+  ret;
+  whl T {
+    prt('.');
+  }
 }
 
 fn testasdfasdf(int i) : flt
@@ -75,21 +76,22 @@ fn tan(flt val) native;
 
 //fn putc(chr c) native;
 
-fn complex(int i)
+fn complex(int i) : flt
 {
-  //ret 2*(3+4)*(5*6+7*8);
+  ret 2*(3+4)*(5*6+7*8);
   whl T {
-//     ret 42;
-    ret;
+    ret 42;
   }
-//   var i : int;
+  var i : int;
   do {
     i = 7;
   } whl F;
-//   for j = 0; j < 7; j+=1
-//   {
-//     i += 2;
-//   }
+  var j : int;
+  for j = 0; j < 7; j+=1
+  {
+    i += 2;
+  }
+  ret 'x';
 }
 
 fn double() : flt {ret 1.2345;}
@@ -107,7 +109,9 @@ fn duplicate();
 fn duplicate();
 fn duplicate();
 
-//fn double(flt f) : flt { ret f; }
+fn double(flt f) : flt { ret f; }
+
+fn double_f_f(){}
 
 fn returnParam(int i) : int {ret i; }
 
@@ -146,8 +150,8 @@ fn assign_test(int i, j, k) : int
 }
 
 fn local_vars(boo bl) : flt {
-  var a : int;
-  var b = 7;
+  var a = 42;
+  var b = 'c';
   var c = 4.5;
   ret (bl*a+1) * (bl*b) + (bl*c);
 }
@@ -178,7 +182,7 @@ fn if_test(boo b)
 
 fn test_bitcomp(int i; chr c; boo b) : int
 {
-  ret ~i | ~c&(b:chr) | (~b|i);
+  ret ~i | ~c&(b:chr) ^ (~b|i);
 }
 
 fn stringtest() : str
@@ -222,6 +226,7 @@ fn main() {
   loop();
   print_string();
   print_mult_table();
+  exit(0);
 }
 
 fn overload(int i){}
