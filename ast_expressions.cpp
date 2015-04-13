@@ -157,13 +157,21 @@ llvm::Value *StringConstExpr::codegen(Context &ctx)
   return GlobalVarExpr(name).codegen(ctx);
 }
 
-Type FunctionCallExpr::getType(Context &)
+void FunctionCallExpr::findFunction(Context &ctx)
 {
-  if (!fnHead) throw CodeGenError("Missing function for call", this);
+  auto callArgs = getArgTypes(ctx);
+  fnHead = ctx.global.getFunctionOverload(name, callArgs);
+  if (!fnHead) throw CodeGenError("no viable function found for " + name, this);
+}
+
+
+Type FunctionCallExpr::getType(Context &ctx)
+{
+  if (!fnHead) findFunction(ctx);
   return fnHead->getReturnType();
 }
 
-std::vector<Type> FunctionCallExpr::getArgType(Context &ctx) const
+std::vector<Type> FunctionCallExpr::getArgTypes(Context &ctx) const
 {
   std::vector<Type> res;
   res.reserve(args.size());
@@ -176,9 +184,8 @@ std::vector<Type> FunctionCallExpr::getArgType(Context &ctx) const
 
 llvm::Value *FunctionCallExpr::codegen(Context &ctx)
 {
-  auto callArgs = getArgType(ctx);
-  fnHead = ctx.global.getFunctionOverload(name, callArgs);
-  if (!fnHead) throw CodeGenError("no viable function found for " + name, this);
+  if (!fnHead) findFunction(ctx);
+  auto callArgs = getArgTypes(ctx);
   std::vector<Type> argTypes;
   argTypes.reserve(args.size());
   for (auto &arg : args)
@@ -196,10 +203,9 @@ llvm::Value *FunctionCallExpr::codegen(Context &ctx)
       args[i] = make_EPtr<CastExpr>(std::move(args[i]), functionArgs[i]);
     params[i] = args[i]->codegen(ctx);
   }
-  ctx.global.builder.CreateCall(
+  return ctx.global.builder.CreateCall(
     fnHead->get_llvm_fn(),
     llvm::ArrayRef<llvm::Value *>(params.get(), args.size()));
-  return nullptr;
 }
 
 Type VariableExpr::getType(Context &ctx) { return ctx.getVariableType(name); }
