@@ -32,8 +32,11 @@ class VariableExpr : public Expr
   std::string name;
 
 public:
-  VariableExpr(std::string name) : name(std::move(name)) {}
-  VariableExpr(const VariableExpr &o) : name(o.name) {}
+  VariableExpr(SourceLocation loc, std::string name)
+      : Expr(loc), name(std::move(name))
+  {
+  }
+  VariableExpr(const VariableExpr &o) : Expr(o.srcLoc), name(o.name) {}
   void print(int indent = 0) override;
   Type getType(Context &ctx) override;
   llvm::AllocaInst *getAlloca(Context &ctx);
@@ -45,7 +48,10 @@ class GlobalVarExpr : public Expr
   std::string name;
 
 public:
-  GlobalVarExpr(std::string name) : name(std::move(name)) {}
+  GlobalVarExpr(SourceLocation loc, std::string name)
+      : Expr(loc), name(std::move(name))
+  {
+  }
   void print(int indent = 0) override;
   Type getType(Context &ctx) override;
   //   llvm::GlobalVariable *getGlobalVarInst(Context &ctx);
@@ -59,8 +65,8 @@ class FunctionCallExpr : public Expr
   FunctionHead *fnHead = nullptr;
 
 public:
-  FunctionCallExpr(std::string name, ExprList args)
-      : name(std::move(name)), args(std::move(args))
+  FunctionCallExpr(SourceLocation loc, std::string name, ExprList args)
+      : Expr(loc), name(std::move(name)), args(std::move(args))
   {
   }
   void print(int indent = 0) override;
@@ -77,7 +83,7 @@ class ConstantExpr : public Expr
   Type type;
 
 public:
-  ConstantExpr(Type type) : type(type) {}
+  ConstantExpr(SourceLocation loc, Type type) : Expr(loc), type(type) {}
   void print(int indent = 0) override;
   Type getType(Context &) override { return type; }
   llvm::Value *codegen(Context &ctx) override = 0;
@@ -88,7 +94,10 @@ class IntNumberExpr : public ConstantExpr
   long long value;
 
 public:
-  IntNumberExpr(long long val) : ConstantExpr(Type::int_t), value(val) {}
+  IntNumberExpr(SourceLocation loc, long long val)
+      : ConstantExpr(loc, Type::int_t), value(val)
+  {
+  }
   void print(int indent = 0) override;
   llvm::Constant *codegen(Context &ctx) override;
 };
@@ -98,7 +107,10 @@ class CharConstExpr : public ConstantExpr
   char value;
 
 public:
-  CharConstExpr(char val) : ConstantExpr(Type::chr_t), value(val) {}
+  CharConstExpr(SourceLocation loc, char val)
+      : ConstantExpr(loc, Type::chr_t), value(val)
+  {
+  }
   void print(int indent = 0) override;
   llvm::Constant *codegen(Context &ctx) override;
 };
@@ -108,7 +120,10 @@ class FltNumberExpr : public ConstantExpr
   long double value;
 
 public:
-  FltNumberExpr(long double val) : ConstantExpr(Type::flt_t), value(val) {}
+  FltNumberExpr(SourceLocation loc, long double val)
+      : ConstantExpr(loc, Type::flt_t), value(val)
+  {
+  }
   void print(int indent = 0) override;
   llvm::Constant *codegen(Context &ctx) override;
 };
@@ -118,7 +133,10 @@ class BoolConstExpr : public ConstantExpr
   bool value;
 
 public:
-  BoolConstExpr(bool val) : ConstantExpr(Type::boo_t), value(val) {}
+  BoolConstExpr(SourceLocation loc, bool val)
+      : ConstantExpr(loc, Type::boo_t), value(val)
+  {
+  }
   void print(int indent = 0) override;
   llvm::Constant *codegen(Context &ctx) override;
 };
@@ -128,8 +146,8 @@ class StringConstExpr : public ConstantExpr
   std::string value;
 
 public:
-  StringConstExpr(std::string val)
-      : ConstantExpr(Type::str_t), value(std::move(val))
+  StringConstExpr(SourceLocation loc, std::string val)
+      : ConstantExpr(loc, Type::str_t), value(std::move(val))
   {
   }
   void print(int indent = 0) override;
@@ -142,8 +160,8 @@ class BinOpExpr : public Expr
   ExprPtr lhs, rhs;
 
 public:
-  BinOpExpr(int op, ExprPtr lhs, ExprPtr rhs)
-      : op(op), lhs(std::move(lhs)), rhs(std::move(rhs))
+  BinOpExpr(SourceLocation loc, int op, ExprPtr lhs, ExprPtr rhs)
+      : Expr(loc), op(op), lhs(std::move(lhs)), rhs(std::move(rhs))
   {
   }
   void print(int indent = 0) override;
@@ -157,7 +175,10 @@ class UnOpExpr : public Expr
   ExprPtr rhs;
 
 public:
-  UnOpExpr(int op, ExprPtr rhs) : op(op), rhs(std::move(rhs)) {}
+  UnOpExpr(SourceLocation loc, int op, ExprPtr rhs)
+      : Expr(loc), op(op), rhs(std::move(rhs))
+  {
+  }
   void print(int indent = 0) override;
   Type getType(Context &ctx) override;
   llvm::Value *codegen(Context &ctx) override;
@@ -169,7 +190,12 @@ class CastExpr : public Expr
   Type newType;
 
 public:
-  CastExpr(ExprPtr expr, Type newType) : expr(std::move(expr)), newType(newType)
+  CastExpr(ExprPtr expr, Type newType)
+      : Expr(expr->srcLoc), expr(std::move(expr)), newType(newType)
+  {
+  }
+  CastExpr(SourceLocation loc, ExprPtr expr, Type newType)
+      : Expr(loc), expr(std::move(expr)), newType(newType)
   {
   }
   void print(int indent = 0) override;

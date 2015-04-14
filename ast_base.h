@@ -34,19 +34,33 @@ namespace llvm
 class BasicBlock;
 }
 
-class SourceLocation
+struct SourceLocation
 {
-  Token referenceToken;
+  const Token startToken, endToken;
   // reference file here
+  SourceLocation() = default;
+  SourceLocation(Token start, Token end) : startToken(start), endToken(end) {}
+  SourceLocation(Token single) : startToken(single), endToken(single) {}
+  SourceLocation(const SourceLocation &o)
+      : startToken(o.startToken), endToken(o.endToken)
+  {
+  }
+  SourceLocation(SourceLocation &&o)
+      : startToken(std::move(o.startToken)), endToken(std::move(o.endToken))
+  {
+  }
 };
 
 // TODO: might not be neccessary!
 class AstNode
 {
 public:
+  AstNode(SourceLocation loc) : srcLoc(loc) {}
   virtual ~AstNode() {}
 
   virtual void print(int indent = 0) = 0;
+
+  const SourceLocation srcLoc;
 };
 
 using AstNodePtr = std::unique_ptr<AstNode>;
@@ -56,7 +70,7 @@ using AstNodePtr = std::unique_ptr<AstNode>;
 class Statement : public AstNode
 {
 public:
-  Statement() = default;
+  Statement(SourceLocation loc) : AstNode(loc) {}
   virtual ~Statement() {}
   // TODO remove default make abstract
   virtual llvm::Value *codegen(Context &ctx) = 0;
@@ -86,8 +100,7 @@ protected:
   // Type type = Type::none;
 
 public:
-  Expr() = default; // TODO: remove when all derived classes use 2nd constructor
-  // Expr(Type type) : type(type) {}
+  Expr(SourceLocation loc) : AstNode(loc) {}
   virtual ~Expr() {}
   virtual Type getType(Context &cc) = 0;
   // TODO remove default make abstract
@@ -102,7 +115,10 @@ class BlockStmt : public Statement
   StmtList block;
 
 public:
-  BlockStmt(StmtList block) : block(std::move(block)) {}
+  BlockStmt(SourceLocation loc, StmtList block)
+      : Statement(loc), block(std::move(block))
+  {
+  }
   void print(int indent = 0) override;
   llvm::Value *codegen(Context &ctx) override;
   Statement::CodeFlowReturn codeFlowReturn() const override;
@@ -120,21 +136,36 @@ using BlockStmtList = std::vector<BlockStmtPtr>;
 class LoopStmt : public Statement
 {
 public:
+  LoopStmt(SourceLocation loc) : Statement(loc) {}
   virtual llvm::BasicBlock *continueTarget() const = 0;
   virtual llvm::BasicBlock *breakTarget() const = 0;
 };
 class LoopCtrlStmt : public Statement
 {
+public:
+  LoopCtrlStmt(SourceLocation loc) : Statement(loc) {}
 };
 
-template <typename St, typename... Args> StmtPtr make_SPtr(Args &&... args)
+template <typename St, typename... Args>
+StmtPtr make_SPtr(SourceLocation loc, Args &&... args)
 {
-  return StmtPtr{new St(std::forward<Args>(args)...)};
+  return StmtPtr{new St(loc, std::forward<Args>(args)...)};
+}
+// for copy/move constructor
+template <typename St> StmtPtr make_SPtr(const St &s)
+{
+  return StmtPtr{new St(s)};
 }
 
-template <typename Ex, typename... Args> ExprPtr make_EPtr(Args &&... args)
+template <typename Ex, typename... Args>
+ExprPtr make_EPtr(SourceLocation loc, Args &&... args)
 {
-  return ExprPtr{new Ex(std::forward<Args>(args)...)};
+  return ExprPtr{new Ex(loc, std::forward<Args>(args)...)};
+}
+// for copy/move constructor
+template <typename Ex> ExprPtr make_EPtr(const Ex &e)
+{
+  return ExprPtr{new Ex(e)};
 }
 
 void printIndent(int indent);

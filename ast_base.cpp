@@ -60,19 +60,17 @@ Statement::CodeFlowReturn BlockStmt::codeFlowReturn() const
     // rest of block is skipped with these statements
     // -> following return meaningless
     // only works if there wasn't a possible return before
-//     if (dynamic_cast<ContinueStmt *>(stmt.get()) ||
-//         dynamic_cast<BreakStmt *>(stmt.get()))
+    //     if (dynamic_cast<ContinueStmt *>(stmt.get()) ||
+    //         dynamic_cast<BreakStmt *>(stmt.get()))
     if (typeid(*stmt) == typeid(ContinueStmt) ||
         typeid(stmt) == typeid(BreakStmt))
     {
-      if (res == Statement::CodeFlowReturn::Always) // no possible return before
-        return Statement::CodeFlowReturn::Always;   // can never reach a return
-                                                    // later
+        return res; // can never reach a return, but might return before
     }
-//     if (dynamic_cast<ReturnStmt *>(stmt.get())) {
-//       // whatever happens before, after this stmt CF cannot continue
-//       return Statement::CodeFlowReturn::Never;
-//     }
+    //     if (dynamic_cast<ReturnStmt *>(stmt.get())) {
+    //       // whatever happens before, after this stmt CF cannot continue
+    //       return Statement::CodeFlowReturn::Never;
+    //     }
 
     // check other statements
     auto cfr = stmt->codeFlowReturn();

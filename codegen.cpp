@@ -182,7 +182,7 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type from, Type to,
         case Type::flt_t:
           return val;
         case Type::boo_t:
-          return builder.CreateFCmpONE(val, FltNumberExpr(0.0).codegen(ctx),
+          return builder.CreateFCmpONE(val, FltNumberExpr({}, 0.0).codegen(ctx),
                                        valName);
         case Type::str_t:
           NO_CAST;
@@ -324,11 +324,11 @@ ExprPtr getIntConstExpr(Type intType, int val)
   switch (intType)
   {
     case Type::int_t:
-      return make_EPtr<IntNumberExpr>(val);
+      return make_EPtr<IntNumberExpr>({}, val);
     case Type::chr_t:
-      return make_EPtr<CharConstExpr>(val);
+      return make_EPtr<CharConstExpr>({}, val);
     case Type::boo_t:
-      return make_EPtr<BoolConstExpr>(val != 0);
+      return make_EPtr<BoolConstExpr>({}, val != 0);
     default:
       throw CodeGenError("invalid int type " + getTypeName(intType));
   }
@@ -339,13 +339,13 @@ llvm::Constant *createDefaultValueConst(Context &ctx, Type type)
   switch (type)
   {
     case Type::int_t:
-      return IntNumberExpr(0).codegen(ctx);
+      return IntNumberExpr({}, 0).codegen(ctx);
     case Type::flt_t:
-      return FltNumberExpr(0.0).codegen(ctx);
+      return FltNumberExpr({}, 0.0).codegen(ctx);
     case Type::chr_t:
-      return CharConstExpr('\0').codegen(ctx);
+      return CharConstExpr({}, '\0').codegen(ctx);
     case Type::boo_t:
-      return BoolConstExpr(false).codegen(ctx);
+      return BoolConstExpr({}, false).codegen(ctx);
     case Type::str_t:
     default:
       throw CodeGenError("no default value for type " + getTypeName(type));

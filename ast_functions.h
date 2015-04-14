@@ -49,9 +49,10 @@ private:
   llvm::Function *llvm_fn = nullptr;
 
 public:
-  FunctionHead(std::string fnName, ArgVector args, Type retType,
-               Binding bind = Binding::Intern)
-      : name(std::move(fnName)),
+  FunctionHead(SourceLocation loc, std::string fnName, ArgVector args,
+               Type retType, Binding bind = Binding::Intern)
+      : AstNode(loc),
+        name(std::move(fnName)),
         args(std::move(args)),
         retType(retType),
         binding(bind),
@@ -115,7 +116,10 @@ protected:
   FunctionHeadPtr head;
 
 public:
-  Function(FunctionHeadPtr head) : head(std::move(head)) {}
+  Function(SourceLocation loc, FunctionHeadPtr head)
+      : AstNode(loc), head(std::move(head))
+  {
+  }
   void print(int indent = 0) override;
   const std::string &getName() const { return head->getName(); }
   virtual llvm::Function *codegen(GlobalContext &gl_ctx) = 0;
@@ -124,7 +128,8 @@ public:
 class NativeFunction : public Function
 {
 public:
-  NativeFunction(FunctionHeadPtr h) : Function(std::move(h))
+  NativeFunction(SourceLocation loc, FunctionHeadPtr h)
+      : Function(loc, std::move(h))
   {
     head->setBinding(FunctionHead::Binding::Extern_C);
   }
@@ -137,8 +142,8 @@ class NormalFunction : public Function
   BlockStmtPtr body;
 
 public:
-  NormalFunction(FunctionHeadPtr h, BlockStmtPtr body)
-      : Function(std::move(h)), body(std::move(body))
+  NormalFunction(SourceLocation loc, FunctionHeadPtr h, BlockStmtPtr body)
+      : Function(loc, std::move(h)), body(std::move(body))
   {
     if (head->getName() == "main")
       head->setBinding(FunctionHead::Binding::Extern_C); // no mangling!
@@ -149,7 +154,10 @@ public:
 class FunctionDecl : public Function
 {
 public:
-  FunctionDecl(FunctionHeadPtr head) : Function(std::move(head)) {}
+  FunctionDecl(SourceLocation loc, FunctionHeadPtr head)
+      : Function(loc, std::move(head))
+  {
+  }
   void print(int indent = 0) override;
   llvm::Function *codegen(GlobalContext &gl_ctx) override;
 };

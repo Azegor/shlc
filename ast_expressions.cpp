@@ -154,7 +154,7 @@ llvm::Value *StringConstExpr::codegen(Context &ctx)
 
   auto name = GV->getName();
   ctx.putGlobalVar(name, Type::str_t, GV);
-  return GlobalVarExpr(name).codegen(ctx);
+  return GlobalVarExpr(srcLoc, name).codegen(ctx);
 }
 
 void FunctionCallExpr::findFunction(Context &ctx)
@@ -199,7 +199,8 @@ llvm::Value *FunctionCallExpr::codegen(Context &ctx)
   for (int i = 0; i < args.size(); ++i)
   {
     if (callArgs[i] != functionArgs[i])
-      args[i] = make_EPtr<CastExpr>(std::move(args[i]), functionArgs[i]);
+      args[i] = make_EPtr<CastExpr>(args[i]->srcLoc, std::move(args[i]),
+                                    functionArgs[i]);
     params[i] = args[i]->codegen(ctx);
   }
   return ctx.global.builder.CreateCall(
@@ -268,8 +269,8 @@ llvm::Value *BinOpExpr::codegen(Context &ctx)
 {
   if (isBinOp(op)) {
     auto commonType = getType(ctx);
-    lhs = make_EPtr<CastExpr>(std::move(lhs), commonType);
-    rhs = make_EPtr<CastExpr>(std::move(rhs), commonType);
+    lhs = make_EPtr<CastExpr>(lhs->srcLoc, std::move(lhs), commonType);
+    rhs = make_EPtr<CastExpr>(rhs->srcLoc, std::move(rhs), commonType);
     return createBinOp(ctx, op, commonType, lhs->codegen(ctx),
                        rhs->codegen(ctx));
   }
@@ -322,7 +323,8 @@ llvm::Value *UnOpExpr::codegen(Context &ctx)
       throw CodeGenError("left hand side of assignment must be a variable",
                          this);
     // the following is a bit of a hack, can be improved
-    return BinOpExpr(getIncDecOpBaseOp(op), make_EPtr<VariableExpr>(*varexpr),
+    return BinOpExpr(srcLoc, getIncDecOpBaseOp(op),
+                     make_EPtr<VariableExpr>(*varexpr),
                      getIntConstExpr(varexpr->getType(ctx), 1)).codegen(ctx);
   }
   throw CodeGenError("invalid unary operation " + Lexer::getTokenName(op),
