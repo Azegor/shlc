@@ -334,6 +334,14 @@ fn wrong_cf(boo b) : int
   // no final return !
 }
 
+fn asldfjasdf()
+{
+  if T {
+  ret 42;
+  }
+  ret;
+}
+
 fn wrong_cf2(boo b) : int
 {
   if b {
@@ -342,4 +350,30 @@ fn wrong_cf2(boo b) : int
     exit(1);
   }
   ret 2222;
+}
+
+fn cond_mv_test1(int i) : int
+{
+  if i < 0 {
+    ret i;
+  } el {
+    ret i-1;
+  }
+}
+
+fn cond_mv_test2(int i) : int
+{
+  if i > 0 {
+    --i;
+  }
+  ret i;
+}
+
+fn broken_opt_bc(int i) : int
+{
+  if i < 0 {
+    ret i;
+  } el {
+    ret --i;
+  }
 }

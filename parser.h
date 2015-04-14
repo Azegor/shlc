@@ -66,6 +66,31 @@ class Parser
 
   Lexer *currentLexer;
   Token prevTok, curTok;
+  std::vector<TokenPos> startPositions;
+  TokenPos endPos;
+
+  void startSLContext() { startPositions.push_back({curTok, false}); }
+  void dupSLContextTop() { startPositions.push_back(startPositions.back()); }
+  void popSLContext() { startPositions.pop_back(); }
+  void markSLContextEnd() { endPos = {curTok, true}; }
+  SourceLocation endSLContextHere()
+  {
+    auto start = startPositions.back();
+    startPositions.pop_back();
+    return {start, TokenPos(curTok, true)};
+  }
+  SourceLocation endSLContextPrevToken()
+  {
+    auto start = startPositions.back();
+    startPositions.pop_back();
+    return {start, TokenPos(prevTok, true)};
+  }
+  SourceLocation getSLContextMarkedEnd()
+  {
+    auto start = startPositions.back();
+    startPositions.pop_back();
+    return {start, endPos};
+  }
 
   Token &readNextToken()
   {

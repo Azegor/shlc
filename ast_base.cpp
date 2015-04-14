@@ -65,7 +65,7 @@ Statement::CodeFlowReturn BlockStmt::codeFlowReturn() const
     if (typeid(*stmt) == typeid(ContinueStmt) ||
         typeid(stmt) == typeid(BreakStmt))
     {
-        return res; // can never reach a return, but might return before
+      return res; // can never reach a return, but might return before
     }
     //     if (dynamic_cast<ReturnStmt *>(stmt.get())) {
     //       // whatever happens before, after this stmt CF cannot continue
