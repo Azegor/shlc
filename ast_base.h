@@ -49,6 +49,15 @@ struct SourceLocation
       : startToken(std::move(o.startToken)), endToken(std::move(o.endToken))
   {
   }
+
+  std::string toStr() const {
+    // TODO output source itselfe (get from lexer)
+    if (startToken.type == Token::TokenType::none)
+      return "at unknown location";
+    if (startToken == endToken)
+      return "at token " + startToken.toStr();
+    return "between token " + startToken.toStr() + " and " + endToken.toStr();
+  }
 };
 
 // TODO: might not be neccessary!
@@ -188,12 +197,15 @@ class CodeGenError : public std::exception
 {
 public:
   const std::string reason, errorLine;
-  const AstNode *node;
+  SourceLocation srcLoc;
   CodeGenError(std::string what, const AstNode *node = nullptr)
-      : reason(std::move(what)), node(std::move(node))
+      : reason(std::move(what)), srcLoc(node ? node->srcLoc : SourceLocation())
   {
   }
   const char *what() const noexcept override { return reason.c_str(); }
+  std::string errorLocation(){
+    return srcLoc.toStr();
+  }
 };
 
 #endif // AST_BASE_H

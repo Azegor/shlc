@@ -124,7 +124,7 @@ llvm::Value *ReturnStmt::codegen(Context &ctx)
   if (!expr) // void
   {
     if (ctx.returnType != Type::vac_t)
-      throw CodeGenError("cannot return value in void function", this);
+      throw CodeGenError("cannot return void in non-void function", this);
     ctx.global.builder.CreateRetVoid();
   }
   else
