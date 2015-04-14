@@ -173,12 +173,16 @@ struct Token
     return *this;
   }
 
-  bool operator ==(const Token & o) const
+  bool operator==(const Token &o) const
   {
     return type == o.type && line == o.line && col == o.col && str == o.str;
   }
 
-  std::string toStr() const { return '<' + str + " at " + std::to_string(line) + ':' + std::to_string(col) + '>'; }
+  std::string toStr() const
+  {
+    return '<' + str + " at " + std::to_string(line) + ':' +
+           std::to_string(col) + '>';
+  }
 };
 
 class Lexer
@@ -309,6 +313,60 @@ public:
     auto pos = tokenNames.find(type);
     if (pos != tokenNames.end()) return pos->second;
     return {(char)type};
+  }
+};
+
+struct TokenPos
+{
+  int line;
+  int col;
+  TokenPos() : line(-1), col(-1) {}
+  TokenPos(int l, int c) : line(l), col(c) {}
+  TokenPos(const Token &t, bool endToken) : line(t.line)
+  {
+    col = t.col + (endToken ? t.str.size() - 1 : 0);
+  }
+
+  bool operator==(const TokenPos &o) const
+  {
+    return line == o.line && col == o.col;
+  }
+
+  std::string toStr() const
+  {
+    return std::to_string(line) + ':' + std::to_string(col);
+  }
+};
+
+struct SourceLocation
+{
+  const TokenPos startToken, endToken;
+  // reference file here
+  SourceLocation() = default;
+  SourceLocation(TokenPos start, TokenPos end)
+      : startToken(start), endToken(end)
+  {
+  }
+  SourceLocation(const Token &single)
+      : startToken(single, false), endToken(single, true)
+  {
+  }
+  SourceLocation(const SourceLocation &o)
+      : startToken(o.startToken), endToken(o.endToken)
+  {
+  }
+  SourceLocation(SourceLocation &&o)
+      : startToken(std::move(o.startToken)), endToken(std::move(o.endToken))
+  {
+  }
+
+  std::string toStr() const
+  {
+    // TODO output source itselfe (get from lexer)
+    if (startToken.col == -1) return "at unknown location";
+    if (startToken == endToken)
+      return "at token " + startToken.toStr() + "->" + endToken.toStr();
+    return "between token " + startToken.toStr() + " and " + endToken.toStr();
   }
 };
 

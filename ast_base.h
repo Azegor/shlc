@@ -34,32 +34,6 @@ namespace llvm
 class BasicBlock;
 }
 
-struct SourceLocation
-{
-  const Token startToken, endToken;
-  // reference file here
-  SourceLocation() = default;
-  SourceLocation(Token start, Token end) : startToken(start), endToken(end) {}
-  SourceLocation(Token single) : startToken(single), endToken(single) {}
-  SourceLocation(const SourceLocation &o)
-      : startToken(o.startToken), endToken(o.endToken)
-  {
-  }
-  SourceLocation(SourceLocation &&o)
-      : startToken(std::move(o.startToken)), endToken(std::move(o.endToken))
-  {
-  }
-
-  std::string toStr() const {
-    // TODO output source itselfe (get from lexer)
-    if (startToken.type == Token::TokenType::none)
-      return "at unknown location";
-    if (startToken == endToken)
-      return "at token " + startToken.toStr();
-    return "between token " + startToken.toStr() + " and " + endToken.toStr();
-  }
-};
-
 // TODO: might not be neccessary!
 class AstNode
 {
@@ -203,9 +177,7 @@ public:
   {
   }
   const char *what() const noexcept override { return reason.c_str(); }
-  std::string errorLocation(){
-    return srcLoc.toStr();
-  }
+  std::string errorLocation() { return srcLoc.toStr(); }
 };
 
 #endif // AST_BASE_H

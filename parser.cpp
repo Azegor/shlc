@@ -143,8 +143,9 @@ std::vector<FunctionPtr> Parser::parse(std::string filename)
 
 FunctionPtr Parser::parseFunctionDef()
 {
-  auto fnStartTok = curTok;
-  readNextToken(); // eat 'fn'
+  startSLContext(); // whole function
+  startSLContext(); // function head
+  readNextToken();  // eat 'fn'
   // handle main as normal Token::identifier
   if (curTok.type != Token::identifier && curTok.type != Token::id_main)
     error("Unexpected Token '" + curTok.str + "', expected identifier");
@@ -167,7 +168,7 @@ FunctionPtr Parser::parseFunctionDef()
     }
   }
 
-  auto headEndToken = curTok;
+  markSLContextEnd();
 
   readNextToken(); // eat ')'
 
@@ -178,13 +179,12 @@ FunctionPtr Parser::parseFunctionDef()
     if (!isVarTypeId(curTok.type) && curTok.type != Token::TokenType::id_vac)
       error("unexpected '" + curTok.str + "', expected type");
     retType = getTypeFromToken(curTok.type);
-    headEndToken = curTok;
+    markSLContextEnd();
     readNextToken();
   }
 
-  auto head = FunctionHeadPtr{new FunctionHead({fnStartTok, headEndToken},
-                                               std::move(fnName),
-                                               std::move(arguments), retType)};
+  auto head = FunctionHeadPtr{new FunctionHead(
+    getSLContextMarkedEnd(), std::move(fnName), std::move(arguments), retType)};
 
   switch (curTok.type)
   {
@@ -200,19 +200,19 @@ FunctionPtr Parser::parseFunctionDef()
         error("unexpected '" + curTok.str + "', expected ';'");
       readNextToken();
       return FunctionPtr{
-        new NativeFunction{{fnStartTok, prevTok}, std::move(head)}};
+        new NativeFunction{endSLContextPrevToken(), std::move(head)}};
       break;
     case '{': // function definition
     {
       auto body = parseStmtBlock();
-      return FunctionPtr{new NormalFunction({fnStartTok, prevTok},
+      return FunctionPtr{new NormalFunction(endSLContextPrevToken(),
                                             std::move(head), std::move(body))};
       break;
     }
     case ';':          // function declaration
       readNextToken(); // eat ';'
       return FunctionPtr{
-        new FunctionDecl({fnStartTok, prevTok}, std::move(head))};
+        new FunctionDecl(endSLContextPrevToken(), std::move(head))};
       break;
   }
 }
@@ -234,7 +234,7 @@ void Parser::parseFunctionArguments(ArgVector &args)
 
 BlockStmtPtr Parser::parseStmtBlock()
 {
-  auto startTok = curTok;
+  startSLContext();
   // assert(curTok.type == '{');
   readNextToken();
   StmtList exprL;
@@ -250,7 +250,7 @@ BlockStmtPtr Parser::parseStmtBlock()
     exprL.push_back(std::move(expr));
   }
   readNextToken(); // eat '}'
-  return BlockStmtPtr{new BlockStmt({startTok, prevTok}, std::move(exprL))};
+  return BlockStmtPtr{new BlockStmt(endSLContextPrevToken(), std::move(exprL))};
 }
 
 StmtPtr Parser::parseTLExpr(bool &isBlock)
@@ -301,13 +301,16 @@ ExprPtr Parser::parseExpr()
 
 ExprPtr Parser::parseBinOpRHS(int exprPrec, ExprPtr lhs)
 {
-  auto startTok = curTok;
+  startSLContext();
   while (true)
   {
     int tokPrec = getTokenPrecedence(curTok.type);
 
     // if new binOp (tokPrec) binds less tight, we're done
-    if (tokPrec < exprPrec) return lhs; // this is the loop exit point!
+    if (tokPrec < exprPrec) {
+      popSLContext();
+      return lhs; // this is the loop exit point!
+    }
 
     auto binOp = curTok.type;
     readNextToken(); // eat binop
@@ -318,7 +321,8 @@ ExprPtr Parser::parseBinOpRHS(int exprPrec, ExprPtr lhs)
     // if new op binds less tightly take current op as its RHS
     if (tokPrec < nextPrec) rhs = parseBinOpRHS(tokPrec + 1, std::move(rhs));
 
-    lhs = make_EPtr<BinOpExpr>({startTok, prevTok}, binOp, std::move(lhs),
+    dupSLContextTop();
+    lhs = make_EPtr<BinOpExpr>(endSLContextPrevToken(), binOp, std::move(lhs),
                                std::move(rhs));
   }
 }
@@ -327,10 +331,10 @@ ExprPtr Parser::parseUnaryExpr()
 {
   if (!isUnaryOperator(curTok.type)) return parsePrimaryExpr();
 
-  auto startTok = curTok;
+  startSLContext();
   int op = curTok.type;
   readNextToken();
-  return make_EPtr<UnOpExpr>({startTok, prevTok}, op, parseUnaryExpr());
+  return make_EPtr<UnOpExpr>(endSLContextPrevToken(), op, parseUnaryExpr());
 }
 
 ExprPtr Parser::parsePrimaryExpr()
@@ -380,14 +384,14 @@ ExprPtr Parser::parsePrimaryExpr()
       error("unexpected '" + curTok.str + "', expected type");
     auto type = getTypeFromToken(curTok.type);
     readNextToken();
-    return make_EPtr<CastExpr>({startTok, prevTok}, std::move(res), type);
+    return make_EPtr<CastExpr>(endSLContextPrevToken(), std::move(res), type);
   }
   return res;
 }
 
 ExprPtr Parser::parseIdentifierExpr()
 {
-  auto startTok = curTok;
+  startSLContext();
   auto idName = curTok.str;
   readNextToken(); // eat identifier
   if (curTok.type != '(')
@@ -407,7 +411,7 @@ ExprPtr Parser::parseIdentifierExpr()
     }
   }
   readNextToken(); // eat ')'
-  return make_EPtr<FunctionCallExpr>({startTok, prevTok}, std::move(idName),
+  return make_EPtr<FunctionCallExpr>(endSLContextPrevToken(), std::move(idName),
                                      std::move(args));
 }
 ExprPtr Parser::parseNumberExpr()
@@ -442,7 +446,7 @@ ExprPtr Parser::parseParenExpr()
 }
 StmtPtr Parser::parseIfStmt()
 {
-  auto startTok = curTok;
+  startSLContext();
   readNextToken(); // eat 'if' or 'elif'
   auto cond = parseExpr();
   if (curTok.type != '{')
@@ -459,12 +463,12 @@ StmtPtr Parser::parseIfStmt()
       error("unexpected '" + curTok.str + "', expected '{'");
     elseExpr = parseStmtBlock();
   }
-  return make_SPtr<IfStmt>({startTok, prevTok}, std::move(cond),
+  return make_SPtr<IfStmt>(endSLContextPrevToken(), std::move(cond),
                            std::move(thenExpr), std::move(elseExpr));
 }
 StmtPtr Parser::parseForStmt()
 {
-  auto startTok = curTok;
+  startSLContext();
   readNextToken();
   ExprPtr init;
   if (curTok.type != ';') // empty init
@@ -482,45 +486,46 @@ StmtPtr Parser::parseForStmt()
   if (curTok.type != '{')
     error("unexpected '" + curTok.str + "', expected '{'");
   auto body = parseStmtBlock();
-  return make_SPtr<ForStmt>({startTok, prevTok}, std::move(init),
+  return make_SPtr<ForStmt>(endSLContextPrevToken(), std::move(init),
                             std::move(cond), std::move(incr), std::move(body));
 }
 StmtPtr Parser::parseWhlStmt()
 {
-  auto startTok = curTok;
+  startSLContext();
   readNextToken();
   auto cond = parseExpr();
   if (curTok.type != '{')
     error("unexpected '" + curTok.str + "', expected '{'");
   BlockStmtPtr body = parseStmtBlock();
-  return make_SPtr<WhileStmt>({startTok, prevTok}, std::move(cond),
+  return make_SPtr<WhileStmt>(endSLContextPrevToken(), std::move(cond),
                               std::move(body));
 }
 StmtPtr Parser::parseDoStmt()
 {
-  auto startTok = curTok;
+  startSLContext();
   readNextToken();
   assertToken('{');
   auto body = parseStmtBlock();
   assertToken(Token::id_whl);
   readNextToken(); // eat 'whl'
   auto cond = parseExpr();
-  return make_SPtr<DoWhileStmt>({startTok, prevTok}, std::move(cond),
+  return make_SPtr<DoWhileStmt>(endSLContextPrevToken(), std::move(cond),
                                 std::move(body));
 }
 StmtPtr Parser::parseRetStmt()
 {
-  auto startTok = curTok;
+  startSLContext();
   readNextToken();
   if (curTok.type == ';') {
-    return make_SPtr<ReturnStmt>({startTok}); // void return
+    return make_SPtr<ReturnStmt>(endSLContextPrevToken()); // void return
   }
-  return make_SPtr<ReturnStmt>({startTok, prevTok}, parseExpr());
+  auto expr = parseExpr();
+  return make_SPtr<ReturnStmt>(endSLContextPrevToken(), std::move(expr));
 }
 
 StmtPtr Parser::parseVarDeclStmt()
 {
-  auto startTok = curTok;
+  startSLContext();
   readNextToken(); // eat 'var'
   VarDeclStmt::VarEnties vars;
 
@@ -558,5 +563,5 @@ StmtPtr Parser::parseVarDeclStmt()
     readNextToken(); // eat type
   }
 
-  return make_SPtr<VarDeclStmt>({startTok, prevTok}, type, std::move(vars));
+  return make_SPtr<VarDeclStmt>(endSLContextPrevToken(), type, std::move(vars));
 }
