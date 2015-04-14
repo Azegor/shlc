@@ -172,6 +172,13 @@ struct Token
     str = std::move(o.str);
     return *this;
   }
+
+  bool operator ==(const Token & o) const
+  {
+    return type == o.type && line == o.line && col == o.col && str == o.str;
+  }
+
+  std::string toStr() const { return '<' + str + " at " + std::to_string(line) + ':' + std::to_string(col) + '>'; }
 };
 
 class Lexer

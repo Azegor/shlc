@@ -210,8 +210,8 @@ void testCodeGen(const char *filename)
   }
   catch (CodeGenError &e)
   {
-    std::cout << "Caught CodeGenError: node" << e.node << ": \033[1;31m"
-              << e.what() << "\033[00m:" << std::endl;
+    std::cout << "Caught CodeGenError: " << "\033[1;31m"
+              << e.what() << "\033[00m " << e.errorLocation() << std::endl;
   }
 }
 
