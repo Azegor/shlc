@@ -30,7 +30,10 @@ private:
   VarEnties vars;
 
 public:
-  VarDeclStmt(Type type, VarEnties vars) : type(type), vars(std::move(vars)) {}
+  VarDeclStmt(SourceLocation loc, Type type, VarEnties vars)
+      : Statement(loc), type(type), vars(std::move(vars))
+  {
+  }
   void print(int indent = 0) override;
   Type getType(Context &ctx);
   llvm::Value *codegen(Context &ctx) override;
@@ -41,7 +44,10 @@ class ReturnStmt : public Statement
   ExprPtr expr;
 
 public:
-  ReturnStmt(ExprPtr expr = {}) : expr(std::move(expr)) {}
+  ReturnStmt(SourceLocation loc, ExprPtr expr = {})
+      : Statement(loc), expr(std::move(expr))
+  {
+  }
   void print(int indent = 0) override;
   llvm::Value *codegen(Context &ctx) override;
   Statement::CodeFlowReturn codeFlowReturn() const override
@@ -57,8 +63,9 @@ class IfStmt : public Statement
   StmtPtr elseExpr;
 
 public:
-  IfStmt(ExprPtr cond, StmtPtr thenE, StmtPtr elseE)
-      : cond(std::move(cond)),
+  IfStmt(SourceLocation loc, ExprPtr cond, StmtPtr thenE, StmtPtr elseE)
+      : Statement(loc),
+        cond(std::move(cond)),
         thenExpr(std::move(thenE)),
         elseExpr(std::move(elseE))
   {
@@ -82,8 +89,8 @@ class WhileStmt : public LoopStmt
   llvm::BasicBlock *breakBB = nullptr;
 
 public:
-  WhileStmt(ExprPtr cond, StmtPtr body)
-      : cond(std::move(cond)), body(std::move(body))
+  WhileStmt(SourceLocation loc, ExprPtr cond, StmtPtr body)
+      : LoopStmt(loc), cond(std::move(cond)), body(std::move(body))
   {
   }
   void print(int indent = 0) override;
@@ -106,8 +113,8 @@ class DoWhileStmt : public LoopStmt
   llvm::BasicBlock *breakBB = nullptr;
 
 public:
-  DoWhileStmt(ExprPtr cond, StmtPtr body)
-      : cond(std::move(cond)), body(std::move(body))
+  DoWhileStmt(SourceLocation loc, ExprPtr cond, StmtPtr body)
+      : LoopStmt(loc), cond(std::move(cond)), body(std::move(body))
   {
   }
   void print(int indent = 0) override;
@@ -130,8 +137,10 @@ class ForStmt : public LoopStmt
   llvm::BasicBlock *breakBB = nullptr;
 
 public:
-  ForStmt(ExprPtr init, ExprPtr cond, ExprPtr incr, StmtPtr body)
-      : init(std::move(init)),
+  ForStmt(SourceLocation loc, ExprPtr init, ExprPtr cond, ExprPtr incr,
+          StmtPtr body)
+      : LoopStmt(loc),
+        init(std::move(init)),
         cond(std::move(cond)),
         incr(std::move(incr)),
         body(std::move(body))
@@ -151,6 +160,7 @@ public:
 class BreakStmt : public LoopCtrlStmt
 {
 public:
+  BreakStmt(SourceLocation loc) : LoopCtrlStmt(loc) {}
   void print(int indent = 0) override;
   llvm::Value *codegen(Context &ctx) override;
 };
@@ -158,6 +168,7 @@ public:
 class ContinueStmt : public LoopCtrlStmt
 {
 public:
+  ContinueStmt(SourceLocation loc) : LoopCtrlStmt(loc) {}
   void print(int indent = 0) override;
   llvm::Value *codegen(Context &ctx) override;
 };
@@ -167,7 +178,10 @@ class ExprStmt : public Statement
   ExprPtr expr;
 
 public:
-  ExprStmt(ExprPtr expr) : expr(std::move(expr)) {}
+  ExprStmt(SourceLocation loc, ExprPtr expr)
+      : Statement(loc), expr(std::move(expr))
+  {
+  }
   void print(int indent = 0) override;
   llvm::Value *codegen(Context &ct) override;
 };

@@ -65,9 +65,13 @@ class Parser
   }
 
   Lexer *currentLexer;
-  Token curTok;
+  Token prevTok, curTok;
 
-  Token &readNextToken() { return curTok = currentLexer->nextToken(); }
+  Token &readNextToken()
+  {
+    prevTok = std::move(curTok);
+    return curTok = currentLexer->nextToken();
+  }
 
   static bool isUnaryOperator(int type);
   static int getTokenPrecedence(int type);

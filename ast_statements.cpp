@@ -132,7 +132,8 @@ llvm::Value *ReturnStmt::codegen(Context &ctx)
     Type type = expr->getType(ctx);
     if (ctx.returnType != type) {
       if (canImplicitlyCast(type, ctx.returnType)) {
-        expr = make_EPtr<CastExpr>(std::move(expr), ctx.returnType);
+        expr =
+          make_EPtr<CastExpr>(expr->srcLoc, std::move(expr), ctx.returnType);
       }
       else
       {
@@ -155,7 +156,7 @@ llvm::Value *IfStmt::codegen(Context &ctx)
   auto condType = cond->getType(ctx);
   if (condType != Type::boo_t) {
     if (canCast(condType, Type::boo_t)) {
-      cond = make_EPtr<CastExpr>(std::move(cond), Type::boo_t);
+      cond = make_EPtr<CastExpr>(cond->srcLoc, std::move(cond), Type::boo_t);
     }
     else
     {
@@ -209,7 +210,7 @@ llvm::Value *WhileStmt::codegen(Context &ctx)
   auto condType = cond->getType(ctx);
   if (condType != Type::boo_t) {
     if (canCast(condType, Type::boo_t)) {
-      cond = make_EPtr<CastExpr>(std::move(cond), Type::boo_t);
+      cond = make_EPtr<CastExpr>(cond->srcLoc, std::move(cond), Type::boo_t);
     }
     else
     {
@@ -257,7 +258,7 @@ llvm::Value *DoWhileStmt::codegen(Context &ctx)
   auto condType = cond->getType(ctx);
   if (condType != Type::boo_t) {
     if (canCast(condType, Type::boo_t)) {
-      cond = make_EPtr<CastExpr>(std::move(cond), Type::boo_t);
+      cond = make_EPtr<CastExpr>(cond->srcLoc, std::move(cond), Type::boo_t);
     }
     else
     {
@@ -313,7 +314,7 @@ llvm::Value *ForStmt::codegen(Context &ctx)
   auto condType = cond->getType(ctx);
   if (condType != Type::boo_t) {
     if (canCast(condType, Type::boo_t)) {
-      cond = make_EPtr<CastExpr>(std::move(cond), Type::boo_t);
+      cond = make_EPtr<CastExpr>(cond->srcLoc, std::move(cond), Type::boo_t);
     }
     else
     {
@@ -416,7 +417,7 @@ llvm::Value *VarDeclStmt::codegen(Context &ctx)
     {
       init = createDefaultValueConst(ctx, type);
     }
-    VariableExpr tmpVarExp(var.first);
+    VariableExpr tmpVarExp(srcLoc, var.first);
     createAssignment(ctx, init, &tmpVarExp);
   }
   return nullptr;

@@ -243,15 +243,16 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
   // if void function add trailing return (even if already existing)
   if (head->getReturnType() == Type::vac_t) // add default return
   {
-//     if (CFR != Statement::CodeFlowReturn::Never)
+    //     if (CFR != Statement::CodeFlowReturn::Never)
     // also use as final instruction so the last bb is not empty (dirty hack)
-      ReturnStmt().codegen(ctx);
+    ReturnStmt({}).codegen(ctx);
   }
-//   else if (ctx.returnType == Type::none) // missing return statement
+  //   else if (ctx.returnType == Type::none) // missing return statement
   else if (CFR != Statement::CodeFlowReturn::Never) // missing return statement
   {
     // TODO: doesn't handle the fact that a return may be conditional
-//     throw CodeGenError("missing return statement in non-void function", this);
+    //     throw CodeGenError("missing return statement in non-void function",
+    //     this);
     throw CodeGenError("not all control flow branches return a value", this);
   }
 
