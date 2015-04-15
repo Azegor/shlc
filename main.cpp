@@ -146,9 +146,9 @@ void testParser(const char *filename)
 
 void testCodeGen(const char *filename)
 {
+  Parser parser;
   try
   {
-    Parser parser;
     auto parseRes = parser.parse(filename);
     GlobalContext gl_ctx;
     llvm::Function *mainFn = nullptr;
@@ -211,8 +211,8 @@ void testCodeGen(const char *filename)
   catch (CodeGenError &e)
   {
     std::cout << "Caught CodeGenError: "
-              << "\033[1;31m" << e.what() << "\033[00m " << e.errorLocation()
-              << std::endl;
+              << "\033[1;31m" << e.what() << "\033[00m " << std::endl;
+    std::cout << e.getErrorLineHighlight(parser.getLexer()) << std::endl;
   }
 }
 

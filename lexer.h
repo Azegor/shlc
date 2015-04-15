@@ -23,6 +23,7 @@
 #include <stdexcept>
 #include <string>
 #include <fstream>
+#include <deque>
 
 #include <cerrno>
 #include <cstring>
@@ -195,14 +196,15 @@ private:
 
   int line = 1, column = 1;
   int tokenLine = 1, tokenCol = 1;
-  std::string currentLine;
+  std::deque<std::string> lines;
+  std::string *currentLine;
   void finishCurrentLine()
   {
     if (!*input) // if file open failed, don't try to read!
       return;
     while (lastChar = input->get(),
            lastChar != '\r' && lastChar != '\n' && !input->eof())
-      currentLine += lastChar;
+      *currentLine += lastChar;
   }
 
   int readNext();
@@ -255,7 +257,7 @@ private:
   [[noreturn]] void error(std::string msg)
   {
     finishCurrentLine();
-    throw LexError(line, column, std::move(msg), std::move(currentLine));
+    throw LexError(line, column, std::move(msg), *currentLine);
   }
 
   void checkStream()
@@ -269,13 +271,17 @@ private:
 public:
   const std::string filename;
 
-  Lexer(std::istream &input) : input(&input), filename("<unknown>")
+  Lexer(std::istream &input)
+      : lines(1), currentLine(&lines[0]), input(&input), filename("<unknown>")
   {
     checkStream();
   }
 
   Lexer(std::string filename)
-      : input(new std::ifstream(filename)), filename(filename)
+      : lines(1),
+        currentLine(&lines[0]),
+        input(new std::ifstream(filename)),
+        filename(filename)
   {
     ownsStream = true;
     checkStream();
@@ -283,13 +289,14 @@ public:
 
   Lexer(const Lexer &) = delete;
   Lexer(Lexer &&o)
-      : ownsStream(o.ownsStream),
-        input(o.input),
-        lastChar(o.lastChar),
-        tokenString(o.tokenString),
-        line(o.line),
-        column(o.column),
-        currentLine(o.currentLine)
+      : ownsStream(std::move(o.ownsStream)),
+        input(std::move(o.input)),
+        lastChar(std::move(o.lastChar)),
+        tokenString(std::move(o.tokenString)),
+        line(std::move(o.line)),
+        column(std::move(o.column)),
+        lines(std::move(o.lines)),
+        currentLine(std::move(o.currentLine))
   {
     // o.input = nullptr;
     o.ownsStream = false;
@@ -305,7 +312,7 @@ public:
   std::string abortAndGetCurrentLine()
   {
     finishCurrentLine();
-    return currentLine;
+    return *currentLine;
   }
 
   static std::string getTokenName(int type)
@@ -314,6 +321,8 @@ public:
     if (pos != tokenNames.end()) return pos->second;
     return {(char)type};
   }
+
+  const std::string &getLine(int i) const { return lines[i-1]; }
 };
 
 struct TokenPos
@@ -341,6 +350,7 @@ struct TokenPos
 struct SourceLocation
 {
   const TokenPos startToken, endToken;
+  int lexerNr; // TODO
   // reference file here
   SourceLocation() = default;
   SourceLocation(TokenPos start, TokenPos end)
@@ -367,6 +377,23 @@ struct SourceLocation
     if (startToken == endToken)
       return "at token " + startToken.toStr() + "->" + endToken.toStr();
     return "between token " + startToken.toStr() + " and " + endToken.toStr();
+  }
+
+  std::string getErrorLineHighlight(const Lexer &lex)
+  {
+    std::string error(lex.getLine(startToken.line));
+    error += '\n';
+    for (int i = 1; i < startToken.col; ++i)
+      error += '~';
+    if (startToken.line == endToken.line) {
+      for (int i = startToken.col; i <= endToken.col; ++i)
+        error += '^';
+    }
+    else
+    {
+      error += '^';
+    }
+    return error;
   }
 };
 

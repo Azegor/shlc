@@ -205,16 +205,17 @@ int Lexer::readNext()
       break;
     }
     newline:
-      currentLine.clear();
+      lines.emplace_back();
+      currentLine = &lines.back();
       if (lastChar != '\r' && lastChar != '\n' && !input->eof())
-        currentLine += lastChar;
+        *currentLine += lastChar;
       column = 1;
       ++line;
       return lastChar;
   }
 
   if (lastChar != '\r' && lastChar != '\n' && !input->eof())
-    currentLine += lastChar;
+    *currentLine += lastChar;
   ++column;
   return lastChar;
 }
