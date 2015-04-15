@@ -178,6 +178,10 @@ public:
   }
   const char *what() const noexcept override { return reason.c_str(); }
   std::string errorLocation() { return srcLoc.toStr(); }
+  std::string getErrorLineHighlight(const Lexer &lex)
+  {
+    return srcLoc.getErrorLineHighlight(lex);
+  }
 };
 
 #endif // AST_BASE_H

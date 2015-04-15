@@ -48,18 +48,20 @@ public:
 
 class Parser
 {
-  std::stack<Lexer> lexers;
+  std::deque<Lexer> allLexers;
+  std::stack<Lexer *> lexers;
 
   void pushLexer(std::string filename)
   {
-    lexers.emplace(filename);
-    currentLexer = &lexers.top();
+    allLexers.emplace_back(filename);
+    lexers.push(&allLexers.back());
+    currentLexer = lexers.top();
   }
   void popLexer()
   {
     lexers.pop();
     if (!lexers.empty())
-      currentLexer = &lexers.top();
+      currentLexer = lexers.top();
     else
       currentLexer = nullptr;
   }
@@ -144,6 +146,10 @@ public:
   Parser() = default;
 
   std::vector<FunctionPtr> parse(std::string filename);
+
+  // TODO implement getting of the correct lexer!!!
+  const Lexer &getLexer() const {
+    return allLexers.front(); }
 };
 
 #endif // PARSER_H
