@@ -322,7 +322,7 @@ public:
     return {(char)type};
   }
 
-  const std::string &getLine(int i) const { return lines[i-1]; }
+  const std::string &getLine(int i) const { return lines[i - 1]; }
 };
 
 struct TokenPos

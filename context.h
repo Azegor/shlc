@@ -136,6 +136,13 @@ struct GlobalVars
   std::map<std::string, GlobVarInfo> globVars;
 };
 
+struct ReturnData
+{
+  Type type = Type::none;
+  llvm::AllocaInst *val = nullptr;
+  llvm::BasicBlock *BB = nullptr;
+};
+
 class Context
 {
   // put parameters in lowest level frame
@@ -145,7 +152,7 @@ class Context
 
 public:
   GlobalContext &global;
-  Type returnType = Type::none;
+  ReturnData ret;
   llvm::Function *currentFn;
   std::vector<LoopStmt *> currentLoops;
 

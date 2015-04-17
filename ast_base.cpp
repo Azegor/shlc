@@ -47,6 +47,8 @@ llvm::Value *BlockStmt::codegen(Context &ctx)
   for (auto &&stmt : block)
   {
     stmt->codegen(ctx);
+    if (stmt->codeFlowReturn() == Statement::CodeFlowReturn::Never)
+      return nullptr; // don't generate dead code
   }
   return nullptr;
 }
