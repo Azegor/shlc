@@ -642,5 +642,6 @@ llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
 llvm::Value *createAssignment(Context &ctx, llvm::Value *val, VariableExpr *var)
 {
   auto alloca = var->getAlloca(ctx);
-  return ctx.global.builder.CreateStore(val, alloca);
+  ctx.global.builder.CreateStore(val, alloca);
+  return val;
 }

@@ -337,7 +337,7 @@ fn wrong_cf(boo b) : int
 fn asldfjasdf()
 {
   if T {
-  ret 42;
+  ret;
   }
   ret;
 }
