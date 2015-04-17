@@ -203,9 +203,18 @@ llvm::Value *FunctionCallExpr::codegen(Context &ctx)
                                     functionArgs[i]);
     params[i] = args[i]->codegen(ctx);
   }
-  return ctx.global.builder.CreateCall(
-    fnHead->get_llvm_fn(),
-    llvm::ArrayRef<llvm::Value *>(params.get(), args.size()), "callres");
+  if (fnHead->getReturnType() == Type::vac_t)
+  {
+    return ctx.global.builder.CreateCall(
+      fnHead->get_llvm_fn(),
+      llvm::ArrayRef<llvm::Value *>(params.get(), args.size()));
+  }
+  else
+  {
+    return ctx.global.builder.CreateCall(
+      fnHead->get_llvm_fn(),
+      llvm::ArrayRef<llvm::Value *>(params.get(), args.size()), "callres");
+  }
 }
 
 Type VariableExpr::getType(Context &ctx) { return ctx.getVariableType(name); }
