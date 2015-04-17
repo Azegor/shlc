@@ -97,7 +97,8 @@ public:
   llvm::Value *codegen(Context &ctx) override;
   Statement::CodeFlowReturn codeFlowReturn() const override
   {
-    return body->codeFlowReturn();
+    return Statement::combineCFR(body->codeFlowReturn(),
+                                 Statement::CodeFlowReturn::Always);
   }
 
   llvm::BasicBlock *continueTarget() const override { return contBB; }
@@ -150,7 +151,8 @@ public:
   llvm::Value *codegen(Context &ctx) override;
   Statement::CodeFlowReturn codeFlowReturn() const override
   {
-    return body->codeFlowReturn();
+    return Statement::combineCFR(body->codeFlowReturn(),
+                                 Statement::CodeFlowReturn::Always);
   }
 
   llvm::BasicBlock *continueTarget() const override { return contBB; }

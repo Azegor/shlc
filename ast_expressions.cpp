@@ -203,8 +203,7 @@ llvm::Value *FunctionCallExpr::codegen(Context &ctx)
                                     functionArgs[i]);
     params[i] = args[i]->codegen(ctx);
   }
-  if (fnHead->getReturnType() == Type::vac_t)
-  {
+  if (fnHead->getReturnType() == Type::vac_t) {
     return ctx.global.builder.CreateCall(
       fnHead->get_llvm_fn(),
       llvm::ArrayRef<llvm::Value *>(params.get(), args.size()));

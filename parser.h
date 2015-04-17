@@ -148,8 +148,7 @@ public:
   std::vector<FunctionPtr> parse(std::string filename);
 
   // TODO implement getting of the correct lexer!!!
-  const Lexer &getLexer() const {
-    return allLexers.front(); }
+  const Lexer &getLexer() const { return allLexers.front(); }
 };
 
 #endif // PARSER_H

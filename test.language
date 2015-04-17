@@ -259,7 +259,7 @@ fn fib(int i) : int
 fn test_fib()
 {
   var i : int;
-  for i = 0; i < 100; ++i {
+  for i = 0; i < 35; ++i {
     prtln(fib(i));
   }
 }
@@ -376,4 +376,16 @@ fn broken_opt_bc(int i) : int
   } el {
     ret --i;
   }
+}
+
+fn deadCode()
+{
+  var i, j, k : int;
+  broken_opt_bc(i);
+  i = 2;
+  ret;
+  j = 3;
+  cond_mv_test1(j);
+  cond_mv_test2(k);
+  k = i + j - 2 * k;
 }

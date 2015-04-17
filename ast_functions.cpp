@@ -205,7 +205,7 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
   auto fn = head->codegen(ctx);
 
   ctx.currentFn = fn;
-  ctx.returnType = head->getReturnType();
+  ctx.ret.type = head->getReturnType();
 
   // Create a new basic block to start insertion into.
   llvm::BasicBlock *entryBB =
@@ -213,6 +213,17 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
   builder.SetInsertPoint(entryBB);
 
   head->createArgumentAllocas(ctx, fn);
+
+  if (ctx.ret.type != Type::vac_t) {
+    ctx.ret.val = builder.CreateAlloca(
+      getLLVMTypeFromType(gl_ctx, head->getReturnType()), 0, "retval");
+  }
+  ctx.ret.BB = llvm::BasicBlock::Create(gl_ctx.llvm_context, "ret", fn);
+  builder.SetInsertPoint(ctx.ret.BB);
+  if (ctx.ret.type == Type::vac_t)
+    builder.CreateRetVoid();
+  else
+    builder.CreateRet(builder.CreateLoad(ctx.ret.val));
 
   // make main block, leave entry for allocas only
   auto mainBB = llvm::BasicBlock::Create(gl_ctx.llvm_context, "fnbody", fn);
@@ -225,10 +236,9 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
   ctx.popFrame();
 
   auto currentInsBlock = builder.GetInsertBlock();
-  auto currentInsPos = builder.GetInsertPoint();
-  builder.SetInsertPoint(entryBB, entryBB->end());
+  builder.SetInsertPoint(entryBB);
   builder.CreateBr(mainBB);
-  builder.SetInsertPoint(currentInsBlock, currentInsPos);
+  builder.SetInsertPoint(currentInsBlock);
 
   if (ctx.frameCount() != 1)
     throw CodeGenError("variable frame count inconsistent (" +
@@ -240,25 +250,16 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
   //   if (typeid(lastStmt) != typeid(ReturnStmt)) // no final return
 
   auto CFR = body->codeFlowReturn();
-  // if void function add trailing return (even if already existing)
-  if (head->getReturnType() == Type::vac_t) // add default return
-  {
-    //     if (CFR != Statement::CodeFlowReturn::Never)
-    // also use as final instruction so the last bb is not empty (dirty hack)
-    ReturnStmt({}).codegen(ctx);
+  if (CFR != Statement::CodeFlowReturn::Never) {
+    if (head->getReturnType() == Type::vac_t) // missing return statement
+    {
+      ReturnStmt({}).codegen(ctx);
+    }
+    else
+    {
+      throw CodeGenError("not all control flow branches return a value", this);
+    }
   }
-  //   else if (ctx.returnType == Type::none) // missing return statement
-  else if (CFR != Statement::CodeFlowReturn::Never) // missing return statement
-  {
-    // TODO: doesn't handle the fact that a return may be conditional
-    //     throw CodeGenError("missing return statement in non-void function",
-    //     this);
-    throw CodeGenError("not all control flow branches return a value", this);
-  }
-
-  // FIXME: dirty hack for now, because otherwise optimizers crash
-  if (gl_ctx.builder.GetInsertBlock()->empty())
-    gl_ctx.builder.GetInsertBlock()->eraseFromParent();
 
   gl_ctx.fpm.run(*fn); // disable when unoptimized output is wanted
 

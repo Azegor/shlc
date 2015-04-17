@@ -154,6 +154,8 @@ void testCodeGen(const char *filename)
     llvm::Function *mainFn = nullptr;
     for (auto &r : parseRes)
     {
+      //       std::cout << "generating code for function " << r->getName() <<
+      //       std::endl;
       auto fn = r->codegen(gl_ctx);
       if (fn && fn->getName() == "main") mainFn = fn;
       //         auto _ = gl_ctx.execEngine->getPointerToFunction(fn);

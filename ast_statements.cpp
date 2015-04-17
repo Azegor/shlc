@@ -123,28 +123,28 @@ llvm::Value *ReturnStmt::codegen(Context &ctx)
 {
   if (!expr) // void
   {
-    if (ctx.returnType != Type::vac_t)
+    if (ctx.ret.type != Type::vac_t)
       throw CodeGenError("cannot return void in non-void function", this);
-    ctx.global.builder.CreateRetVoid();
+    ctx.global.builder.CreateBr(ctx.ret.BB);
   }
   else
   {
     Type type = expr->getType(ctx);
-    if (ctx.returnType != type) {
-      if (canImplicitlyCast(type, ctx.returnType)) {
-        expr =
-          make_EPtr<CastExpr>(expr->srcLoc, std::move(expr), ctx.returnType);
+    if (ctx.ret.type != type) {
+      if (canImplicitlyCast(type, ctx.ret.type)) {
+        expr = make_EPtr<CastExpr>(expr->srcLoc, std::move(expr), ctx.ret.type);
       }
       else
       {
         throw CodeGenError("incompatible return types '" + getTypeName(type) +
-                             "' and '" + getTypeName(ctx.returnType) + '\'',
+                             "' and '" + getTypeName(ctx.ret.type) + '\'',
                            this);
       }
     }
     auto val = expr->codegen(ctx);
     assert(val);
-    ctx.global.builder.CreateRet(val);
+    ctx.global.builder.CreateStore(val, ctx.ret.val);
+    ctx.global.builder.CreateBr(ctx.ret.BB);
   }
   return nullptr;
 }
@@ -194,7 +194,10 @@ llvm::Value *IfStmt::codegen(Context &ctx)
       builder.CreateBr(endBB);
   }
 
-  builder.SetInsertPoint(endBB);
+  if (codeFlowReturn() == Statement::CodeFlowReturn::Never)
+    endBB->eraseFromParent(); // don't need it
+  else
+    builder.SetInsertPoint(endBB);
 
   ctx.popFrame();
   return nullptr;
@@ -203,9 +206,6 @@ llvm::Value *IfStmt::codegen(Context &ctx)
 llvm::Value *WhileStmt::codegen(Context &ctx)
 {
   ctx.pushFrame();
-
-  //     auto alloca = createEntryBlockAlloca(); // use, if variable definitions
-  //     are allowed here
 
   auto condType = cond->getType(ctx);
   if (condType != Type::boo_t) {
@@ -286,15 +286,22 @@ llvm::Value *DoWhileStmt::codegen(Context &ctx)
   ctx.pushLoop(this);
   body->codegen(ctx);
   ctx.popLoop();
-  if (body->codeFlowReturn() != Statement::CodeFlowReturn::Never)
+  if (body->codeFlowReturn() != Statement::CodeFlowReturn::Never) {
     builder.CreateBr(headBB);
 
-  // INFO: if body never return CF, this doesn't need to be generated
-  builder.SetInsertPoint(headBB);
-  auto condVal = cond->codegen(ctx);
-  builder.CreateCondBr(condVal, loopBB, endBB);
+    // INFO: if body never return CF, this doesn't need to be generated
+    builder.SetInsertPoint(headBB);
+    auto condVal = cond->codegen(ctx);
+    builder.CreateCondBr(condVal, loopBB, endBB);
 
-  builder.SetInsertPoint(endBB);
+    builder.SetInsertPoint(endBB);
+  }
+  else
+  {
+    // don't need them
+    headBB->eraseFromParent();
+    endBB->eraseFromParent();
+  }
 
   ctx.popFrame();
   return nullptr;
