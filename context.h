@@ -51,7 +51,8 @@ class VariableNotDefinedError : public CodeGenError
 {
 public:
   const std::string variableName;
-  VariableNotDefinedError(const std::string &name, const AstNode *node = nullptr)
+  VariableNotDefinedError(const std::string &name,
+                          const AstNode *node = nullptr)
       : CodeGenError("Variable '" + name + "' was not defined", node)
   {
   }

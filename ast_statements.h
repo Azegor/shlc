@@ -78,6 +78,11 @@ public:
                                  elseExpr ? elseExpr->codeFlowReturn()
                                           : Statement::CodeFlowReturn::Always);
   }
+  Statement::BranchBehaviour branchBehaviour() const override
+  {
+    return elseExpr ? thenExpr->branchBehaviour() | elseExpr->branchBehaviour()
+                    : thenExpr->branchBehaviour();
+  }
 };
 
 class WhileStmt : public LoopStmt
@@ -122,7 +127,13 @@ public:
   llvm::Value *codegen(Context &ctx) override;
   Statement::CodeFlowReturn codeFlowReturn() const override
   {
-    return body->codeFlowReturn();
+    auto bodyCFR = body->codeFlowReturn();
+    if (bodyCFR == Statement::CodeFlowReturn::Never &&
+        (bool)(body->branchBehaviour() &
+               (Statement::BranchBehaviour::Breaks |
+                Statement::BranchBehaviour::Continues)))
+      return Statement::CodeFlowReturn::Sometimes;
+    return bodyCFR;
   }
 
   llvm::BasicBlock *continueTarget() const override { return contBB; }
@@ -167,6 +178,10 @@ public:
   BreakStmt(SourceLocation loc) : LoopCtrlStmt(loc) {}
   void print(int indent = 0) override;
   llvm::Value *codegen(Context &ctx) override;
+  Statement::BranchBehaviour branchBehaviour() const override
+  {
+    return Statement::BranchBehaviour::Breaks;
+  }
 };
 
 class ContinueStmt : public LoopCtrlStmt
@@ -175,6 +190,10 @@ public:
   ContinueStmt(SourceLocation loc) : LoopCtrlStmt(loc) {}
   void print(int indent = 0) override;
   llvm::Value *codegen(Context &ctx) override;
+  Statement::BranchBehaviour branchBehaviour() const override
+  {
+    return Statement::BranchBehaviour::Continues;
+  }
 };
 
 class ExprStmt : public Statement
