@@ -72,6 +72,29 @@ public:
   {
     return Statement::CodeFlowReturn::Always; // default impl
   }
+  enum class BranchBehaviour
+  {
+    None = 0,
+    Breaks = 1 << 0,
+    Continues = 1 << 1,
+  };
+  friend BranchBehaviour operator|(BranchBehaviour b1, BranchBehaviour b2)
+  {
+    return (BranchBehaviour)(((int)b1) | ((int)b2));
+  }
+  friend BranchBehaviour operator&(BranchBehaviour b1, BranchBehaviour b2)
+  {
+    return (BranchBehaviour)(((int)b1) & ((int)b2));
+  }
+  friend BranchBehaviour operator~(BranchBehaviour b1)
+  {
+    return (BranchBehaviour)(~((int)b1));
+  }
+  friend bool operator!(BranchBehaviour b1) { return !((int)b1); }
+  virtual BranchBehaviour branchBehaviour() const
+  {
+    return Statement::BranchBehaviour::None; // default impl
+  }
 };
 
 using StmtPtr = std::unique_ptr<Statement>;
@@ -105,6 +128,7 @@ public:
   void print(int indent = 0) override;
   llvm::Value *codegen(Context &ctx) override;
   Statement::CodeFlowReturn codeFlowReturn() const override;
+  Statement::BranchBehaviour branchBehaviour() const override;
 
   // 'const' access to individual statements
   //  const Statement *front() const {return block.front().get(); }
@@ -129,7 +153,8 @@ public:
   LoopCtrlStmt(SourceLocation loc) : Statement(loc) {}
   CodeFlowReturn codeFlowReturn() const override
   {
-    return Statement::CodeFlowReturn::Never; // TODO: maybe conflicts with return check???
+    return Statement::CodeFlowReturn::Never; // TODO: maybe conflicts with
+                                             // return check???
   }
 };
 

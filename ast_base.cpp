@@ -55,20 +55,19 @@ llvm::Value *BlockStmt::codegen(Context &ctx)
 
 Statement::CodeFlowReturn BlockStmt::codeFlowReturn() const
 {
-  bool first = true;
   Statement::CodeFlowReturn res = Statement::CodeFlowReturn::Always;
   for (auto &&stmt : block)
   {
     // rest of block is skipped with these statements
     // -> following return meaningless
     // only works if there wasn't a possible return before
-    //     if (dynamic_cast<ContinueStmt *>(stmt.get()) ||
-    //         dynamic_cast<BreakStmt *>(stmt.get()))
-    if (typeid(*stmt) == typeid(ContinueStmt) ||
-        typeid(stmt) == typeid(BreakStmt))
-    {
-      return res; // can never reach a return, but might return before
-    }
+    //         if (dynamic_cast<ContinueStmt *>(stmt.get()) ||
+    //             dynamic_cast<BreakStmt *>(stmt.get()))
+    //     if (typeid(*stmt) == typeid(ContinueStmt) ||
+    //         typeid(*stmt) == typeid(BreakStmt))
+    //     {
+    //       return res; // can never reach a return, but might return before
+    //     }
     //     if (dynamic_cast<ReturnStmt *>(stmt.get())) {
     //       // whatever happens before, after this stmt CF cannot continue
     //       return Statement::CodeFlowReturn::Never;
@@ -79,6 +78,19 @@ Statement::CodeFlowReturn BlockStmt::codeFlowReturn() const
     if (cfr == Statement::CodeFlowReturn::Never)
       return Statement::CodeFlowReturn::Never;
     res = Statement::combineCFR(res, cfr);
+  }
+  return res;
+}
+
+Statement::BranchBehaviour BlockStmt::branchBehaviour() const
+{
+  Statement::BranchBehaviour res = Statement::BranchBehaviour::None;
+  for (auto &&stmt : block)
+  {
+    auto brb = stmt->branchBehaviour();
+    res = res | brb;
+    // no more following
+    if (stmt->codeFlowReturn() == Statement::CodeFlowReturn::Never) return res;
   }
   return res;
 }

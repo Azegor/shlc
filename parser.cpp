@@ -294,8 +294,7 @@ StmtPtr Parser::parseTLExpr(bool &isBlock)
 
 StmtPtr Parser::parseVarDeclStmtOrExpr()
 {
-  if (curTok.type == Token::id_var)
-    return parseVarDeclStmt();
+  if (curTok.type == Token::id_var) return parseVarDeclStmt();
   auto expr = parseExpr();
   return make_SPtr<ExprStmt>(expr->srcLoc, std::move(expr));
 }

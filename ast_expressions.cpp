@@ -326,10 +326,11 @@ llvm::Value *BinOpExpr::codegen(Context &ctx)
     auto rightType = rhs->getType(ctx);
     auto targetType = lhs->getType(ctx);
     if (!canImplicitlyCast(rightType, targetType))
-      throw CodeGenError("cannot implicitly convert right argument of assignment '" +
-                           getTypeName(rightType) + "' to type '" +
-                           getTypeName(targetType) + '\'',
-                         this);
+      throw CodeGenError(
+        "cannot implicitly convert right argument of assignment '" +
+          getTypeName(rightType) + "' to type '" + getTypeName(targetType) +
+          '\'',
+        this);
     rhs = make_EPtr<CastExpr>(rhs->srcLoc, std::move(rhs), targetType);
     return createAssignment(ctx, rhs->codegen(ctx), varexpr);
   }

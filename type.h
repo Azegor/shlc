@@ -35,7 +35,8 @@ enum class Type : int
 namespace types
 {
 using int_t = long long;
-using flt_t = long double;
+// using flt_t = long double;
+using flt_t = double;
 using chr_t = signed char;
 using boo_t = bool;
 // using str_t = std::string;

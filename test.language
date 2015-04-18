@@ -182,6 +182,12 @@ fn if_test(boo b)
       ret;
     }
   } whl b;
+  do {
+    break_test(T);
+  } whl T;
+  do {
+    ret;
+  } whl T;
 }
 
 fn test_bitcomp(int i; chr c; boo b) : int
@@ -437,34 +443,62 @@ fn retTest(boo b) : int
 
 fn forvartest()
 {
-//   var j = 1234.56; // ?????
-  var j = 50;
+  var j = 1234.56; // ?????
+//   var j = 50;
   prtln(j);
-  for var i = 0; i < 10; ++i {
-    prtln(i);
+  prtln(j);
+  for var j = 0; j < 10; ++j {
+    prtln(j);
   }
   prtln(j);
+  prtln(j);
   for ;; {brk;}
+  do { brk; } whl T;
+  whl F {}
+  do {} whl F;
 }
+
+fn error(boo b) : flt
+{
+  whl b {
+    if b {
+      ret 3.14;
+    } el {
+//         ret 2;
+        brk;
+    }
+  }
+  ret 3;
+}
+
+fn noJmpError(boo b)
+{
+  do {brk;} whl b;
+  whl b {}
+}
+
+fn __() : flt
+{
+  if T {
+    ret 42;
+  } el {
+    ret 24;
+  }
+}
+
+fn print_doubles()
+{
+  prtln(1.2);
+  prtln(0.0);
+  prtln(3.14);
+  prtln(42.24);
+  prtln(1e100);
+}
+
 
 fn testStuff()
 {
   forvartest();
-}
-
-fn error(boo b) : flt
-
-                    {
-  
-  if b {
-    
-    ret 3.14;
-  } el {
-    whl b {
-//       brk;
-    }
-  }
-  whl T {}
-  whl b {}
-  whl T {}
+  error(F);
+  print_doubles();
 }

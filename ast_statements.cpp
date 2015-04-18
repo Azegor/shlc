@@ -286,9 +286,15 @@ llvm::Value *DoWhileStmt::codegen(Context &ctx)
   ctx.pushLoop(this);
   body->codegen(ctx);
   ctx.popLoop();
-  if (body->codeFlowReturn() != Statement::CodeFlowReturn::Never) {
+  auto bodyReturnsCF =
+    body->codeFlowReturn() != Statement::CodeFlowReturn::Never;
+  if (bodyReturnsCF) {
     builder.CreateBr(headBB);
+  }
 
+  auto brb = body->branchBehaviour();
+  // if cfr returns or it has a continue statement we need the function head!
+  if (bodyReturnsCF || (bool)(brb & Statement::BranchBehaviour::Continues)) {
     // INFO: if body never return CF, this doesn't need to be generated
     builder.SetInsertPoint(headBB);
     auto condVal = cond->codegen(ctx);
@@ -298,9 +304,13 @@ llvm::Value *DoWhileStmt::codegen(Context &ctx)
   }
   else
   {
-    // don't need them
+    // don't need a function head
     headBB->eraseFromParent();
-    endBB->eraseFromParent();
+    // no break, don't even need a block after the loop
+    if ((bool)(brb & Statement::BranchBehaviour::Breaks))
+      builder.SetInsertPoint(endBB);
+    else
+      endBB->eraseFromParent();
   }
 
   ctx.popFrame();
@@ -343,8 +353,8 @@ llvm::Value *ForStmt::codegen(Context &ctx)
       else
       {
         throw CodeGenError("non-boolean or boolean-castable expression in "
-                          "while statement condition",
-                          this);
+                           "while statement condition",
+                           this);
       }
     }
     auto condVal = cond->codegen(ctx);

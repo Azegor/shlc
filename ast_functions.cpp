@@ -342,8 +342,8 @@ std::string FunctionHead::getMangledName() const
     {
       res += getMangleName(arg.first);
     }
-//     res += '_';
-//     res += getMangleName(retType);
+    //     res += '_';
+    //     res += getMangleName(retType);
     return res;
   }
   if (binding == Binding::Extern_C) {
