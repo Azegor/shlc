@@ -381,6 +381,7 @@ struct SourceLocation
 
   std::string getErrorLineHighlight(const Lexer &lex)
   {
+    if (startToken.line == -1) return "at unknown location";
     std::string error(lex.getLine(startToken.line));
     error += '\n';
     for (int i = 1; i < startToken.col; ++i)

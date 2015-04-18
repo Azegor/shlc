@@ -73,18 +73,16 @@ public:
                      "' was not defined") // implement row/col later
   {
   }
+};
 
-  /*
-  std::string getErrorLineHighlight()
+struct GlobalVars
+{
+  struct GlobVarInfo
   {
-    std::string error(errorLine);
-    error += '\n';
-    for (int i = 1; i < col; ++i)
-      error += '~';
-    error += '^';
-    return error;
-  }
-  */
+    Type type;
+    llvm::GlobalVariable *var;
+  };
+  std::map<std::string, GlobVarInfo> globVars;
 };
 
 class GlobalContext
@@ -106,12 +104,39 @@ public:
     //         fnHead(fh) {}
   };
   std::unordered_multimap<std::string, Fn> declaredFunctions;
+  GlobalVars globalVars;
+  std::unordered_map<std::string, std::string> stringConstants;
 
   GlobalContext();
 
   FunctionHead *getFunction(const std::string &name) const; // unused!
   FunctionHead *getFunctionOverload(const std::string &name,
                                     const std::vector<Type> &args) const;
+
+  void putGlobalVar(const std::string &name, Type type,
+                    llvm::GlobalVariable *globVar)
+  {
+    auto var = globalVars.globVars.find(name);
+    if (var != globalVars.globVars.end())
+      throw VariableAlreadyDefinedError(name);
+    globalVars.globVars[name] = {type, globVar};
+  }
+  const GlobalVars::GlobVarInfo &getGlobalVar(const std::string &name) const
+  {
+    auto var = globalVars.globVars.find(name);
+    if (var == globalVars.globVars.end()) throw VariableNotDefinedError(name);
+    return var->second;
+  }
+
+  llvm::GlobalVariable *getGlobalVarInst(const std::string &name) const
+  {
+    return getGlobalVar(name).var;
+  }
+
+  Type getGlobalVarType(const std::string &name) const
+  {
+    return getGlobalVar(name).type;
+  }
 };
 
 struct ContextFrame
@@ -126,16 +151,6 @@ struct ContextFrame
   std::map<std::string, VarInfo> variables;
 };
 
-struct GlobalVars
-{
-  struct GlobVarInfo
-  {
-    Type type;
-    llvm::GlobalVariable *var;
-  };
-  std::map<std::string, GlobVarInfo> globVars;
-};
-
 struct ReturnData
 {
   Type type = Type::none;
@@ -148,7 +163,6 @@ class Context
   // put parameters in lowest level frame
   std::vector<ContextFrame> frames;
   ContextFrame *top = nullptr;
-  GlobalVars globalVars;
 
 public:
   GlobalContext &global;
@@ -194,31 +208,6 @@ public:
   Type getVariableType(const std::string &name) const
   {
     return getVar(name).type;
-  }
-
-  void putGlobalVar(const std::string &name, Type type,
-                    llvm::GlobalVariable *globVar)
-  {
-    auto var = globalVars.globVars.find(name);
-    if (var != globalVars.globVars.end())
-      throw VariableAlreadyDefinedError(name);
-    globalVars.globVars[name] = {type, globVar};
-  }
-  const GlobalVars::GlobVarInfo &getGlobalVar(const std::string &name) const
-  {
-    auto var = globalVars.globVars.find(name);
-    if (var == globalVars.globVars.end()) throw VariableNotDefinedError(name);
-    return var->second;
-  }
-
-  llvm::GlobalVariable *getGlobalVarInst(const std::string &name) const
-  {
-    return getGlobalVar(name).var;
-  }
-
-  Type getGlobalVarType(const std::string &name) const
-  {
-    return getGlobalVar(name).type;
   }
 
   int frameCount() const { return frames.size(); }
