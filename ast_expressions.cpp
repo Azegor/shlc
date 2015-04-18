@@ -307,12 +307,13 @@ llvm::Value *BinOpExpr::codegen(Context &ctx)
     int assign_op = getCompAssigOpBaseOp(op);
     auto rightType = rhs->getType(ctx);
     auto targetType = lhs->getType(ctx);
-    if (!canImplicitlyCast(rhs->getType(ctx), targetType))
+    if (!canImplicitlyCast(rightType, targetType))
       throw CodeGenError("cannot implicitly convert right argument of binop '" +
                            Lexer::getTokenName(op) + "' of type '" +
                            getTypeName(rightType) + "' to type '" +
                            getTypeName(targetType) + '\'',
                          this);
+    rhs = make_EPtr<CastExpr>(rhs->srcLoc, std::move(rhs), targetType);
     auto assignVal = createBinOp(ctx, assign_op, targetType, lhs->codegen(ctx),
                                  rhs->codegen(ctx));
     return createAssignment(ctx, assignVal, varexpr);
@@ -323,6 +324,14 @@ llvm::Value *BinOpExpr::codegen(Context &ctx)
     if (!varexpr)
       throw CodeGenError("left hand side of assignment must be a variable",
                          this);
+    auto rightType = rhs->getType(ctx);
+    auto targetType = lhs->getType(ctx);
+    if (!canImplicitlyCast(rightType, targetType))
+      throw CodeGenError("cannot implicitly convert right argument of assignment '" +
+                           getTypeName(rightType) + "' to type '" +
+                           getTypeName(targetType) + '\'',
+                         this);
+    rhs = make_EPtr<CastExpr>(rhs->srcLoc, std::move(rhs), targetType);
     return createAssignment(ctx, rhs->codegen(ctx), varexpr);
   }
   throw CodeGenError("invalid binary operation " + Lexer::getTokenName(op),
