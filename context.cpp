@@ -45,7 +45,7 @@ GlobalContext::GlobalContext()
   // Set up the optimizer pipeline.  Start with registering info about how the
   // target lays out data structures.
   module->setDataLayout(execEngine->getDataLayout());
-#if 1
+#if 0
   // Provide basic AliasAnalysis support for GVN.
   fpm.add(llvm::createBasicAliasAnalysisPass());
   // Promote allocas to registers.
