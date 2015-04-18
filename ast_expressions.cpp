@@ -142,19 +142,29 @@ llvm::Constant *BoolConstExpr::codegen(Context &ctx)
 
 llvm::Value *StringConstExpr::codegen(Context &ctx)
 {
-  llvm::StringRef str(value.c_str(), value.size());
+  auto pos = ctx.global.stringConstants.find(value);
+  std::string globalVarName;
+  if (pos == ctx.global.stringConstants.end()) {
+    llvm::StringRef str(value.c_str(), value.size());
 
-  llvm::Constant *str_const =
-    llvm::ConstantDataArray::getString(ctx.global.llvm_context, str);
+    llvm::Constant *str_const =
+      llvm::ConstantDataArray::getString(ctx.global.llvm_context, str);
 
-  auto *GV = new llvm::GlobalVariable(*ctx.global.module, str_const->getType(),
-                                      true, llvm::GlobalValue::PrivateLinkage,
-                                      str_const, "str_const");
-  GV->setUnnamedAddr(true);
+    auto *GV = new llvm::GlobalVariable(
+      *ctx.global.module, str_const->getType(), true,
+      llvm::GlobalValue::PrivateLinkage, str_const, "str_const");
+    GV->setUnnamedAddr(true);
 
-  auto name = GV->getName();
-  ctx.putGlobalVar(name, Type::str_t, GV);
-  return GlobalVarExpr(srcLoc, name).codegen(ctx);
+    globalVarName = GV->getName();
+    ctx.global.putGlobalVar(globalVarName, Type::str_t, GV);
+    ctx.global.stringConstants.insert({value, globalVarName});
+  }
+  else
+  {
+    std::cout << "using cached strconst" << std::endl;
+    globalVarName = pos->second;
+  }
+  return GlobalVarExpr(srcLoc, globalVarName).codegen(ctx);
 }
 
 void FunctionCallExpr::findFunction(Context &ctx)
@@ -223,12 +233,18 @@ llvm::Value *VariableExpr::codegen(Context &ctx)
   return ctx.global.builder.CreateLoad(ctx.getVarAlloca(name), name);
 }
 
-Type GlobalVarExpr::getType(Context &ctx) { return ctx.getGlobalVarType(name); }
+Type GlobalVarExpr::getType(Context &ctx)
+{
+  return ctx.global.getGlobalVarType(name);
+}
 
 llvm::Value *GlobalVarExpr::codegen(Context &ctx)
 {
-  return ctx.global.builder.CreateConstGEP2_32(ctx.getGlobalVarInst(name), 0,
-                                               0);
+  auto var = ctx.global.getGlobalVar(name);
+  if (var.type == Type::str_t)
+    return ctx.global.builder.CreateConstGEP2_32(var.var, 0, 0);
+  else
+    return ctx.global.builder.CreateConstGEP1_32(var.var, 0);
 }
 
 llvm::AllocaInst *VariableExpr::getAlloca(Context &ctx)

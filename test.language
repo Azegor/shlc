@@ -76,11 +76,12 @@ fn tan(flt val) native;
 
 //fn putc(chr c) native;
 
-fn complex(int i) : flt
+fn complex(int i; boo b) : flt
 {
-  ret 2*(3+4)*(5*6+7*8);
-  whl T {
-    ret 42;
+  var res : flt;
+  res = 2*(3+4)*(5*6+7*8);
+  whl b {
+    res = 42;
   }
   var i : int;
   do {
@@ -91,7 +92,10 @@ fn complex(int i) : flt
   {
     i += 2;
   }
-  ret 'x';
+  if b {
+    res = 'x';
+  }
+  ret res;
 }
 
 fn double() : flt {ret 1.2345;}
@@ -188,6 +192,8 @@ fn test_bitcomp(int i; chr c; boo b) : int
 fn stringtest() : str
 {
   var s = "yo";
+  var s3 = "samestring";
+  var s2 = "samestring";
   ret s;
   ret "somestringconst";
 }
@@ -197,9 +203,9 @@ fn print_string()
   prt("hi there\n");
   var i : int;
   for i = 0; i < 100; i += 1 {
-    prt("<<");
+    prt("--<");
     prt(i*i);
-    prt(">>");
+    prt(">--");
   }
   prt('\n');
 }
@@ -369,7 +375,7 @@ fn cond_mv_test2(int i) : int
   ret i;
 }
 
-fn broken_opt_bc(int i) : int
+fn opt1(int i) : int
 {
   if i < 0 {
     ret i;
@@ -378,14 +384,33 @@ fn broken_opt_bc(int i) : int
   }
 }
 
+fn opt2(int i) : int
+{
+  if i > 0 {
+    ret --i;
+  } el {
+    ret i;
+  }
+}
+
 fn deadCode()
 {
   var i, j, k : int;
-  broken_opt_bc(i);
+  opt1(i);
+  opt2(i);
   i = 2;
   ret;
   j = 3;
   cond_mv_test1(j);
   cond_mv_test2(k);
   k = i + j - 2 * k;
+}
+
+fn retTest(boo b) : int
+{
+  if b {
+    ret 42;
+  } el {
+    ret 0;
+  }
 }
