@@ -224,6 +224,7 @@ fn print_mult_table()
 }
 
 fn test_fib();
+fn testStuff();
 
 fn main() {
   hi();
@@ -235,6 +236,7 @@ fn main() {
   print_string();
   print_mult_table();
   test_fib();
+  testStuff();
   exit(0);
 }
 
@@ -431,4 +433,38 @@ fn retTest(boo b) : int
   } el {
     ret 0;
   }
+}
+
+fn forvartest()
+{
+//   var j = 1234.56; // ?????
+  var j = 50;
+  prtln(j);
+  for var i = 0; i < 10; ++i {
+    prtln(i);
+  }
+  prtln(j);
+  for ;; {brk;}
+}
+
+fn testStuff()
+{
+  forvartest();
+}
+
+fn error(boo b) : flt
+
+                    {
+  
+  if b {
+    
+    ret 3.14;
+  } el {
+    whl b {
+//       brk;
+    }
+  }
+  whl T {}
+  whl b {}
+  whl T {}
 }

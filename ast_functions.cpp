@@ -337,13 +337,13 @@ void FunctionHead::addToFunctionTable(GlobalContext &ctx, FnReg regType)
 std::string FunctionHead::getMangledName() const
 {
   if (binding == Binding::Intern) {
-    std::string res = name + '_';
+    std::string res = "_Z" + std::to_string(name.length()) + name;
     for (auto &arg : args)
     {
       res += getMangleName(arg.first);
     }
-    res += '_';
-    res += getMangleName(retType);
+//     res += '_';
+//     res += getMangleName(retType);
     return res;
   }
   if (binding == Binding::Extern_C) {

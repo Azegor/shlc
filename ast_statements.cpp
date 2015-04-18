@@ -318,19 +318,6 @@ llvm::Value *ForStmt::codegen(Context &ctx)
   // 3.1 body
   // 3.2 increment
 
-  auto condType = cond->getType(ctx);
-  if (condType != Type::boo_t) {
-    if (canCast(condType, Type::boo_t)) {
-      cond = make_EPtr<CastExpr>(cond->srcLoc, std::move(cond), Type::boo_t);
-    }
-    else
-    {
-      throw CodeGenError("non-boolean or boolean-castable expression in "
-                         "while statement condition",
-                         this);
-    }
-  }
-
   auto &builder = ctx.global.builder;
 
   auto headBB =
@@ -348,6 +335,18 @@ llvm::Value *ForStmt::codegen(Context &ctx)
 
   builder.SetInsertPoint(headBB);
   if (cond) {
+    auto condType = cond->getType(ctx);
+    if (condType != Type::boo_t) {
+      if (canCast(condType, Type::boo_t)) {
+        cond = make_EPtr<CastExpr>(cond->srcLoc, std::move(cond), Type::boo_t);
+      }
+      else
+      {
+        throw CodeGenError("non-boolean or boolean-castable expression in "
+                          "while statement condition",
+                          this);
+      }
+    }
     auto condVal = cond->codegen(ctx);
     builder.CreateCondBr(condVal, loopBB, endBB);
   }

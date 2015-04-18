@@ -292,6 +292,14 @@ StmtPtr Parser::parseTLExpr(bool &isBlock)
   }
 }
 
+StmtPtr Parser::parseVarDeclStmtOrExpr()
+{
+  if (curTok.type == Token::id_var)
+    return parseVarDeclStmt();
+  auto expr = parseExpr();
+  return make_SPtr<ExprStmt>(expr->srcLoc, std::move(expr));
+}
+
 ExprPtr Parser::parseExpr()
 {
   auto res = parseBinOpRHS(0, parseUnaryExpr());
@@ -334,7 +342,8 @@ ExprPtr Parser::parseUnaryExpr()
   startSLContext();
   int op = curTok.type;
   readNextToken();
-  return make_EPtr<UnOpExpr>(endSLContextPrevToken(), op, parseUnaryExpr());
+  auto unary = parseUnaryExpr();
+  return make_EPtr<UnOpExpr>(endSLContextPrevToken(), op, std::move(unary));
 }
 
 ExprPtr Parser::parsePrimaryExpr()
@@ -379,6 +388,7 @@ ExprPtr Parser::parsePrimaryExpr()
   }
   if (curTok.type == ':') // cast
   {
+    dupSLContextTop(); // use same start as to-cast expression
     auto startTok = prevTok;
     if (!isVarTypeId(readNextToken().type))
       error("unexpected '" + curTok.str + "', expected type");
@@ -395,7 +405,7 @@ ExprPtr Parser::parseIdentifierExpr()
   auto idName = curTok.str;
   readNextToken(); // eat identifier
   if (curTok.type != '(')
-    return make_EPtr<VariableExpr>({prevTok}, std::move(idName));
+    return make_EPtr<VariableExpr>(endSLContextPrevToken(), std::move(idName));
 
   readNextToken();
   ExprList args;
@@ -470,9 +480,9 @@ StmtPtr Parser::parseForStmt()
 {
   startSLContext();
   readNextToken();
-  ExprPtr init;
+  StmtPtr init;
   if (curTok.type != ';') // empty init
-    init = parseExpr();
+    init = parseVarDeclStmtOrExpr();
   if (curTok.type != ';')
     error("unexpected '" + curTok.str + "', expected ';'");
   readNextToken();

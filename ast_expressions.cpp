@@ -161,7 +161,6 @@ llvm::Value *StringConstExpr::codegen(Context &ctx)
   }
   else
   {
-    std::cout << "using cached strconst" << std::endl;
     globalVarName = pos->second;
   }
   return GlobalVarExpr(srcLoc, globalVarName).codegen(ctx);
