@@ -20,8 +20,6 @@
 
 #include <string>
 
-#include "lexer.h"
-
 enum class Type : int
 {
   none,

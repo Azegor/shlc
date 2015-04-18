@@ -38,39 +38,21 @@
 #include "type.h"
 #include "ast_functions.h"
 
-class VariableAlreadyDefinedError : public std::exception
+class VariableAlreadyDefinedError : public CodeGenError
 {
 public:
-  const std::string variableName;
-  VariableAlreadyDefinedError(std::string name)
-      : variableName(std::move(name)) // implement row/col later
+  VariableAlreadyDefinedError(std::string name, const AstNode *node = nullptr)
+      : CodeGenError("Variable '" + name + "' was already defined", node)
   {
   }
-  const char *what() const noexcept override
-  {
-    return ("Variable '" + variableName + "' was already defined").c_str();
-  }
-
-  /*
-  std::string getErrorLineHighlight()
-  {
-    std::string error(errorLine);
-    error += '\n';
-    for (int i = 1; i < col; ++i)
-      error += '~';
-    error += '^';
-    return error;
-  }
-  */
 };
 
 class VariableNotDefinedError : public CodeGenError
 {
 public:
   const std::string variableName;
-  VariableNotDefinedError(const std::string &name)
-      : CodeGenError("Variable '" + name +
-                     "' was not defined") // implement row/col later
+  VariableNotDefinedError(const std::string &name, const AstNode *node = nullptr)
+      : CodeGenError("Variable '" + name + "' was not defined", node)
   {
   }
 };

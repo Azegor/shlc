@@ -127,6 +127,10 @@ class LoopCtrlStmt : public Statement
 {
 public:
   LoopCtrlStmt(SourceLocation loc) : Statement(loc) {}
+  CodeFlowReturn codeFlowReturn() const override
+  {
+    return Statement::CodeFlowReturn::Never; // TODO: maybe conflicts with return check???
+  }
 };
 
 template <typename St, typename... Args>

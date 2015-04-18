@@ -131,14 +131,16 @@ public:
 
 class ForStmt : public LoopStmt
 {
-  ExprPtr init, cond, incr;
+  StmtPtr init;
+  ExprPtr cond;
+  ExprPtr incr;
   StmtPtr body;
 
   llvm::BasicBlock *contBB = nullptr;
   llvm::BasicBlock *breakBB = nullptr;
 
 public:
-  ForStmt(SourceLocation loc, ExprPtr init, ExprPtr cond, ExprPtr incr,
+  ForStmt(SourceLocation loc, StmtPtr init, ExprPtr cond, ExprPtr incr,
           StmtPtr body)
       : LoopStmt(loc),
         init(std::move(init)),

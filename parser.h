@@ -107,6 +107,7 @@ class Parser
   FunctionPtr parseFunctionDef();
   BlockStmtPtr parseStmtBlock();
   StmtPtr parseTLExpr(bool &isBlock);
+  StmtPtr parseVarDeclStmtOrExpr();
   ExprPtr parseExpr();
   ExprPtr parseBinOpRHS(int prec, ExprPtr rhs);
   ExprPtr parseUnaryExpr();
