@@ -78,6 +78,7 @@ public:
   llvm::ModulePassManager mpm;
   std::string errorString;
   llvm::ExecutionEngine *execEngine;
+  bool optimize = false;
 
   struct Fn
   {

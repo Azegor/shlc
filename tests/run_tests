@@ -1,5 +1,6 @@
 #!/bin/sh
 make -C ../build -j4
 ../build/compiler tests.shl tests.ll
+../build/compiler tests.shl tests_opt.ll -O
 clang -O3 tests.ll -o tests -L../build -lstdshl
 ./tests
