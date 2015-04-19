@@ -1,0 +1,3 @@
+#!/bin/sh
+make -C ../build -j4
+../build/compiler tests.shl test.ll

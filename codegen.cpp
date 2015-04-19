@@ -547,7 +547,19 @@ llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
 
         // TODO for bool
         case Tok::log_and:
+          if (commonType != Type::boo_t)
+          {
+            lhs = builder.CreateIsNotNull(lhs, "boo_cst");
+            rhs = builder.CreateIsNotNull(rhs, "boo_cst");
+          }
+          return builder.CreateAnd(lhs, rhs, "logand");
         case Tok::log_or:
+          if (commonType != Type::boo_t)
+          {
+            lhs = builder.CreateIsNotNull(lhs, "boo_cst");
+            rhs = builder.CreateIsNotNull(rhs, "boo_cst");
+          }
+          return builder.CreateOr(lhs, rhs, "logor");
 
         // bit operations
         case '|':

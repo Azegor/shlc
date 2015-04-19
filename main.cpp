@@ -144,7 +144,7 @@ void testParser(const char *filename)
   }
 }
 
-void testCodeGen(const char *filename)
+void testCodeGen(const char *filename, const char* outName)
 {
   Parser parser;
   try
@@ -179,11 +179,10 @@ void testCodeGen(const char *filename)
     std::cout << "===============================================" << std::endl;
     gl_ctx.module->dump();
 
-    static constexpr const char *outFileName = "out.ll";
     std::string err;
-    llvm::raw_fd_ostream outFile(outFileName, err,
+    llvm::raw_fd_ostream outFile(outName, err,
                                  llvm::sys::fs::F_RW | llvm::sys::fs::F_Text);
-    std::cout << "Wringing generated code to " << outFileName << std::endl;
+    std::cout << "Wringing generated code to " << outName << std::endl;
     gl_ctx.module->print(outFile, nullptr);
     outFile.close();
 
@@ -229,9 +228,10 @@ void init_llvm()
 int main(int argc, char **argv)
 {
   init_llvm();
-  auto filename = argc == 2 ? argv[1] : "../test.language";
+  auto filename = (argc >= 2) ? argv[1] : "../test.language";
+  auto outName = (argc >= 3) ? argv[2] : "out.ll";
   //   testLexer(filename);
   //   testParser(filename);
-  testCodeGen(filename);
+  testCodeGen(filename, outName);
   return 0;
 }

@@ -1,0 +1,59 @@
+// >>>>>>> stdlib declarations:
+
+fn prt(int i) native "prt_i";
+fn prt_w(int i, w) native "prt_w_i";
+fn prtln(int i) native "prtln_i";
+
+fn prt(flt f) native "prt_f";
+fn prt_w(flt f, w) native "prt_w_f";
+fn prtln(flt f) native "prtln_f";
+
+fn prt(chr c) native "prt_c";
+fn prtln(chr c) native "prtln_c";
+
+fn prt(boo b) native "prt_b";
+fn prtln(boo b) native "prtln_b";
+
+fn prt(str s) native "prt_s";
+fn prtln(str s) native "prtln_s";
+
+// <<<<<<<
+
+fn dce()
+{
+    if F {
+      prtln(2147483647);
+    }
+    whl F {
+      prtln(0-2147483648);
+    }
+
+    var a = F;
+    var b = T;
+
+    if a && b && 1{
+      prtln(51717);
+    }
+}
+
+fn missingReturn(boo a, b, c, d) : int
+{
+  if a {
+    if b {
+      if c {
+        if d {ret 1;}
+      } el {ret 1;}
+    }
+  } elif (b) {
+    ret 1;
+  } el {
+    whl a && b { ret 1;}
+  }
+  ret 1;
+}
+        
+fn main()
+{
+  dce();
+  missingReturn(T, F, T, F);
+}
