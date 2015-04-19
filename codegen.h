@@ -78,7 +78,7 @@ inline bool isBinOp(int op)
 
 inline bool isUnOp(int op)
 {
-  static constexpr const char *sc_unops = "!~";
+  static constexpr const char *sc_unops = "!~-";
   return std::strchr(sc_unops, op) != nullptr;
 }
 

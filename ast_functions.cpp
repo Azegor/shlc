@@ -338,10 +338,13 @@ std::string FunctionHead::getMangledName() const
 {
   if (binding == Binding::Intern) {
     std::string res = "_Z" + std::to_string(name.length()) + name;
-    for (auto &arg : args)
-    {
-      res += getMangleName(arg.first);
-    }
+    if (args.empty())
+      res += getMangleName(Type::vac_t);
+    else
+      for (auto &arg : args)
+      {
+        res += getMangleName(arg.first);
+      }
     //     res += '_';
     //     res += getMangleName(retType);
     return res;

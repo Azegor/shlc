@@ -29,7 +29,7 @@ static inline bool isVarTypeId(int tokenType)
 }
 
 std::unordered_set<int> unaryOperators{
-  '!', '~', Token::TokenType::increment, Token::TokenType::decrement,
+  '!', '~', '-', Token::TokenType::increment, Token::TokenType::decrement,
 };
 
 std::unordered_map<int, int> binOpPrecedence{
