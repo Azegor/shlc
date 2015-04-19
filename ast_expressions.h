@@ -165,6 +165,7 @@ public:
   {
   }
   void print(int indent = 0) override;
+  Type getCommonType(Context &ctx);
   Type getType(Context &ctx) override;
   llvm::Value *codegen(Context &ctx) override;
 };

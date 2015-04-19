@@ -661,6 +661,14 @@ llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
 
 #undef OP_NOT_SUPPORTED
 
+Type getBinOpReturnType(int op, Type inType)
+{
+  static constexpr const char *bool_binops = "<>";
+  if ((op >= Token::TokenType::lte && op <= Token::TokenType::log_or) || std::strchr(bool_binops, op) != nullptr)
+    return Type::boo_t;
+  return inType;
+}
+
 llvm::Value *createAssignment(Context &ctx, llvm::Value *val, VariableExpr *var)
 {
   auto alloca = var->getAlloca(ctx);

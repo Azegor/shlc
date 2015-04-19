@@ -264,7 +264,7 @@ llvm::Value *CastExpr::codegen(Context &ctx)
   return generateCast(ctx, val, from, newType, castName);
 }
 
-Type BinOpExpr::getType(Context &ctx)
+Type BinOpExpr::getCommonType(Context &ctx)
 {
   auto t1 = lhs->getType(ctx);
   auto t2 = rhs->getType(ctx);
@@ -288,10 +288,16 @@ Type BinOpExpr::getType(Context &ctx)
   return ct;
 }
 
+Type BinOpExpr::getType(Context &ctx)
+{
+  auto ct = getCommonType(ctx);
+  return getBinOpReturnType(op, ct);
+}
+
 llvm::Value *BinOpExpr::codegen(Context &ctx)
 {
   if (isBinOp(op)) {
-    auto commonType = getType(ctx);
+    auto commonType = getCommonType(ctx);
     lhs = make_EPtr<CastExpr>(lhs->srcLoc, std::move(lhs), commonType);
     rhs = make_EPtr<CastExpr>(rhs->srcLoc, std::move(rhs), commonType);
     return createBinOp(ctx, op, commonType, lhs->codegen(ctx),

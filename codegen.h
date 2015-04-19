@@ -102,6 +102,8 @@ llvm::Value *createUnOp(Context &ctx, int op, Type type, llvm::Value *rhs);
 llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
                          llvm::Value *lhs, llvm::Value *rhs);
 
+Type getBinOpReturnType(int op, Type inType);
+
 llvm::Value *createAssignment(Context &ctx, llvm::Value *val,
                               VariableExpr *var);
 

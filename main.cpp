@@ -3,6 +3,7 @@
 
 #include <cstdio>
 
+#include <string>
 #include <unordered_set>
 
 #include <llvm/IR/Function.h>
@@ -12,6 +13,8 @@
 #include "lexer.h"
 #include "parser.h"
 #include "context.h"
+
+using namespace std::literals;
 
 std::unordered_set<std::string> includedFiles;
 
@@ -144,13 +147,14 @@ void testParser(const char *filename)
   }
 }
 
-void testCodeGen(const char *filename, const char* outName)
+void testCodeGen(const char *filename, const char* outName, bool optimize)
 {
   Parser parser;
   try
   {
     auto parseRes = parser.parse(filename);
     GlobalContext gl_ctx;
+    gl_ctx.optimize = optimize;
     llvm::Function *mainFn = nullptr;
     for (auto &r : parseRes)
     {
@@ -230,8 +234,9 @@ int main(int argc, char **argv)
   init_llvm();
   auto filename = (argc >= 2) ? argv[1] : "../test.language";
   auto outName = (argc >= 3) ? argv[2] : "out.ll";
+  auto optimize = (argc >= 4) ? argv[3] != ""s : false;
   //   testLexer(filename);
   //   testParser(filename);
-  testCodeGen(filename, outName);
+  testCodeGen(filename, outName, optimize);
   return 0;
 }
