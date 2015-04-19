@@ -423,6 +423,16 @@ llvm::Value *createUnOp(Context &ctx, int op, Type type, llvm::Value *rhs)
           return builder.CreateXor(rhs, getIntConst(ctx, type, -1), "bitcmpl");
           OP_NOT_SUPPORTED(op, type);
       }
+    case '-':
+      switch (type)
+      {
+        case Type::int_t:
+        case Type::chr_t:
+          return builder.CreateNeg(rhs, "ineg");
+        case Type::flt_t:
+          return builder.CreateFNeg(rhs, "fneg");
+          OP_NOT_SUPPORTED(op, type);
+      }
     //     case Tok::increment:
     //       switch (type)
     //       {
