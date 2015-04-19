@@ -474,7 +474,9 @@ fn error(boo b) : flt
 fn noJmpError(boo b)
 {
   do {brk;} whl b;
-  whl b {}
+  whl b {cnt;}
+  whl b {brk;}
+  whl b {ret;}
 }
 
 fn __() : flt
@@ -492,7 +494,7 @@ fn print_doubles()
   prtln(0.0);
   prtln(3.14);
   prtln(42.24);
-  prtln(1e100);
+  prtln(1e308);
 }
 
 
