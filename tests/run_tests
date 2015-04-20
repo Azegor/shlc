@@ -1,6 +1,14 @@
 #!/bin/sh
 make -C ../build -j4
+echo --- running unoptimized compilation ---
 ../build/compiler tests.shl tests.ll
+if [[ $? -ne 0 ]]; then
+  echo !!! error in non-optimized compilation, terminating !!!
+  exit
+fi
+echo --- running optimized compilation ---
 ../build/compiler tests.shl tests_opt.ll -O
-clang -O3 tests.ll -o tests -L../build -lstdshl
+echo --- compiling optimized binary ---
+clang -O3 tests_opt.ll -o tests -L../build -lstdshl
+echo --- running optimized binary ---
 ./tests

@@ -258,7 +258,7 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
   }
 
   if (gl_ctx.optimize)
-    gl_ctx.fpm.run(*fn); // disable when unoptimized output is wanted
+    gl_ctx.fpm->run(*fn); // disable when unoptimized output is wanted
 
   return fn;
 }

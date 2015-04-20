@@ -26,7 +26,7 @@ GlobalContext::GlobalContext()
     : llvm_context(llvm::getGlobalContext()),
       module(new llvm::Module("my jit module", llvm_context)),
       builder(llvm_context),
-      fpm(module),
+      fpm(),
       mpm(),
       errorString(),
       //             execEngine(llvm::EngineBuilder(std::unique_ptr<llvm::Module>(module)).setErrorStr(&errorString)
@@ -45,7 +45,10 @@ GlobalContext::GlobalContext()
   // Set up the optimizer pipeline.  Start with registering info about how the
   // target lays out data structures.
   module->setDataLayout(execEngine->getDataLayout());
-#if 1
+  int optLevel = 3;
+  pm_builder.Inliner = llvm::createFunctionInliningPass(optLevel, 275);
+  pm_builder.OptLevel = optLevel;
+#if 0
   // Provide basic AliasAnalysis support for GVN.
   fpm.add(llvm::createBasicAliasAnalysisPass());
   // Promote allocas to registers.
@@ -81,7 +84,7 @@ GlobalContext::GlobalContext()
   //   fpm.add(llvm::createLoopRotatePass());
   //   fpm.add(llvm::createInstructionCombiningPass());
 
-  fpm.doInitialization();
+  //   fpm.doInitialization();
 
   // Module passes
   //   mpm.addPass(llvm::createFunctionAttrsPass());
@@ -89,6 +92,20 @@ GlobalContext::GlobalContext()
   //   mpm.addPass(llvm::createGlobalOptimizerPass());
   //   mpm.addPass(llvm::createDeadArgEliminationPass());
 }
+
+void GlobalContext::initFPM()
+{
+  fpm = std::make_unique<llvm::legacy::FunctionPassManager>(module);
+  pm_builder.populateFunctionPassManager(*fpm);
+}
+void GlobalContext::finalizeFPM() { fpm->doFinalization(); }
+
+void GlobalContext::initMPM()
+{
+  mpm = std::make_unique<llvm::legacy::PassManager>();
+  pm_builder.populateModulePassManager(*mpm);
+}
+void GlobalContext::finalizeMPM() {}
 
 FunctionHead *GlobalContext::getFunction(const std::string &name) const
 {

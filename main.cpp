@@ -155,6 +155,7 @@ void testCodeGen(const char *filename, const char *outName, bool optimize)
     auto parseRes = parser.parse(filename);
     GlobalContext gl_ctx;
     gl_ctx.optimize = optimize;
+    gl_ctx.initFPM();
     llvm::Function *mainFn = nullptr;
     for (auto &r : parseRes)
     {
@@ -178,7 +179,10 @@ void testCodeGen(const char *filename, const char *outName, bool optimize)
       //         }
     }
 
-    gl_ctx.mpm.run(gl_ctx.module);
+    gl_ctx.finalizeFPM();
+    gl_ctx.initMPM();
+    if (gl_ctx.optimize) gl_ctx.mpm->run(*gl_ctx.module);
+    gl_ctx.finalizeMPM();
 
     std::cout << "===============================================" << std::endl;
     gl_ctx.module->dump();
