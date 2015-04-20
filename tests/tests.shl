@@ -61,6 +61,9 @@ fn flt_neg()
   var nf = -f;
 }
 
+fn useVar(boo b){}
+fn useVar(int i){}
+
 fn expressions()
 {
   var x : int;
@@ -88,7 +91,7 @@ fn expressions()
   /* +,- */
 
   y = x + x; y = x - x;
-  y = (x * x) + (y / y) - (x % y);
+//   y = (x * x) + (y / y) - (x % y); // makes it undefined!
 
   /* <. <=, >, >= */
 
@@ -115,6 +118,11 @@ fn expressions()
   b1 = b1 || b2;
   b1 = !b1 || !b2;
   b1 = (x < y) || (x > y) && (x * x <= x / x) || (((((F)))));
+
+  useVar(x);
+  useVar(y);
+  useVar(b1);
+  useVar(b2);
 }
 
 fn main()

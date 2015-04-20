@@ -108,8 +108,6 @@ private:
 
 using FunctionHeadPtr = std::unique_ptr<FunctionHead>;
 
-// TODO: add to some function table, to look up function when called
-
 class Function : public AstNode
 {
 protected:

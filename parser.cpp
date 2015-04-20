@@ -538,7 +538,6 @@ StmtPtr Parser::parseVarDeclStmt()
   readNextToken(); // eat 'var'
   VarDeclStmt::VarEnties vars;
 
-  // TODO initializers missing so far
   bool inferred = false;
   while (true)
   {

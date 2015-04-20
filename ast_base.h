@@ -34,7 +34,6 @@ namespace llvm
 class BasicBlock;
 }
 
-// TODO: might not be neccessary!
 class AstNode
 {
 public:
@@ -48,14 +47,11 @@ public:
 
 using AstNodePtr = std::unique_ptr<AstNode>;
 
-// TODO use different class as Expr-ancestor, so that Statement can have it's
-// own codegen-function with other/no return type
 class Statement : public AstNode
 {
 public:
   Statement(SourceLocation loc) : AstNode(loc) {}
   virtual ~Statement() {}
-  // TODO remove default make abstract
   virtual llvm::Value *codegen(Context &ctx) = 0;
   enum class CodeFlowReturn
   {
@@ -109,7 +105,6 @@ public:
   Expr(SourceLocation loc) : AstNode(loc) {}
   virtual ~Expr() {}
   virtual Type getType(Context &cc) = 0;
-  // TODO remove default make abstract
   virtual llvm::Value *codegen(Context &ctx) = 0;
 };
 
@@ -153,8 +148,7 @@ public:
   LoopCtrlStmt(SourceLocation loc) : Statement(loc) {}
   CodeFlowReturn codeFlowReturn() const override
   {
-    return Statement::CodeFlowReturn::Never; // TODO: maybe conflicts with
-                                             // return check???
+    return Statement::CodeFlowReturn::Never;
   }
 };
 

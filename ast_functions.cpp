@@ -245,10 +245,6 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
                          std::to_string(ctx.frameCount()) + " != 1)",
                        this);
 
-  // TODO: check if last stmt is a return; if not & void -> insert, else error
-  //   auto lastStmt = body->back();
-  //   if (typeid(lastStmt) != typeid(ReturnStmt)) // no final return
-
   auto CFR = body->codeFlowReturn();
   if (CFR != Statement::CodeFlowReturn::Never) {
     if (head->getReturnType() == Type::vac_t) // missing return statement
@@ -298,8 +294,7 @@ llvm::Function *FunctionDecl::codegen(GlobalContext &gl_ctx)
 {
   Context ctx(gl_ctx);
   head->addToFunctionTable(gl_ctx, FunctionHead::FnReg::Declare);
-  return head->codegen(ctx); // TODO: don't codegen for declaration!
-                             //   return nullptr;
+  return head->codegen(ctx);
 }
 
 void FunctionHead::addToFunctionTable(GlobalContext &ctx, FnReg regType)
