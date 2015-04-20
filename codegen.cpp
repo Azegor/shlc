@@ -555,19 +555,20 @@ llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
         case Tok::neq:
           return builder.CreateICmpNE(lhs, rhs, "cmp_neq");
 
-        // TODO for bool
         case Tok::log_and:
-          if (commonType != Type::boo_t)
-          {
+          if (commonType != Type::boo_t) {
             lhs = builder.CreateIsNotNull(lhs, "boo_cst");
             rhs = builder.CreateIsNotNull(rhs, "boo_cst");
+            //             throw CodeGenError("cannot implicitly convert " +
+            //                                getTypeName(commonType));
           }
           return builder.CreateAnd(lhs, rhs, "logand");
         case Tok::log_or:
-          if (commonType != Type::boo_t)
-          {
+          if (commonType != Type::boo_t) {
             lhs = builder.CreateIsNotNull(lhs, "boo_cst");
             rhs = builder.CreateIsNotNull(rhs, "boo_cst");
+            //             throw CodeGenError("cannot implicitly convert " +
+            //                                getTypeName(commonType));
           }
           return builder.CreateOr(lhs, rhs, "logor");
 
@@ -664,7 +665,8 @@ llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
 Type getBinOpReturnType(int op, Type inType)
 {
   static constexpr const char *bool_binops = "<>";
-  if ((op >= Token::TokenType::lte && op <= Token::TokenType::log_or) || std::strchr(bool_binops, op) != nullptr)
+  if ((op >= Token::TokenType::lte && op <= Token::TokenType::log_or) ||
+      std::strchr(bool_binops, op) != nullptr)
     return Type::boo_t;
   return inType;
 }

@@ -130,9 +130,7 @@ llvm::Constant *CharConstExpr::codegen(Context &ctx)
 
 llvm::Constant *FltNumberExpr::codegen(Context &ctx)
 {
-  // TODO do something about this (double) cast, or change back no short double
-  return llvm::ConstantFP::get(ctx.global.llvm_context,
-                               llvm::APFloat((double)value));
+  return llvm::ConstantFP::get(ctx.global.llvm_context, llvm::APFloat(value));
 }
 
 llvm::Constant *BoolConstExpr::codegen(Context &ctx)

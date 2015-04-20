@@ -147,7 +147,7 @@ void testParser(const char *filename)
   }
 }
 
-void testCodeGen(const char *filename, const char* outName, bool optimize)
+void testCodeGen(const char *filename, const char *outName, bool optimize)
 {
   Parser parser;
   try

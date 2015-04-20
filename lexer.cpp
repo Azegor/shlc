@@ -446,9 +446,7 @@ inline Token Lexer::readDivideOperatorOrComment()
     if (!input->eof()) {
       if (lastChar == '\r' && readNext() == '\n') // crlf
         readNext();
-      if (!input->eof())
-        return nextToken(); // recursive call TODO replace with goto top? nope!
-                            // (tail call?)
+      if (!input->eof()) return nextToken();
     }
     return makeToken(Token::eof);
   }

@@ -372,7 +372,7 @@ struct SourceLocation
 
   std::string toStr() const
   {
-    // TODO output source itselfe (get from lexer)
+    // TODO output source itself (get from lexer)
     if (startToken.col == -1) return "at unknown location";
     if (startToken == endToken)
       return "at token " + startToken.toStr() + "->" + endToken.toStr();
@@ -382,7 +382,8 @@ struct SourceLocation
   std::string getErrorLineHighlight(const Lexer &lex)
   {
     if (startToken.line == -1) return "at unknown location";
-    std::string error("at <unknown file>:" + std::to_string(startToken.line) + ':' + std::to_string(startToken.col) + '\n');
+    std::string error("at <unknown file>:" + std::to_string(startToken.line) +
+                      ':' + std::to_string(startToken.col) + '\n');
     error += lex.getLine(startToken.line);
     error += '\n';
     for (int i = 1; i < startToken.col; ++i)
