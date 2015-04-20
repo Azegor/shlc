@@ -117,7 +117,7 @@ public:
 
 class FltNumberExpr : public ConstantExpr
 {
-  long double value;
+  double value;
 
 public:
   FltNumberExpr(SourceLocation loc, long double val)

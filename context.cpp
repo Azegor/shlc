@@ -55,6 +55,7 @@ GlobalContext::GlobalContext()
   // Reassociate expressions.
   fpm.add(llvm::createReassociatePass());
   // Eliminate Common SubExpressions.
+  fpm.add(llvm::createEarlyCSEPass());
   fpm.add(llvm::createGVNPass());
   // Simplify the control flow graph (deleting unreachable blocks, etc).
   //   fpm.add(llvm::createFlattenCFGPass());
@@ -83,6 +84,7 @@ GlobalContext::GlobalContext()
   fpm.doInitialization();
 
   // Module passes
+  //   mpm.addPass(llvm::createFunctionAttrsPass());
   //   mpm.addPass(llvm::createFunctionInliningPass());
   //   mpm.addPass(llvm::createGlobalOptimizerPass());
   //   mpm.addPass(llvm::createDeadArgEliminationPass());
