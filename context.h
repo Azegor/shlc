@@ -29,6 +29,7 @@
 #include <llvm/IR/Module.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LegacyPassManager.h>
+#include <llvm/Transforms/IPO/PassManagerBuilder.h>
 #include <llvm/IR/PassManager.h>
 #include <llvm/Analysis/Passes.h>
 #include <llvm/Transforms/Scalar.h> // for createPromoteMemoryToRegisterPass()
@@ -74,8 +75,11 @@ public:
   llvm::LLVMContext &llvm_context;
   llvm::Module *const module;
   llvm::IRBuilder<> builder;
-  llvm::legacy::FunctionPassManager fpm;
-  llvm::ModulePassManager mpm;
+  llvm::PassManagerBuilder pm_builder;
+  //   llvm::legacy::FunctionPassManager fpm;
+  std::unique_ptr<llvm::legacy::FunctionPassManager> fpm;
+  //   llvm::legacy::PassManager mpm;
+  std::unique_ptr<llvm::legacy::PassManager> mpm;
   std::string errorString;
   llvm::ExecutionEngine *execEngine;
   bool optimize = false;
@@ -92,6 +96,12 @@ public:
   std::unordered_map<std::string, std::string> stringConstants;
 
   GlobalContext();
+
+  void initFPM();
+  void finalizeFPM();
+
+  void initMPM();
+  void finalizeMPM();
 
   FunctionHead *getFunction(const std::string &name) const; // unused!
   FunctionHead *getFunctionOverload(const std::string &name,
