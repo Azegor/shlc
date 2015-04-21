@@ -263,7 +263,6 @@ private:
   void checkStream()
   {
     if (!*input) {
-      std::cout << "throwing now" << std::endl;
       error(std::string("Broken input stream: ") + std::strerror(errno));
     }
   }
