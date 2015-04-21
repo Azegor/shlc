@@ -21,14 +21,14 @@ void Compiler::parseArguments(int argc, char* argv[])
 {
   po::positional_options_description posArgs;
   posArgs.add("input-file", 1);
-  po::options_description desc("Allowed options");
+  po::options_description desc("Options");
   desc.add_options()                      //
     ("help,h", "print this help message") //
     (",O", po::value<int>(&optLevel)->default_value(0),
      "optimization level") //
     ("input-file", po::value<std::string>(&inFile),
      "input file") //
-    (",o", po::value<std::string>(&outFile),
+    ("output-file,o", po::value<std::string>(&outFile),
      "output file")("run", "run main method of generated code");
 
   po::variables_map vm;
@@ -41,6 +41,7 @@ void Compiler::parseArguments(int argc, char* argv[])
               vm);
 
     if (vm.count("help")) {
+      std::cout << "Usage: " << argv[0] << " [options] file..." << std::endl;
       std::cout << desc << std::endl << std::endl;
       //         rad::OptionPrinter::printStandardAppDesc(appName,
       //                                                  std::cout,
@@ -55,7 +56,7 @@ void Compiler::parseArguments(int argc, char* argv[])
       std::cerr << "error: no input files" << std::endl;
       exit(1);
     }
-    if (!vm.count("o")) {
+    if (!vm.count("output-file")) {
       outFile = inFile + ".ll";
     }
     if (vm.count("run")) {

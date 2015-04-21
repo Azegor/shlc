@@ -152,8 +152,11 @@ fn test_fib()
   prtln(fib_iter(100));
   prtln(fib_iter(1000));
   prtln(fib_iter(10000));
-  for var i = 0; i < 10000; ++i {
-    prt(fib_iter(i));
+  for var i = 0; i < 100; ++i {
+    var val = fib_iter(i);
+    if val < 0 { brk; }
+    prt(val);
+    prt(' ');
   }
 }
 
@@ -180,4 +183,5 @@ fn main()
   test_fib();
   var_self_reference();
   ambig_overload();
+  prtln("");
 }
