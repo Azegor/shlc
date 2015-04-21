@@ -20,6 +20,7 @@
 #include <typeinfo>
 
 #include "ast_statements.h"
+#include "parser.h"
 
 void printIndent(int indent)
 {
@@ -93,4 +94,9 @@ Statement::BranchBehaviour BlockStmt::branchBehaviour() const
     if (stmt->codeFlowReturn() == Statement::CodeFlowReturn::Never) return res;
   }
   return res;
+}
+
+std::string CodeGenError::getErrorLineHighlight(const Parser &parser) const
+{
+  return srcLoc.getErrorLineHighlight(parser.getLexer(srcLoc.lexerNr));
 }

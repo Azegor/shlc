@@ -189,6 +189,7 @@ struct Token
 class Lexer
 {
 private:
+  int lexerNr;
   bool ownsStream = false;
   std::istream *input;
   int lastChar = ' '; // ' ' will be skipped immediately
@@ -198,14 +199,6 @@ private:
   int tokenLine, tokenCol;
   std::deque<std::string> lines;
   std::string *currentLine;
-  void finishCurrentLine()
-  {
-    if (!*input) // if file open failed, don't try to read!
-      return;
-    while (lastChar = input->get(),
-           lastChar != '\r' && lastChar != '\n' && !input->eof())
-      *currentLine += lastChar;
-  }
 
   int readNext();
 
@@ -306,7 +299,22 @@ public:
     if (ownsStream) delete input;
   }
 
+  void setNr(int nr) { lexerNr = nr; }
+  int getNr() const { return lexerNr; }
+
+  const std::string &getFileName() const { return filename; }
+
   Token nextToken();
+
+  void finishCurrentLine()
+  {
+    if (!*input) // if file open failed, don't try to read!
+      return;
+    while (lastChar = readNext(),
+           lastChar != '\r' && lastChar != '\n' && !input->eof())
+    {
+    }
+  }
 
   std::string abortAndGetCurrentLine()
   {
@@ -348,24 +356,25 @@ struct TokenPos
 
 struct SourceLocation
 {
+  int lexerNr;
   const TokenPos startToken, endToken;
-  int lexerNr; // TODO
-  // reference file here
   SourceLocation() = default;
-  SourceLocation(TokenPos start, TokenPos end)
-      : startToken(start), endToken(end)
+  SourceLocation(int lexerNr, TokenPos start, TokenPos end)
+      : lexerNr(lexerNr), startToken(start), endToken(end)
   {
   }
-  SourceLocation(const Token &single)
-      : startToken(single, false), endToken(single, true)
+  SourceLocation(int lexerNr, const Token &single)
+      : lexerNr(lexerNr), startToken(single, false), endToken(single, true)
   {
   }
   SourceLocation(const SourceLocation &o)
-      : startToken(o.startToken), endToken(o.endToken)
+      : lexerNr(o.lexerNr), startToken(o.startToken), endToken(o.endToken)
   {
   }
   SourceLocation(SourceLocation &&o)
-      : startToken(std::move(o.startToken)), endToken(std::move(o.endToken))
+      : lexerNr(o.lexerNr),
+        startToken(std::move(o.startToken)),
+        endToken(std::move(o.endToken))
   {
   }
 
@@ -378,11 +387,12 @@ struct SourceLocation
     return "between token " + startToken.toStr() + " and " + endToken.toStr();
   }
 
-  std::string getErrorLineHighlight(const Lexer &lex)
+  std::string getErrorLineHighlight(const Lexer &lex) const
   {
     if (startToken.line == -1) return "at unknown location";
-    std::string error("at <unknown file>:" + std::to_string(startToken.line) +
-                      ':' + std::to_string(startToken.col) + '\n');
+    std::string error("at \033[1;37m" + lex.getFileName() + "\033[00m:" +
+                      std::to_string(startToken.line) + ':' +
+                      std::to_string(startToken.col) + '\n');
     error += lex.getLine(startToken.line);
     error += '\n';
     for (int i = 1; i < startToken.col; ++i)
