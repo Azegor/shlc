@@ -1,0 +1,16 @@
+fn prt(int i) native "prt_i";
+fn prt_w(int i, w) native "prt_w_i";
+fn prtln(int i) native "prtln_i";
+
+fn prt(flt f) native "prt_f";
+fn prt_w(flt f, w) native "prt_w_f";
+fn prtln(flt f) native "prtln_f";
+
+fn prt(chr c) native "prt_c";
+fn prtln(chr c) native "prtln_c";
+
+fn prt(boo b) native "prt_b";
+fn prtln(boo b) native "prtln_b";
+
+fn prt(str s) native "prt_s";
+fn prtln(str s) native "prtln_s";

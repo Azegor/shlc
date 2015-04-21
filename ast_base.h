@@ -190,21 +190,20 @@ void printList(L &list, Callback callback)
   }
 }
 
+class Parser;
+
 class CodeGenError : public std::exception
 {
 public:
   const std::string reason, errorLine;
-  SourceLocation srcLoc;
+  const SourceLocation srcLoc;
   CodeGenError(std::string what, const AstNode *node = nullptr)
       : reason(std::move(what)), srcLoc(node ? node->srcLoc : SourceLocation())
   {
   }
   const char *what() const noexcept override { return reason.c_str(); }
   std::string errorLocation() { return srcLoc.toStr(); }
-  std::string getErrorLineHighlight(const Lexer &lex)
-  {
-    return srcLoc.getErrorLineHighlight(lex);
-  }
+  std::string getErrorLineHighlight(const Parser &parser) const;
 };
 
 #endif // AST_BASE_H

@@ -25,27 +25,30 @@
 #include "ast.h"
 #include "util.h"
 
+class Parser;
+
 class ParseError : public std::exception
 {
 public:
-  const Token token;
+  const SourceLocation srcLoc;
   const std::string reason, errorLine;
-  ParseError(Token token, std::string what, std::string errorLine)
-      : token(std::move(token)), reason(std::move(what)), errorLine(errorLine)
+  ParseError(SourceLocation srcLoc, std::string what, std::string errorLine)
+      : srcLoc(std::move(srcLoc)), reason(std::move(what)), errorLine(errorLine)
   {
   }
   const char *what() const noexcept override { return reason.c_str(); }
 
-  std::string getErrorLineHighlight()
-  {
-    std::string error(errorLine);
-    error += '\n';
-    for (int i = 1; i < token.col; ++i)
-      error += '~';
-    for (int i = token.col; i < token.col + token.str.length(); ++i)
-      error += '^';
-    return error;
-  }
+  //   std::string getErrorLineHighlight()
+  //   {
+  //     std::string error(errorLine);
+  //     error += '\n';
+  //     for (int i = 1; i < srcLoc.startToken.col; ++i)
+  //       error += '~';
+  //     for (int i = srcLoc.startToken.col; i < srcLoc.endToken.col; ++i)
+  //       error += '^';
+  //     return error;
+  //   }
+  std::string getErrorLineHighlight(const Parser &parser) const;
 };
 
 class Parser
@@ -53,6 +56,7 @@ class Parser
   std::deque<Lexer> allLexers;
   std::stack<Lexer *> lexers;
   std::stack<Token> lastTokens;
+  int currentLexerNr = 0;
 
   void pushLexer(std::string filename)
   {
@@ -60,15 +64,17 @@ class Parser
     allLexers.emplace_back(filename);
     lexers.push(&allLexers.back());
     currentLexer = lexers.top();
+    currentLexerNr = allLexers.size() - 1;
+    currentLexer->setNr(currentLexerNr);
   }
   void popLexer()
   {
     lexers.pop();
-    if (!lexers.empty())
-    {
+    if (!lexers.empty()) {
       currentLexer = lexers.top();
       curTok = lastTokens.top();
       lastTokens.pop();
+      currentLexerNr = currentLexer->getNr();
     }
     else
       currentLexer = nullptr;
@@ -87,19 +93,27 @@ class Parser
   {
     auto start = startPositions.back();
     startPositions.pop_back();
-    return {start, TokenPos(curTok, true)};
+    return {currentLexerNr, start, TokenPos(curTok, true)};
   }
   SourceLocation endSLContextPrevToken()
   {
     auto start = startPositions.back();
     startPositions.pop_back();
-    return {start, TokenPos(prevTok, true)};
+    return {currentLexerNr, start, TokenPos(prevTok, true)};
   }
   SourceLocation getSLContextMarkedEnd()
   {
     auto start = startPositions.back();
     startPositions.pop_back();
-    return {start, endPos};
+    return {currentLexerNr, start, endPos};
+  }
+  SourceLocation getSLContextSingleCurToken()
+  {
+    return {currentLexerNr, curTok};
+  }
+  SourceLocation getSLContextSinglePrevToken()
+  {
+    return {currentLexerNr, prevTok};
   }
 
   Token &readNextToken()
@@ -139,7 +153,8 @@ class Parser
 
   [[noreturn]] void error(std::string msg)
   {
-    throw ParseError(curTok, std::move(msg),
+    //     currentLexer->finishCurrentLine();
+    throw ParseError({currentLexerNr, curTok}, std::move(msg),
                      currentLexer->abortAndGetCurrentLine());
   }
 
@@ -166,8 +181,7 @@ public:
 
   std::vector<FunctionPtr> parse(std::string filename);
 
-  // TODO implement getting of the correct lexer!!!
-  const Lexer &getLexer() const { return allLexers.front(); }
+  const Lexer &getLexer(int nr) const { return allLexers[nr]; }
 };
 
 #endif // PARSER_H

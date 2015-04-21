@@ -128,9 +128,9 @@ void testLexer(const char *filename)
 
 void testParser(const char *filename)
 {
+  Parser parser;
   try
   {
-    Parser parser;
     auto parseRes = parser.parse(filename);
     for (auto &r : parseRes)
       r->print();
@@ -144,10 +144,9 @@ void testParser(const char *filename)
   }
   catch (ParseError &e)
   {
-    std::cout << "Caught ParseError on line " << e.token.line << ':'
-              << e.token.col << ": \033[1;31m" << e.what()
-              << "\033[00m:" << std::endl;
-    std::cout << e.getErrorLineHighlight() << std::endl;
+    std::cout << "Caught ParseError: "
+              << "\033[1;31m" << e.what() << "\033[00m " << std::endl;
+    std::cout << e.getErrorLineHighlight(parser) << std::endl;
     exit(1);
   }
 }
@@ -218,17 +217,16 @@ void testCodeGen(const char *filename, const char *outName, bool optimize)
   }
   catch (ParseError &e)
   {
-    std::cout << "Caught ParseError on line " << e.token.line << ':'
-              << e.token.col << ": \033[1;31m" << e.what()
-              << "\033[00m:" << std::endl;
-    std::cout << e.getErrorLineHighlight() << std::endl;
+    std::cout << "Caught ParseError: "
+              << "\033[1;31m" << e.what() << "\033[00m " << std::endl;
+    std::cout << e.getErrorLineHighlight(parser) << std::endl;
     exit(1);
   }
   catch (CodeGenError &e)
   {
     std::cout << "Caught CodeGenError: "
               << "\033[1;31m" << e.what() << "\033[00m " << std::endl;
-    std::cout << e.getErrorLineHighlight(parser.getLexer()) << std::endl;
+    std::cout << e.getErrorLineHighlight(parser) << std::endl;
     exit(1);
   }
 }

@@ -23,6 +23,11 @@
 
 #include "lexer.h"
 
+std::string ParseError::getErrorLineHighlight(const Parser &parser) const
+{
+  return srcLoc.getErrorLineHighlight(parser.getLexer(srcLoc.lexerNr));
+}
+
 static inline bool isVarTypeId(int tokenType)
 {
   return Token::id_int <= tokenType && tokenType <= Token::id_chr;
@@ -123,11 +128,11 @@ std::vector<FunctionPtr> Parser::parse(std::string filename)
       {
         default:
           assertTokens({Token::id_use, Token::id_fn, Token::eof});
-//           error("unexpected token");
-//           std::cerr << "unexpected token '" << curTok.str << "' at "
-//                     << curTok.line << ':' << curTok.col << std::endl;
-//           readNextToken();
-//           break;
+        //           error("unexpected token");
+        //           std::cerr << "unexpected token '" << curTok.str << "' at "
+        //                     << curTok.line << ':' << curTok.col << std::endl;
+        //           readNextToken();
+        //           break;
         case Token::id_use:
         {
           readNextToken();
@@ -157,8 +162,7 @@ std::vector<FunctionPtr> Parser::parse(std::string filename)
           std::cout << "Reached end of file in " << currentLexer->filename
                     << std::endl;
           popLexer();
-          if (lexers.empty())
-            eof = true;
+          if (lexers.empty()) eof = true;
           break;
       }
     }
@@ -308,11 +312,11 @@ StmtPtr Parser::parseTLExpr(bool &isBlock)
       return parseVarDeclStmt();
     case Token::id_brk:
       readNextToken();
-      return make_SPtr<BreakStmt>({prevTok});
+      return make_SPtr<BreakStmt>(getSLContextSinglePrevToken());
       break;
     case Token::id_cnt:
       readNextToken();
-      return make_SPtr<ContinueStmt>({prevTok});
+      return make_SPtr<ContinueStmt>(getSLContextSinglePrevToken());
       break;
   }
 }
@@ -391,19 +395,21 @@ ExprPtr Parser::parsePrimaryExpr()
       if (curTok.str.length() != 1)
         error("invalid char constant: '" + curTok.str + "' with length " +
               std::to_string(curTok.str.length()));
-      res = make_EPtr<CharConstExpr>({curTok}, curTok.str[0]);
+      res =
+        make_EPtr<CharConstExpr>(getSLContextSingleCurToken(), curTok.str[0]);
       readNextToken();
       break;
     case Token::dq_string:
-      res = make_EPtr<StringConstExpr>({curTok}, curTok.str);
+      res =
+        make_EPtr<StringConstExpr>(getSLContextSingleCurToken(), curTok.str);
       readNextToken();
       break;
     case Token::id_T:
-      res = make_EPtr<BoolConstExpr>({curTok}, true);
+      res = make_EPtr<BoolConstExpr>(getSLContextSingleCurToken(), true);
       readNextToken();
       break;
     case Token::id_F:
-      res = make_EPtr<BoolConstExpr>({curTok}, false);
+      res = make_EPtr<BoolConstExpr>(getSLContextSingleCurToken(), false);
       readNextToken();
       break;
     case '(':
@@ -457,10 +463,12 @@ ExprPtr Parser::parseNumberExpr()
     case Token::hex_number:
     case Token::oct_number:
     case Token::bin_number:
-      res = make_EPtr<IntNumberExpr>({curTok}, std::stoll(curTok.str));
+      res = make_EPtr<IntNumberExpr>(getSLContextSingleCurToken(),
+                                     std::stoll(curTok.str));
       break;
     case Token::dec_flt_number:
-      res = make_EPtr<FltNumberExpr>({curTok}, std::stold(curTok.str));
+      res = make_EPtr<FltNumberExpr>(getSLContextSingleCurToken(),
+                                     std::stold(curTok.str));
       break;
     default:
       error("!!! unknown token in parseNumberExpr: " +
