@@ -159,8 +159,9 @@ std::vector<FunctionPtr> Parser::parse(std::string filename)
           toplevelFunctions.push_back(parseFunctionDef());
           break;
         case Token::eof:
-          std::cout << "Reached end of file in " << currentLexer->filename
-                    << std::endl;
+          //           std::cout << "Reached end of file in " <<
+          //           currentLexer->filename
+          //                     << std::endl;
           popLexer();
           if (lexers.empty()) eof = true;
           break;

@@ -26,6 +26,7 @@ GlobalContext::GlobalContext()
     : llvm_context(llvm::getGlobalContext()),
       module(new llvm::Module("my jit module", llvm_context)),
       builder(llvm_context),
+      pm_builder(),
       fpm(),
       mpm(),
       errorString(),
@@ -45,9 +46,7 @@ GlobalContext::GlobalContext()
   // Set up the optimizer pipeline.  Start with registering info about how the
   // target lays out data structures.
   module->setDataLayout(execEngine->getDataLayout());
-  int optLevel = 3;
-  pm_builder.Inliner = llvm::createFunctionInliningPass(optLevel, 275);
-  pm_builder.OptLevel = optLevel;
+
 #if 0
   // Provide basic AliasAnalysis support for GVN.
   fpm.add(llvm::createBasicAliasAnalysisPass());
@@ -91,6 +90,12 @@ GlobalContext::GlobalContext()
   //   mpm.addPass(llvm::createFunctionInliningPass());
   //   mpm.addPass(llvm::createGlobalOptimizerPass());
   //   mpm.addPass(llvm::createDeadArgEliminationPass());
+}
+
+void GlobalContext::initPMB()
+{
+  pm_builder.Inliner = llvm::createFunctionInliningPass(optimizeLevel, 275);
+  pm_builder.OptLevel = optimizeLevel;
 }
 
 void GlobalContext::initFPM()

@@ -82,7 +82,7 @@ public:
   std::unique_ptr<llvm::legacy::PassManager> mpm;
   std::string errorString;
   llvm::ExecutionEngine *execEngine;
-  bool optimize = false;
+  int optimizeLevel = 0;
 
   struct Fn
   {
@@ -96,6 +96,8 @@ public:
   std::unordered_map<std::string, std::string> stringConstants;
 
   GlobalContext();
+
+  void initPMB();
 
   void initFPM();
   void finalizeFPM();
