@@ -23,6 +23,7 @@
 
 #include "lexer.h"
 #include "ast.h"
+#include "util.h"
 
 class ParseError : public std::exception
 {
@@ -51,9 +52,11 @@ class Parser
 {
   std::deque<Lexer> allLexers;
   std::stack<Lexer *> lexers;
+  std::stack<Token> lastTokens;
 
   void pushLexer(std::string filename)
   {
+    lastTokens.push(curTok);
     allLexers.emplace_back(filename);
     lexers.push(&allLexers.back());
     currentLexer = lexers.top();
@@ -62,7 +65,11 @@ class Parser
   {
     lexers.pop();
     if (!lexers.empty())
+    {
       currentLexer = lexers.top();
+      curTok = lastTokens.top();
+      lastTokens.pop();
+    }
     else
       currentLexer = nullptr;
   }
@@ -142,6 +149,16 @@ class Parser
     if (curTok.type != token)
       error("Unexpected '" + curTok.str + "', expected '" +
             Lexer::getTokenName(token) + '\'');
+  }
+  void assertTokens(std::initializer_list<int> tokens)
+  {
+    for (auto &&t : tokens)
+      if (curTok.type == t) return;
+    error("Unexpected '" + curTok.str + "', expected one of " +
+          listToString(tokens, [](int t)
+                       {
+            return '\'' + Lexer::getTokenName(t) + '\'';
+          }));
   }
 
 public:

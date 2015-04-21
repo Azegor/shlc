@@ -122,11 +122,34 @@ std::vector<FunctionPtr> Parser::parse(std::string filename)
       switch (curTok.type)
       {
         default:
-          error("unexpected token");
-          std::cerr << "unexpected token '" << curTok.str << "' at "
-                    << curTok.line << ':' << curTok.col << std::endl;
+          assertTokens({Token::id_use, Token::id_fn, Token::eof});
+//           error("unexpected token");
+//           std::cerr << "unexpected token '" << curTok.str << "' at "
+//                     << curTok.line << ':' << curTok.col << std::endl;
+//           readNextToken();
+//           break;
+        case Token::id_use:
+        {
+          readNextToken();
+          std::string filename;
+          if (curTok.type == Token::dq_string) {
+            filename = curTok.str;
+          }
+          else if (curTok.type == Token::identifier)
+          {
+            filename = curTok.str + ".shl";
+          }
+          else
+          {
+            assertTokens({Token::dq_string, Token::identifier});
+          }
+          readNextToken();
+          assertToken(';');
+          readNextToken();
+          pushLexer(filename);
           readNextToken();
           break;
+        }
         case Token::id_fn:
           toplevelFunctions.push_back(parseFunctionDef());
           break;
@@ -134,7 +157,8 @@ std::vector<FunctionPtr> Parser::parse(std::string filename)
           std::cout << "Reached end of file in " << currentLexer->filename
                     << std::endl;
           popLexer();
-          eof = true;
+          if (lexers.empty())
+            eof = true;
           break;
       }
     }
