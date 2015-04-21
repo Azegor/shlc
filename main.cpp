@@ -14,6 +14,7 @@
 #include "lexer.h"
 #include "parser.h"
 #include "context.h"
+#include "compiler.h"
 
 using namespace std::literals;
 
@@ -158,7 +159,7 @@ void testCodeGen(const char *filename, const char *outName, bool optimize)
   {
     auto parseRes = parser.parse(filename);
     GlobalContext gl_ctx;
-    gl_ctx.optimize = optimize;
+    gl_ctx.optimizeLevel = optimize ? 3 : 0;
     gl_ctx.initFPM();
     llvm::Function *mainFn = nullptr;
     for (auto &r : parseRes)
@@ -185,7 +186,7 @@ void testCodeGen(const char *filename, const char *outName, bool optimize)
 
     gl_ctx.finalizeFPM();
     gl_ctx.initMPM();
-    if (gl_ctx.optimize) gl_ctx.mpm->run(*gl_ctx.module);
+    gl_ctx.mpm->run(*gl_ctx.module);
     gl_ctx.finalizeMPM();
 
     std::cout << "===============================================" << std::endl;
@@ -255,6 +256,7 @@ int main(int argc, char **argv)
   auto optimize = (argc >= 4) ? argv[3] != ""s : false;
   //   testLexer(filename);
   //   testParser(filename);
-  testCodeGen(filename, outName, optimize);
-  return 0;
+  //   testCodeGen(filename, outName, optimize);
+  Compiler compiler(argc, argv);
+  return compiler.run();
 }
