@@ -41,7 +41,8 @@ public:
     error += '\n';
     for (int i = 1; i < token.col; ++i)
       error += '~';
-    error += '^';
+    for (int i = token.col; i < token.col + token.str.length(); ++i)
+      error += '^';
     return error;
   }
 };

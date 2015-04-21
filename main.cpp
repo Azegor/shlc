@@ -2,6 +2,7 @@
 #include <fstream>
 
 #include <cstdio>
+// #include <csignal>
 
 #include <string>
 #include <unordered_set>
@@ -104,6 +105,7 @@ bool readFile(std::string input)
               << " in file " << input << ": \033[1;31m" << e.what()
               << "\033[00m:" << std::endl;
     std::cout << e.getErrorLineHighlight() << std::endl;
+    exit(1);
   }
   return true;
 }
@@ -119,6 +121,7 @@ void testLexer(const char *filename)
     std::cout << "Caught LexError on line " << e.line << ':' << e.col
               << ": \033[1;31m" << e.what() << "\033[00m:" << std::endl;
     std::cout << e.getErrorLineHighlight() << std::endl;
+    exit(1);
   }
   std::cout << std::endl;
 }
@@ -137,6 +140,7 @@ void testParser(const char *filename)
     std::cout << "Caught LexError on line " << e.line << ':' << e.col
               << ": \033[1;31m" << e.what() << "\033[00m:" << std::endl;
     std::cout << e.getErrorLineHighlight() << std::endl;
+    exit(1);
   }
   catch (ParseError &e)
   {
@@ -144,6 +148,7 @@ void testParser(const char *filename)
               << e.token.col << ": \033[1;31m" << e.what()
               << "\033[00m:" << std::endl;
     std::cout << e.getErrorLineHighlight() << std::endl;
+    exit(1);
   }
 }
 
@@ -209,6 +214,7 @@ void testCodeGen(const char *filename, const char *outName, bool optimize)
     std::cout << "Caught LexError on line " << e.line << ':' << e.col
               << ": \033[1;31m" << e.what() << "\033[00m:" << std::endl;
     std::cout << e.getErrorLineHighlight() << std::endl;
+    exit(1);
   }
   catch (ParseError &e)
   {
@@ -216,12 +222,14 @@ void testCodeGen(const char *filename, const char *outName, bool optimize)
               << e.token.col << ": \033[1;31m" << e.what()
               << "\033[00m:" << std::endl;
     std::cout << e.getErrorLineHighlight() << std::endl;
+    exit(1);
   }
   catch (CodeGenError &e)
   {
     std::cout << "Caught CodeGenError: "
               << "\033[1;31m" << e.what() << "\033[00m " << std::endl;
     std::cout << e.getErrorLineHighlight(parser.getLexer()) << std::endl;
+    exit(1);
   }
 }
 
@@ -233,8 +241,16 @@ void init_llvm()
   llvm::InitializeNativeTargetAsmParser();
 }
 
+// void FPE_ExceptionHandler(int nSig)
+// {
+//   std::cerr << "caught SIGFPE" << std::endl;
+//   std::abort();
+// }
+
 int main(int argc, char **argv)
 {
+  //   signal(SIGFPE, FPE_ExceptionHandler);
+
   init_llvm();
   auto filename = (argc >= 2) ? argv[1] : "../test.language";
   auto outName = (argc >= 3) ? argv[2] : "out.ll";

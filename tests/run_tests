@@ -8,7 +8,15 @@ if [[ $? -ne 0 ]]; then
 fi
 echo --- running optimized compilation ---
 ../build/compiler tests.shl tests_opt.ll -O
-echo --- compiling optimized binary ---
+if [[ $? -ne 0 ]]; then
+  echo !!! error in optimized compilation, terminating !!!
+  exit
+fi
+echo --- linking optimized binary ---
 clang -O3 tests_opt.ll -o tests -L../build -lstdshl
+if [[ $? -ne 0 ]]; then
+  echo !!! error in linking of optimized binary, terminating !!!
+  exit
+fi
 echo --- running optimized binary ---
 ./tests

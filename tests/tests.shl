@@ -1,23 +1,25 @@
-// >>>>>>> stdlib declarations:
+use std;
 
-fn prt(int i) native "prt_i";
-fn prt_w(int i, w) native "prt_w_i";
-fn prtln(int i) native "prtln_i";
-
-fn prt(flt f) native "prt_f";
-fn prt_w(flt f, w) native "prt_w_f";
-fn prtln(flt f) native "prtln_f";
-
-fn prt(chr c) native "prt_c";
-fn prtln(chr c) native "prtln_c";
-
-fn prt(boo b) native "prt_b";
-fn prtln(boo b) native "prtln_b";
-
-fn prt(str s) native "prt_s";
-fn prtln(str s) native "prtln_s";
-
-// <<<<<<<
+// // >>>>>>> stdlib declarations:
+//
+// fn prt(int i) native "prt_i";
+// fn prt_w(int i, w) native "prt_w_i";
+// fn prtln(int i) native "prtln_i";
+//
+// fn prt(flt f) native "prt_f";
+// fn prt_w(flt f, w) native "prt_w_f";
+// fn prtln(flt f) native "prtln_f";
+//
+// fn prt(chr c) native "prt_c";
+// fn prtln(chr c) native "prtln_c";
+//
+// fn prt(boo b) native "prt_b";
+// fn prtln(boo b) native "prtln_b";
+//
+// fn prt(str s) native "prt_s";
+// fn prtln(str s) native "prtln_s";
+//
+// // <<<<<<<
 
 fn dce()
 {
@@ -36,7 +38,7 @@ fn dce()
     }
 }
 
-fn missingReturn(boo a, b, c, d) : int
+fn missingReturn1(boo a, b, c, d) : int
 {
   if a {
     if b {
@@ -52,13 +54,30 @@ fn missingReturn(boo a, b, c, d) : int
   ret 1;
 }
 
-fn flt_neg()
+fn missingReturn2(boo a, b, c, d) : int
+{
+  if a {
+    if b {
+      if c {
+        if d {ret 1;}
+      } el {ret 2;}
+    }
+  } elif (b) {
+    ret 3;
+  } el {
+    whl a && b { ret 4;}
+  }
+  ret 5;
+}
+
+fn flt_neg() : flt
 {
   var i = 1;
   var f = 1.0;
 
   var ni = -i;
   var nf = -f;
+  ret ni + nf;
 }
 
 fn useVar(boo b){}
@@ -125,10 +144,80 @@ fn expressions()
   useVar(b2);
 }
 
+fn fib(int i) : int
+{
+  if i <= 2 {
+    ret 1;
+  }
+  ret fib(i-1)+fib(i-2);
+}
+
+fn fib_iter(int val) : int
+{
+  if val < 3 { ret 1; }
+  var fib_1 = 1, fib_2 = 1, res = 0;
+  var i : int;
+  for i = 3; i <= val; ++i {
+    res = fib_1 + fib_2;
+    fib_2 = fib_1;
+    fib_1 = res;
+  }
+  ret res;
+}
+
+fn test_fib()
+{
+  prt(fib(0));
+  prtln(fib_iter(0));
+  prt(fib(1));
+  prtln(fib_iter(1));
+  prt(fib(2));
+  prtln(fib_iter(2));
+  prt(fib(3));
+  prtln(fib_iter(3));
+  prt(fib(4));
+  prtln(fib_iter(4));
+  prt(fib(5));
+  prtln(fib_iter(5));
+  prt(fib(6));
+  prtln(fib_iter(6));
+  prt(fib(7));
+  prtln(fib_iter(7));
+  prt(fib(8));
+  prtln(fib_iter(8));
+  prt(fib(9));
+  prtln(fib_iter(9));
+
+  prtln(fib_iter(10));
+  prtln(fib_iter(100));
+  prtln(fib_iter(1000));
+  prtln(fib_iter(10000));
+  for var i = 0; i < 10000; ++i {
+    prt(fib_iter(i));
+  }
+}
+
+fn var_self_reference()
+{
+//   var x = x;
+}
+
+fn overload(int i){}
+fn overload(chr i){}
+
+fn ambig_overload()
+{
+//   overload(T);
+}
+
 fn main()
 {
   dce();
-  missingReturn(T, F, T, F);
-  flt_neg();
+  prt(missingReturn1(T, F, T, F));
+  prt(missingReturn2(T, F, T, F));
+  prt(flt_neg());
   expressions();
+  test_fib();
+  var_self_reference();
+  ambig_overload();
 }
