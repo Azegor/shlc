@@ -194,8 +194,8 @@ private:
   int lastChar = ' '; // ' ' will be skipped immediately
   std::string tokenString;
 
-  int line = 1, column = 1;
-  int tokenLine = 1, tokenCol = 1;
+  int line = 1, column = 0;
+  int tokenLine, tokenCol;
   std::deque<std::string> lines;
   std::string *currentLine;
   void finishCurrentLine()

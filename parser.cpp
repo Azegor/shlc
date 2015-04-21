@@ -122,6 +122,7 @@ std::vector<FunctionPtr> Parser::parse(std::string filename)
       switch (curTok.type)
       {
         default:
+          error("unexpected token");
           std::cerr << "unexpected token '" << curTok.str << "' at "
                     << curTok.line << ':' << curTok.col << std::endl;
           readNextToken();
