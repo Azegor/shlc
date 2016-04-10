@@ -113,7 +113,7 @@ void FunctionHead::createArgumentAllocas(Context &ctx, llvm::Function *fn)
       fn, args[idx].second, getLLVMTypeFromType(ctx.global, args[idx].first));
 
     // Store the initial value into the alloca.
-    ctx.global.builder.CreateStore(ai, alloca);
+    ctx.global.builder.CreateStore(&*ai, alloca);
 
     // Add arguments to variable symbol table.
     ctx.putVar(args[idx].second, args[idx].first, alloca);

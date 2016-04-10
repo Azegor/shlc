@@ -17,26 +17,26 @@
 
 #include "context.h"
 
-#include <llvm/ExecutionEngine/JIT.h> // needed because of error "JIT has not been linked in"
+// #include <llvm/ExecutionEngine/JIT.h> // needed because of error "JIT has not been linked in"
 #include <llvm/Transforms/IPO.h>
 
 // std::string GlobalContext::errorString;
 
 GlobalContext::GlobalContext()
     : llvm_context(llvm::getGlobalContext()),
-      module(new llvm::Module("my jit module", llvm_context)),
+      module(new llvm::Module("shl_global_module", llvm_context)),
       builder(llvm_context),
       pm_builder(),
       fpm(),
       mpm(),
       errorString(),
-      //             execEngine(llvm::EngineBuilder(std::unique_ptr<llvm::Module>(module)).setErrorStr(&errorString)
-      execEngine(
-        llvm::EngineBuilder(module)
-          .setErrorStr(&errorString)
-          //           .setMCJITMemoryManager(std::make_unique<llvm::SectionMemoryManager>())
-          //           .setMCJITMemoryManager(new
-          //           llvm::SectionMemoryManager)
+                  execEngine(llvm::EngineBuilder(std::unique_ptr<llvm::Module>(module)).setErrorStr(&errorString)
+//       execEngine(
+//         llvm::EngineBuilder(module)
+//           .setErrorStr(&errorString)
+//           //           .setMCJITMemoryManager(std::make_unique<llvm::SectionMemoryManager>())
+//           //           .setMCJITMemoryManager(new
+//           //           llvm::SectionMemoryManager)
           .create())
 {
   if (!execEngine)

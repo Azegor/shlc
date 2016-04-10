@@ -1,0 +1,19 @@
+#!/bin/sh
+
+if [ "x$1" == "x" ]; then
+	echo Error no input file
+	exit 1
+fi
+
+fullfile=$1
+filename=$(basename "$fullfile")
+extension="${filename##*.}"
+filename="${filename%%.*}"
+
+tmpfilebase=/tmp/shl_$filename
+
+build/compiler -O3 $fullfile -o $tmpfilebase.ll
+~/src/llvm/build/bin/llc $tmpfilebase.ll
+gcc $tmpfilebase.s -Lbuild -lstdshl -o $filename
+rm $tmpfilebase.s
+rm $tmpfilebase.ll

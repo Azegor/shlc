@@ -92,6 +92,12 @@ std::unordered_map<int, int> binOpPrecedence{
   {Token::power, 120},
 };
 
+static inline bool isRightAssociative(int tokenType)
+{
+  return tokenType == '='
+      || (tokenType >= Token::add_assign && tokenType <= Token::bit_xor_assign);
+}
+
 /* maybe needed later?
 std::unordered_map<int, int> unOpPrecedence{
     // 150
@@ -341,9 +347,10 @@ ExprPtr Parser::parseBinOpRHS(int exprPrec, ExprPtr lhs)
   startSLContext();
   while (true)
   {
-    int tokPrec = getTokenPrecedence(curTok.type);
+    int tokPrec = getTokenPrecedence(curTok.type); // next operator
 
     // if new binOp (tokPrec) binds less tight, we're done
+    // return current result as LHS for the next expr
     if (tokPrec < exprPrec) {
       popSLContext();
       return lhs; // this is the loop exit point!
@@ -354,11 +361,14 @@ ExprPtr Parser::parseBinOpRHS(int exprPrec, ExprPtr lhs)
 
     auto rhs = parseUnaryExpr();
 
-    int nextPrec = getTokenPrecedence(curTok.type);
-    // if new op binds less tightly take current op as its RHS
-    if (tokPrec < nextPrec) rhs = parseBinOpRHS(tokPrec + 1, std::move(rhs));
+    int nextPrec = getTokenPrecedence(curTok.type); // one operator after that
+    // if new op binds less tightly take current op as its LHS
+    // with right hand precedence let next OP be "stronger"
+    int offset = isRightAssociative(binOp) ? -1 : 1;
+    if (tokPrec < nextPrec || isRightAssociative(binOp)) rhs = parseBinOpRHS(tokPrec + offset, std::move(rhs));
 
     dupSLContextTop();
+    // eat next OP and continue looping (this OP was stringer)
     lhs = make_EPtr<BinOpExpr>(endSLContextPrevToken(), binOp, std::move(lhs),
                                std::move(rhs));
   }

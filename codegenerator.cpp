@@ -76,23 +76,24 @@ void CodeGenerator::writeCodeToFile(const std::string &outFileName)
 {
   //   gl_ctx.module->dump();
 
-  std::string err;
-  llvm::raw_fd_ostream outFile(outFileName.c_str(), err,
+  std::error_code err;
+  llvm::raw_fd_ostream outFile(outFileName, err,
                                llvm::sys::fs::F_RW | llvm::sys::fs::F_Text);
-  gl_ctx.module->print(outFile, nullptr);
+  gl_ctx.module->print(outFile, nullptr, true);
+//   outFile << *gl_ctx.module;
   outFile.close();
 }
 
 void CodeGenerator::runFunction(std::string name)
 {
-  //   auto main_ptr = gl_ctx.execEngine->getFunctionAddress("main");
   if (!mainFn) {
     std::cerr << "no main function found, exiting" << std::endl;
     exit(1);
   }
-  auto main_ptr = gl_ctx.execEngine->getPointerToFunction(mainFn);
-  void (*_main)() = (void (*)())main_ptr;
-  if (_main) {
+//   auto main_ptr = gl_ctx.execEngine->getPointerToFunction(mainFn);
+  auto main_ptr = gl_ctx.execEngine->getFunctionAddress("main");
+  if (main_ptr) {
+    void (*_main)() = (void (*)())main_ptr;
     _main();
   }
   else
