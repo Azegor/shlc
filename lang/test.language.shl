@@ -148,9 +148,17 @@ fn assign_test(int i, j, k) : int
 {
   i = k;
   i += j;
-  // i += j += k; // broken, because wrong associativity for now! (FIXME)
+  i += j += k; // was broken, (because wrong associativity)
   k = i + j * k;
   ret k;
+}
+
+fn chain_assign(int i, j, k) : int
+{
+  var e, a : int;
+  e = i = j = k;
+  a += i += j += k;
+  ret a;
 }
 
 fn local_vars(boo bl) : flt {

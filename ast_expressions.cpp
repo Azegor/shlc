@@ -239,7 +239,7 @@ llvm::Value *GlobalVarExpr::codegen(Context &ctx)
 {
   auto var = ctx.global.getGlobalVar(name);
   if (var.type == Type::str_t)
-    return ctx.global.builder.CreateConstGEP2_32(var.var, 0, 0);
+    return ctx.global.builder.CreateConstGEP2_32(nullptr, var.var, 0, 0); // FIXME
   else
     return ctx.global.builder.CreateConstGEP1_32(var.var, 0);
 }

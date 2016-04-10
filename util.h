@@ -27,7 +27,7 @@ template <typename T> struct Identity
 
 template <typename L, typename Callback = Identity<decltype(*L().begin())>>
 std::string listToString(
-  L &list, Callback callback = Identity<decltype(*list.begin())>())
+  L &list, Callback callback = Identity<decltype(*L().begin())>())
 {
   std::stringstream res;
   bool first = true;

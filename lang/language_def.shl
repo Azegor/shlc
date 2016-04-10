@@ -1,0 +1,398 @@
+/*
+As Bonus, we want to include 2 out of these 4 as minimum:
+
++- Correct calculation of the .limit stack
+
++- Debug informationen
+
++- String support (including concatination of strings, also with non-strings)
+
++- Visitor mit "richtiger" Datenstruktur statt Strings
+*/
+
+/* Keywords:
+
+ * if elif el //if elseif else
+
+ * for whl //for while
+
+ * brk cnt //break continue
+
+ * var int flt boo str vac chr /*variable integer float boolean string
+
+ * void(vacantness) character
+
+ * t f nil //true false null
+
+ * use //include
+
+ * fn main ret //function main return
+
+ * native (using java reflection?)
+
+ * reserved for future use: op (operator overload)
+
+ */
+
+/*
+
+use “Dateien_xyz”; //includes the file Dateien_xyz
+
+// this is a comment
+
+/* this too
+
+yay (multi line) */
+
+/* Datentypen:
+
+ * Integer: int (1,2,3,4,...)
+
+ * Float: flt (1.25,0.76,3,...)
+
+ * Boolean: boo (t,f)
+
+ * [String: str (nice to have)]
+
+*/
+
+use "stdlib";
+
+fn prt(chr d) native "stdlib";
+fn prtln(chr d) native "stdlib";
+
+fn prt(int i) native "stdlib";
+fn prtln(int i) native "stdlib";
+
+fn prt(str c) native "stdlib";
+fn prtln(str c) native "stdlib";
+
+fn prt(flt k) native "stdlib";
+fn prtln(flt k) native "stdlib";
+
+fn prt(boo k) native "stdlib";
+fn prtln(boo k) native "stdlib";
+
+fn cmpTest() {
+  var res : boo;
+  res = 7 < 14;
+  prt("res: ");
+  prtln(res);
+
+  var a = T, b = F;
+  var c = a && b;
+  var d = a || b;
+  var e = a < b;
+  var f = a < b;
+  var g = a < b;
+  var h = a < b;
+  var i = a;
+  prtln(c);
+  prtln(d);
+  prtln(e);
+  prtln(f);
+  prtln(g);
+
+  // brk; // illegal here
+}
+
+fn ifTest() {
+  if T {
+    prtln("condition is true");
+  } el {
+    prtln("condition is false");
+  }
+}
+
+fn cmplxOpTest() {
+  var res : int;
+  res = (2 ** 10) : int;
+  prt("2 ^ 10 = ");
+  prtln(res);
+  var a = "[a]", b = "[b]", c = "";
+  c = a + b;
+  prtln(c);
+}
+
+fn whlTest() {
+  var i = 10;
+  whl i > 0 {
+    prtln(i);
+    i -= 1;
+  }
+
+  i = 10;
+  whl i > 0 {
+    i -= 1;
+    if i % 2 == 0 {
+      cnt;
+    }
+    elif i == 3 {
+      brk;
+    }
+    prt("loop index = ");
+    prtln(i);
+  }
+}
+
+fn someOtherFn();
+
+fn main() {
+
+ // main function, has to be defined once in a program
+
+  var t = !!!T;
+  prtln(t);
+
+  prtln("hi");
+  prtln(42);
+
+  cmpTest();
+  cmplxOpTest();
+
+  ifTest();
+
+  whlTest();
+
+  someOtherFn();
+}
+
+fn callSomeOtherFn() {}
+
+fn someFn (int p1, p2; flt p3, p4){//implicit vac(void) return type
+
+ callSomeOtherFn(); //call function
+
+}
+
+fn otherFn(int x) : int {
+  var y : int;
+  ret 42;
+
+}
+
+//returns 42
+
+fn a() : int {
+  ret 42;
+}
+
+fn logTest() {
+  var a, b, c : boo;
+  a = b || c;
+}
+
+/*
+fn operators() : int {
+
+ //variable declaration
+
+ var a, r, c : int;
+
+ var x, y, z : int;
+
+ var d = 7, e = 42;
+ var f = 2, g =2;
+ // var c, d = 3 : int;
+
+ // var a = 7 : int; // nicht erlaubt !!!
+ var h = 7;
+ var i : int;
+ //var b = 7, c = "abc";
+
+ var j = 8;
+
+ var k = 7, l=3;
+
+ a = 5;
+
+ c = 3;
+
+ var b : int;
+
+ // var b = a; //b is of type int, because a is! (type inference???)
+
+ r = a + b - c; // * / ** % in same manner (standard calculations)
+
+ //r = 7
+
+ r += c; // -= *= /= **= %= in same manner
+
+ //r = 10
+
+ //r++; // -- in same manner () (increment, decreasement)
+
+ //r = 11
+
+ // bit operations << >> ^ ~ | &
+
+ // logical operations && || and or [xor]
+
+ a>>=1;
+
+ //a is 10
+
+ a<<=1;
+
+ //Same manner as above
+
+ x = 4; y = 3;
+
+ //z = x | y; // z is 7 (from 011 | 100 -> 111)
+
+ //z = x & y; // z is 0 (from 011 & 100 -> 000)
+
+ x = 7;
+
+ //z = x ^ y; // z is 3 (from 111 ^ 100 -> 011)
+
+ //~z; // z is 4 (from 011 -> 100)
+
+ var tf,tt,ff:boo;
+
+ tt = T;
+
+ ff = F;
+
+ tf = T && F; //tf is false
+
+ tf = T || F; //tf is true
+
+ {
+
+ var q : int;
+
+ q=3;
+
+ var a : flt;
+
+ a = 28;
+
+ // a is 28
+
+ var b : int;
+
+ a = b:flt; //b is accessible because it’s in superior scope
+
+ //b is converted to flt by cast
+
+ }
+
+ //q is undefined here because it’s in inner scope
+
+ // a is 5, because it was defined in other scope earlier
+
+ ret a;
+
+}
+*/
+
+
+//returns 5
+
+fn yay() : boo {
+  ret T;
+}
+fn then() {}
+fn nay() {}
+fn afterIf() {}
+fn doSth() {}
+fn doSthDifferent() {}
+fn whatEverIDontCare() {}
+
+fn conditions() {
+
+  if yay() {
+    then();
+  } el {
+    nay();
+  }
+
+  afterIf();
+
+
+ if T {
+
+ doSth();
+
+ } elif F {
+
+ doSthDifferent();
+
+ } el {
+
+ whatEverIDontCare();
+
+ }
+
+ var cond = T, a = F;
+
+ whl cond { //Exspect jump to el
+
+ 4 + 5;
+
+ // loop body
+
+/*
+if a { // since a is false jump to el
+
+ brk;
+
+ } el {
+
+ cnt;
+
+ }*/
+
+ }
+
+ //el { /* nice to have; executed when brk; is called */
+
+ // [insert code here]
+
+ //}
+
+
+}
+
+// stdlib:
+
+//print-function
+
+/* print isdefined inprint-function instdlib withfnptr([str s|inti|
+
+ *fltk|chrc)[:vac]
+
+ */
+
+fn someFn(){
+
+  prt("I sound my barbaric YAWP over the roofs of the world.");
+
+}
+
+fn bla() { prtln("bla"); }
+
+
+fn someOtherFn()
+{
+  var a : int;
+
+  whl a != 0 {
+    doSth();
+  }
+
+  /*do {
+    sth();
+  } whl T;*/
+
+  /*
+  int a = cond ? 1 : 2;
+  int b = if cond {1} el {"bla"};
+  */
+
+  for var i = 0; i < 42; i += 1 {
+    bla();
+  }
+
+}
