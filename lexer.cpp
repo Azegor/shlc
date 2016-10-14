@@ -312,14 +312,14 @@ inline Token Lexer::readString(char sep, int tokenType)
         }
         tokenString += (char)std::stoi(nr, nullptr, 16);
       }
-      else if ('0' <= lastChar && lastChar <= '9')
+      else if ('0' <= lastChar && lastChar <= '7')
       {
         std::string nr;
         nr += lastChar;
         for (int i = 0; i < 2; ++i)
         {
           nr += readNext();
-          if (lastChar < '0' || '9' < lastChar)
+          if (lastChar < '0' || '7' < lastChar)
             error(std::string("unexpected '") + ((char)lastChar) +
                   "' in octal escape sequence");
         }

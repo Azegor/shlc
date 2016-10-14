@@ -251,9 +251,9 @@ int main(int argc, char **argv)
   //   signal(SIGFPE, FPE_ExceptionHandler);
 
   init_llvm();
-  auto filename = (argc >= 2) ? argv[1] : "../test.language";
-  auto outName = (argc >= 3) ? argv[2] : "out.ll";
-  auto optimize = (argc >= 4) ? argv[3] != ""s : false;
+//   auto filename = (argc >= 2) ? argv[1] : "../test.language";
+//   auto outName = (argc >= 3) ? argv[2] : "out.ll";
+//   auto optimize = (argc >= 4) ? argv[3] != ""s : false;
   //   testLexer(filename);
   //   testParser(filename);
   //   testCodeGen(filename, outName, optimize);
