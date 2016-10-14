@@ -160,7 +160,7 @@ llvm::Value *IfStmt::codegen(Context &ctx)
     }
     else
     {
-      throw CodeGenError("non-boolean or boolean-castable expression in "
+      throw CodeGenError("non-boolean or non-boolean-castable expression in "
                          "if statement condition",
                          this);
     }
@@ -214,7 +214,7 @@ llvm::Value *WhileStmt::codegen(Context &ctx)
     }
     else
     {
-      throw CodeGenError("non-boolean or boolean-castable expression in "
+      throw CodeGenError("non-boolean or non-boolean-castable expression in "
                          "while statement condition",
                          this);
     }
@@ -262,7 +262,7 @@ llvm::Value *DoWhileStmt::codegen(Context &ctx)
     }
     else
     {
-      throw CodeGenError("non-boolean or boolean-castable expression in "
+      throw CodeGenError("non-boolean or non-boolean-castable expression in "
                          "do while statement condition",
                          this);
     }
@@ -352,7 +352,7 @@ llvm::Value *ForStmt::codegen(Context &ctx)
       }
       else
       {
-        throw CodeGenError("non-boolean or boolean-castable expression in "
+        throw CodeGenError("non-boolean or non-boolean-castable expression in "
                            "while statement condition",
                            this);
       }

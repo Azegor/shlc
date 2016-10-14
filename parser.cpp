@@ -474,12 +474,24 @@ ExprPtr Parser::parseNumberExpr()
     case Token::hex_number:
     case Token::oct_number:
     case Token::bin_number:
-      res = make_EPtr<IntNumberExpr>(getSLContextSingleCurToken(),
+      try {
+        res = make_EPtr<IntNumberExpr>(getSLContextSingleCurToken(),
                                      std::stoll(curTok.str));
+      }
+      catch(std::out_of_range &oor)
+      {
+        error("Number '" + curTok.str + "' is too large to be represented as a 'int'");
+      }
       break;
     case Token::dec_flt_number:
-      res = make_EPtr<FltNumberExpr>(getSLContextSingleCurToken(),
+      try {
+        res = make_EPtr<FltNumberExpr>(getSLContextSingleCurToken(),
                                      std::stold(curTok.str));
+      }
+      catch(std::out_of_range &oor)
+      {
+        error("Number '" + curTok.str + "' is too large to be represented as a 'flt'");
+      }
       break;
     default:
       error("!!! unknown token in parseNumberExpr: " +
@@ -581,8 +593,10 @@ StmtPtr Parser::parseVarDeclStmt()
   startSLContext();
   readNextToken(); // eat 'var'
   VarDeclStmt::VarEnties vars;
+  
+  enum class Inferred {Unknown, NO, YES};
 
-  bool inferred = false;
+  Inferred inferred = Inferred::Unknown;
   while (true)
   {
     if (curTok.type != Token::identifier)
@@ -590,24 +604,36 @@ StmtPtr Parser::parseVarDeclStmt()
     auto name = std::move(curTok.str);
     ExprPtr initializer;
     if (readNextToken().type == '=') {
+      if (inferred == Inferred::Unknown)
+      {
+          inferred = Inferred::YES;
+      }
+      else if (inferred == Inferred::NO)
+      {
+          error("unexpected '=', expected ','  (cannot mix inferred with non-inferred mode in variable declaration)");
+      }
       readNextToken();
       initializer = parseExpr();
-      inferred = true;
+      inferred = Inferred::YES;
     }
-    else if (inferred)
+    else if (inferred == Inferred::YES)
     {
-      error("unexpected '" + curTok.str + "', expected '='");
+      error("unexpected '" + curTok.str + "', expected '=' (cannot mix inferred with non-inferred mode in variable declaration)");
+    }
+    else
+    {
+        inferred = Inferred::NO;
     }
     vars.push_back(std::make_pair(std::move(name), std::move(initializer)));
 
-    if (!inferred && curTok.type == ':') break;
-    if (inferred && curTok.type == ';') break;
+    if (inferred==Inferred::NO && curTok.type == ':') break;
+    if (inferred==Inferred::YES && curTok.type == ';') break;
     if (curTok.type != ',')
       error("unexpected '" + curTok.str + "', expected ':', '=' or ','");
     readNextToken(); // eat ','
   }
   Type type = Type::inferred;
-  if (!inferred) {
+  if (inferred==Inferred::NO) {
     readNextToken(); // eat ':'
     if (!isVarTypeId(curTok.type))
       error("unexpected '" + curTok.str + "', expected type");
