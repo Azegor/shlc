@@ -71,6 +71,7 @@ struct GlobalVars
 
 class GlobalContext
 {
+  std::unique_ptr<llvm::LLVMContext> _llvm_context;
 public:
   llvm::LLVMContext &llvm_context;
   llvm::Module *const module;
