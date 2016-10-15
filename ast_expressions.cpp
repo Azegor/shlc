@@ -21,6 +21,7 @@
 #include <memory>
 
 #include <llvm/IR/Constants.h>
+#include <llvm/IR/GlobalValue.h>
 #include <llvm/ADT/APInt.h>
 
 #include "ast.h"
@@ -151,7 +152,8 @@ llvm::Value *StringConstExpr::codegen(Context &ctx)
     auto *GV = new llvm::GlobalVariable(
       *ctx.global.module, str_const->getType(), true,
       llvm::GlobalValue::PrivateLinkage, str_const, "str_const");
-    GV->setUnnamedAddr(true);
+//     GV->setUnnamedAddr(true);
+    GV->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
 
     globalVarName = GV->getName();
     ctx.global.putGlobalVar(globalVarName, Type::str_t, GV);

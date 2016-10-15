@@ -10,6 +10,7 @@
 #include <llvm/IR/Function.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/FileSystem.h>
+#include <llvm/ExecutionEngine/MCJIT.h> // necessary to link MCJIT (with static linking)
 
 #include "lexer.h"
 #include "parser.h"
@@ -258,5 +259,15 @@ int main(int argc, char **argv)
   //   testParser(filename);
   //   testCodeGen(filename, outName, optimize);
   Compiler compiler(argc, argv);
-  return compiler.run();
+  int res = 0;
+#ifdef __AFL_HAVE_MANUAL_CONTROL
+  while (__AFL_LOOP(1000)) {
+#endif
+
+    res = compiler.run();
+
+#ifdef __AFL_HAVE_MANUAL_CONTROL
+  }
+#endif
+  return res;
 }

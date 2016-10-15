@@ -19,21 +19,22 @@ add_definitions(${LLVM_DEFINITIONS})
 
 find_package(Boost COMPONENTS program_options REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
-llvm_map_components_to_libnames(llvm_libs core mcjit native ipo support executionengine)
+llvm_map_components_to_libnames(LLVM_LIBS core mcjit native ipo support executionengine)
+message(STATUS "Linking the following LLVM libs: ${LLVM_LIBS}")
 
-link_directories(/home/tpriesner/src/Fuzzer)
+# link_directories(/home/tpriesner/src/Fuzzer)
 
 add_executable(compiler stdlib.cpp ast_functions.cpp ast_expressions.cpp ast_statements.cpp context.cpp ast_base.cpp parser.cpp lexer.cpp codegen.cpp type.cpp codegenerator.cpp compiler.cpp main.cpp)
 
-add_executable(fuzzshl stdlib.cpp ast_functions.cpp ast_expressions.cpp ast_statements.cpp context.cpp ast_base.cpp parser.cpp lexer.cpp codegen.cpp type.cpp codegenerator.cpp compiler.cpp fuzz.cpp)
+# add_executable(fuzzshl stdlib.cpp ast_functions.cpp ast_expressions.cpp ast_statements.cpp context.cpp ast_base.cpp parser.cpp lexer.cpp codegen.cpp type.cpp codegenerator.cpp compiler.cpp fuzz.cpp)
 
-set_target_properties(fuzzshl PROPERTIES COMPILE_FLAGS "-fsanitize-coverage=edge -fsanitize=address")
-set_target_properties(fuzzshl PROPERTIES CMAKE_CXX_COMPILER "clang++")
+# set_target_properties(fuzzshl PROPERTIES COMPILE_FLAGS "-fsanitize-coverage=edge -fsanitize=address")
+# set_target_properties(fuzzshl PROPERTIES CMAKE_CXX_COMPILER "clang++")
 
 add_library(stdshl stdlib.cpp)
-target_link_libraries(compiler ${Boost_LIBRARIES} ${llvm_libs})
+target_link_libraries(compiler ${Boost_LIBRARIES} ${LLVM_LIBS})
 
 
-target_link_libraries(fuzzshl Fuzzer pthread asan ${Boost_LIBRARIES} ${llvm_libs})
+# target_link_libraries(fuzzshl Fuzzer pthread asan ${Boost_LIBRARIES} ${LLVM_LIBS})
 
 install(TARGETS compiler RUNTIME DESTINATION bin)
