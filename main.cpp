@@ -16,6 +16,7 @@
 #include "parser.h"
 #include "context.h"
 #include "compiler.h"
+#include "compilationunit.h"
 
 using namespace std::literals;
 
@@ -37,9 +38,7 @@ bool readFile(std::string input)
     return true;
   }
   includedFiles.insert(input);
-  std::ifstream in(input);
-  if (!in) return false;
-  Lexer lex(in);
+  Lexer lex((Compilationunit(input)));
   try
   {
     Token token;
@@ -133,7 +132,7 @@ void testParser(const char *filename)
   Parser parser;
   try
   {
-    auto parseRes = parser.parse(filename);
+    auto parseRes = parser.parse(Compilationunit(filename));
     for (auto &r : parseRes)
       r->print();
   }
@@ -158,7 +157,7 @@ void testCodeGen(const char *filename, const char *outName, bool optimize)
   Parser parser;
   try
   {
-    auto parseRes = parser.parse(filename);
+    auto parseRes = parser.parse(Compilationunit(filename));
     GlobalContext gl_ctx;
     gl_ctx.optimizeLevel = optimize ? 3 : 0;
     gl_ctx.initFPM();
@@ -239,6 +238,12 @@ void init_llvm()
   llvm::InitializeNativeTarget();
   llvm::InitializeNativeTargetAsmPrinter();
   llvm::InitializeNativeTargetAsmParser();
+  
+//   llvm::InitializeAllTargetInfos();
+//   llvm::InitializeAllTargets();
+//   llvm::InitializeAllTargetMCs();
+//   llvm::InitializeAllAsmParsers();
+//   llvm::InitializeAllAsmPrinters();
 }
 
 // void FPE_ExceptionHandler(int nSig)

@@ -40,7 +40,7 @@ public:
 
   int run()
   {
-    CodeGenerator codegen(inFile);
+    CodeGenerator codegen(Compilationunit{inFile});
     codegen.generateCode(optLevel);
     if (runCode)
       codegen.runFunction("main");

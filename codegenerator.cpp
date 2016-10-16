@@ -23,7 +23,7 @@ void CodeGenerator::generateCode(int optLevel)
 {
   try
   {
-    auto parseRes = parser.parse(fileName);
+    auto parseRes = parser.parse(std::move(compUnit));
     gl_ctx.optimizeLevel = optLevel;
     gl_ctx.initPMB();
     gl_ctx.initFPM();

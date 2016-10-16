@@ -119,9 +119,9 @@ int Parser::getTokenPrecedence(int type)
   return pos->second;
 }
 
-std::vector<FunctionPtr> Parser::parse(std::string filename)
+std::vector<FunctionPtr> Parser::parse(Compilationunit compUnit)
 {
-  pushLexer(filename);
+  pushLexer(std::move(compUnit));
   // outer:
   std::vector<FunctionPtr> toplevelFunctions;
   while (!lexers.empty())

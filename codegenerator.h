@@ -20,16 +20,17 @@
 
 #include "parser.h"
 #include "context.h"
+#include "compilationunit.h"
 
 class CodeGenerator
 {
-  std::string fileName;
+  Compilationunit compUnit;
   Parser parser;
   GlobalContext gl_ctx;
   llvm::Function* mainFn = nullptr;
 
 public:
-  CodeGenerator(std::string fileName) : fileName(fileName) {}
+  CodeGenerator(Compilationunit input) : compUnit(std::move(input)) {}
 
   void generateCode(int optLevel);
 

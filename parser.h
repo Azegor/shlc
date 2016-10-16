@@ -24,6 +24,7 @@
 #include "lexer.h"
 #include "ast.h"
 #include "util.h"
+#include "compilationunit.h"
 
 class Parser;
 
@@ -58,10 +59,10 @@ class Parser
   std::stack<Token> lastTokens;
   int currentLexerNr = 0;
 
-  void pushLexer(std::string filename)
+  void pushLexer(Compilationunit compUnit)
   {
     lastTokens.push(curTok);
-    allLexers.emplace_back(filename);
+    allLexers.emplace_back(std::move(compUnit));
     lexers.push(&allLexers.back());
     currentLexer = lexers.top();
     currentLexerNr = allLexers.size() - 1;
@@ -179,7 +180,7 @@ class Parser
 public:
   Parser() = default;
 
-  std::vector<FunctionPtr> parse(std::string filename);
+  std::vector<FunctionPtr> parse(Compilationunit compUnit);
 
   const Lexer &getLexer(int nr) const { return allLexers[nr]; }
 };

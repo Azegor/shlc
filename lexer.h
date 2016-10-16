@@ -28,6 +28,8 @@
 #include <cerrno>
 #include <cstring>
 
+#include "compilationunit.h"
+
 class LexError : public std::exception
 {
 public:
@@ -190,7 +192,7 @@ class Lexer
 {
 private:
   int lexerNr;
-  bool ownsStream = false;
+  Compilationunit compUnit;
   std::istream *input;
   int lastChar = ' '; // ' ' will be skipped immediately
   std::string tokenString;
@@ -263,25 +265,15 @@ private:
 public:
   const std::string filename;
 
-  Lexer(std::istream &input)
-      : lines(1), currentLine(&lines[0]), input(&input), filename("<unknown>")
+  Lexer(Compilationunit inputCU)
+      : lines(1), currentLine(&lines[0]), compUnit(std::move(inputCU)), input(compUnit.getStream())
   {
-    checkStream();
-  }
-
-  Lexer(std::string filename)
-      : lines(1),
-        currentLine(&lines[0]),
-        input(new std::ifstream(filename)),
-        filename(filename)
-  {
-    ownsStream = true;
     checkStream();
   }
 
   Lexer(const Lexer &) = delete;
   Lexer(Lexer &&o)
-      : ownsStream(std::move(o.ownsStream)),
+      : compUnit(std::move(o.compUnit)),
         input(std::move(o.input)),
         lastChar(std::move(o.lastChar)),
         tokenString(std::move(o.tokenString)),
@@ -290,14 +282,8 @@ public:
         lines(std::move(o.lines)),
         currentLine(std::move(o.currentLine))
   {
-    // o.input = nullptr;
-    o.ownsStream = false;
   }
 
-  ~Lexer()
-  {
-    if (ownsStream) delete input;
-  }
 
   void setNr(int nr) { lexerNr = nr; }
   int getNr() const { return lexerNr; }
