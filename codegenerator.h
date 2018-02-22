@@ -18,9 +18,17 @@
 #ifndef CODEGENERATOR_H
 #define CODEGENERATOR_H
 
+#include <string>
+#include <stdexcept>
+
 #include "parser.h"
 #include "context.h"
 #include "compilationunit.h"
+
+class CompileError : public std::runtime_error {
+public:
+    CompileError(std::string s) : std::runtime_error(std::move(s)) {}
+};
 
 class CodeGenerator
 {
