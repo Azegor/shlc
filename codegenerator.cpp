@@ -17,10 +17,13 @@
 
 #include "codegenerator.h"
 
+#include <sstream>
+
 #include <llvm/Support/FileSystem.h>
 
 void CodeGenerator::generateCode(int optLevel)
 {
+  std::stringstream errorMsg;
   try
   {
     auto parseRes = parser.parse(std::move(compUnit));
@@ -51,24 +54,24 @@ void CodeGenerator::generateCode(int optLevel)
   }
   catch (LexError &e)
   {
-    std::cout << "Caught LexError on line " << e.line << ':' << e.col
+    errorMsg << "Caught LexError on line " << e.line << ':' << e.col
               << ": \033[1;31m" << e.what() << "\033[00m:" << std::endl;
-    std::cout << e.getErrorLineHighlight() << std::endl;
-    exit(1);
+    errorMsg << e.getErrorLineHighlight() << std::endl;
+    throw CompileError(errorMsg.str());
   }
   catch (ParseError &e)
   {
-    std::cout << "Caught ParseError: "
+    errorMsg << "Caught ParseError: "
               << "\033[1;31m" << e.what() << "\033[00m " << std::endl;
-    std::cout << e.getErrorLineHighlight(parser) << std::endl;
-    exit(1);
+    errorMsg << e.getErrorLineHighlight(parser) << std::endl;
+    throw CompileError(errorMsg.str());
   }
   catch (CodeGenError &e)
   {
-    std::cout << "Caught CodeGenError: "
+    errorMsg << "Caught CodeGenError: "
               << "\033[1;31m" << e.what() << "\033[00m " << std::endl;
-    std::cout << e.getErrorLineHighlight(parser) << std::endl;
-    exit(1);
+    errorMsg << e.getErrorLineHighlight(parser) << std::endl;
+    throw CompileError(errorMsg.str());
   }
 }
 

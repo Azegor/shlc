@@ -13,7 +13,7 @@ bool init_llvm()
   llvm::InitializeNativeTarget();
   llvm::InitializeNativeTargetAsmPrinter();
   llvm::InitializeNativeTargetAsmParser();
-  
+
 //   llvm::InitializeAllTargetInfos();
 //   llvm::InitializeAllTargets();
 //   llvm::InitializeAllTargetMCs();
@@ -23,14 +23,21 @@ bool init_llvm()
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-    
+
     static bool initialized = init_llvm();
     (void)initialized;
-    
+
     std::istringstream input(std::string((char*)data, size));
     CodeGenerator codegen(Compilationunit{"<fuzz_input>", &input});
-    codegen.generateCode(0);
-//     codegen.writeCodeToFile(outFile);
-    
+
+    try
+    {
+        codegen.generateCode(0);
+    }
+    catch (CompileError &e)
+    {
+        // ignore
+    }
+
   return 0;  // Non-zero return values are reserved for future use.
 }

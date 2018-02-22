@@ -41,7 +41,15 @@ public:
   int run()
   {
     CodeGenerator codegen(Compilationunit{inFile});
-    codegen.generateCode(optLevel);
+    try
+    {
+        codegen.generateCode(optLevel);
+    }
+    catch (CompileError& err)
+    {
+        std::cerr << err.what() << std::endl;
+        exit(1);
+    }
     if (runCode)
       codegen.runFunction("main");
     else
