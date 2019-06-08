@@ -218,12 +218,7 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
     ctx.ret.val = builder.CreateAlloca(
       getLLVMTypeFromType(gl_ctx, head->getReturnType()), 0, "retval");
   }
-  ctx.ret.BB = llvm::BasicBlock::Create(gl_ctx.llvm_context, "ret", fn);
-  builder.SetInsertPoint(ctx.ret.BB);
-  if (ctx.ret.type == Type::vac_t)
-    builder.CreateRetVoid();
-  else
-    builder.CreateRet(builder.CreateLoad(ctx.ret.val));
+  ctx.ret.BB = llvm::BasicBlock::Create(gl_ctx.llvm_context, "ret");
 
   // make main block, leave entry for allocas only
   auto mainBB = llvm::BasicBlock::Create(gl_ctx.llvm_context, "fnbody", fn);
@@ -256,6 +251,13 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
       throw CodeGenError("not all control flow branches return a value", this);
     }
   }
+
+  fn->getBasicBlockList().push_back(ctx.ret.BB); // add return block last!
+  builder.SetInsertPoint(ctx.ret.BB);
+  if (ctx.ret.type == Type::vac_t)
+    builder.CreateRetVoid();
+  else
+    builder.CreateRet(builder.CreateLoad(ctx.ret.val));
 
   gl_ctx.fpm->run(*fn);
 
