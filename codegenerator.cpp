@@ -80,8 +80,8 @@ void CodeGenerator::writeCodeToFile(const std::string &outFileName)
   //   gl_ctx.module->dump();
 
   std::error_code err;
-  llvm::raw_fd_ostream outFile(outFileName, err,
-                               llvm::sys::fs::F_RW | llvm::sys::fs::F_Text);
+  llvm::raw_fd_ostream outFile(outFileName, err, llvm::sys::fs::CD_CreateAlways,
+                                 llvm::sys::fs::FA_Write, llvm::sys::fs::OF_Text);
   gl_ctx.module->print(outFile, nullptr, true);
 //   outFile << *gl_ctx.module;
   outFile.close();

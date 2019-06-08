@@ -193,8 +193,8 @@ void testCodeGen(const char *filename, const char *outName, bool optimize)
     gl_ctx.module->dump();
 
     std::error_code err;
-    llvm::raw_fd_ostream outFile(outName, err,
-                                 llvm::sys::fs::F_RW | llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream outFile(outName, err, llvm::sys::fs::CD_CreateAlways,
+                                 llvm::sys::fs::FA_Write, llvm::sys::fs::OF_Text);
     std::cout << "Wringing generated code to " << outName << std::endl;
     gl_ctx.module->print(outFile, nullptr);
     outFile.close();
