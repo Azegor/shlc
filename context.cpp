@@ -96,7 +96,7 @@ GlobalContext::GlobalContext()
 
 void GlobalContext::initPMB()
 {
-  pm_builder.Inliner = llvm::createFunctionInliningPass(optimizeLevel, 275);
+  pm_builder.Inliner = llvm::createFunctionInliningPass(optimizeLevel, 275, false);
   pm_builder.OptLevel = optimizeLevel;
 }
 
