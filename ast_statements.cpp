@@ -172,9 +172,9 @@ llvm::Value *IfStmt::codegen(Context &ctx)
   llvm::BasicBlock *elseBB;
   if (elseExpr)
     elseBB =
-      llvm::BasicBlock::Create(ctx.global.llvm_context, "else", ctx.currentFn);
+      llvm::BasicBlock::Create(ctx.global.llvm_context, "else");
   auto endBB =
-    llvm::BasicBlock::Create(ctx.global.llvm_context, "ifend", ctx.currentFn);
+    llvm::BasicBlock::Create(ctx.global.llvm_context, "ifend");
 
   auto condVal = cond->codegen(ctx);
   if (elseExpr)
@@ -188,16 +188,17 @@ llvm::Value *IfStmt::codegen(Context &ctx)
     builder.CreateBr(endBB);
 
   if (elseExpr) {
+    ctx.currentFn->getBasicBlockList().push_back(elseBB);
     builder.SetInsertPoint(elseBB);
     elseExpr->codegen(ctx);
     if (elseExpr->codeFlowReturn() != Statement::CodeFlowReturn::Never)
       builder.CreateBr(endBB);
   }
 
-  if (codeFlowReturn() == Statement::CodeFlowReturn::Never)
-    endBB->eraseFromParent(); // don't need it
-  else
+  if (codeFlowReturn() != Statement::CodeFlowReturn::Never) {
+    ctx.currentFn->getBasicBlockList().push_back(endBB);
     builder.SetInsertPoint(endBB);
+  }
 
   ctx.popFrame();
   return nullptr;
@@ -225,9 +226,9 @@ llvm::Value *WhileStmt::codegen(Context &ctx)
   auto headBB =
     llvm::BasicBlock::Create(ctx.global.llvm_context, "whlhead", ctx.currentFn);
   auto loopBB =
-    llvm::BasicBlock::Create(ctx.global.llvm_context, "whlloop", ctx.currentFn);
+    llvm::BasicBlock::Create(ctx.global.llvm_context, "whlloop");
   auto endBB =
-    llvm::BasicBlock::Create(ctx.global.llvm_context, "whlend", ctx.currentFn);
+    llvm::BasicBlock::Create(ctx.global.llvm_context, "whlend");
 
   contBB = headBB;
   breakBB = endBB;
@@ -238,6 +239,7 @@ llvm::Value *WhileStmt::codegen(Context &ctx)
   auto condVal = cond->codegen(ctx);
   builder.CreateCondBr(condVal, loopBB, endBB);
 
+  ctx.currentFn->getBasicBlockList().push_back(loopBB);
   builder.SetInsertPoint(loopBB);
   ctx.pushLoop(this);
   body->codegen(ctx);
@@ -245,6 +247,7 @@ llvm::Value *WhileStmt::codegen(Context &ctx)
   if (body->codeFlowReturn() != Statement::CodeFlowReturn::Never)
     builder.CreateBr(headBB);
 
+  ctx.currentFn->getBasicBlockList().push_back(endBB);
   builder.SetInsertPoint(endBB);
 
   ctx.popFrame();
@@ -273,9 +276,9 @@ llvm::Value *DoWhileStmt::codegen(Context &ctx)
   auto loopBB =
     llvm::BasicBlock::Create(ctx.global.llvm_context, "doloop", ctx.currentFn);
   auto headBB =
-    llvm::BasicBlock::Create(ctx.global.llvm_context, "dohead", ctx.currentFn);
+    llvm::BasicBlock::Create(ctx.global.llvm_context, "dohead");
   auto endBB =
-    llvm::BasicBlock::Create(ctx.global.llvm_context, "doend", ctx.currentFn);
+    llvm::BasicBlock::Create(ctx.global.llvm_context, "doend");
 
   contBB = headBB;
   breakBB = endBB;
@@ -296,21 +299,18 @@ llvm::Value *DoWhileStmt::codegen(Context &ctx)
   // if cfr returns or it has a continue statement we need the function head!
   if (bodyReturnsCF || (bool)(brb & Statement::BranchBehaviour::Continues)) {
     // INFO: if body never return CF, this doesn't need to be generated
+    ctx.currentFn->getBasicBlockList().push_back(headBB);
     builder.SetInsertPoint(headBB);
     auto condVal = cond->codegen(ctx);
     builder.CreateCondBr(condVal, loopBB, endBB);
 
+    ctx.currentFn->getBasicBlockList().push_back(endBB);
     builder.SetInsertPoint(endBB);
   }
-  else
-  {
-    // don't need a function head
-    headBB->eraseFromParent();
+  else if ((bool)(brb & Statement::BranchBehaviour::Breaks)) {
     // no break, don't even need a block after the loop
-    if ((bool)(brb & Statement::BranchBehaviour::Breaks))
-      builder.SetInsertPoint(endBB);
-    else
-      endBB->eraseFromParent();
+    ctx.currentFn->getBasicBlockList().push_back(endBB);
+    builder.SetInsertPoint(endBB);
   }
 
   ctx.popFrame();
@@ -333,9 +333,9 @@ llvm::Value *ForStmt::codegen(Context &ctx)
   auto headBB =
     llvm::BasicBlock::Create(ctx.global.llvm_context, "forhead", ctx.currentFn);
   auto loopBB =
-    llvm::BasicBlock::Create(ctx.global.llvm_context, "forloop", ctx.currentFn);
+    llvm::BasicBlock::Create(ctx.global.llvm_context, "forloop");
   auto endBB =
-    llvm::BasicBlock::Create(ctx.global.llvm_context, "forend", ctx.currentFn);
+    llvm::BasicBlock::Create(ctx.global.llvm_context, "forend");
 
   contBB = headBB;
   breakBB = endBB;
@@ -366,6 +366,7 @@ llvm::Value *ForStmt::codegen(Context &ctx)
   }
 
   ctx.pushLoop(this);
+  ctx.currentFn->getBasicBlockList().push_back(loopBB);
   builder.SetInsertPoint(loopBB);
   body->codegen(ctx);
   ctx.popLoop();
@@ -373,6 +374,7 @@ llvm::Value *ForStmt::codegen(Context &ctx)
   if (body->codeFlowReturn() != Statement::CodeFlowReturn::Never)
     builder.CreateBr(headBB);
 
+  ctx.currentFn->getBasicBlockList().push_back(endBB);
   builder.SetInsertPoint(endBB);
 
   ctx.popFrame();
