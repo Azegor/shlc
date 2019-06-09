@@ -23,22 +23,22 @@
 #include "context.h"
 #include "ast_expressions.h"
 
-llvm::Type *getLLVMTypeFromType(GlobalContext &ctx, Type type)
+llvm::Type *getLLVMTypeFromType(GlobalContext &ctx, BuiltinTypeKind type)
 {
   switch (type)
   {
     // int_t, flt_t, chr_t, boo_t, str_t, vac_t
-    case Type::vac_t:
+    case BuiltinTypeKind::vac_t:
       return llvm::Type::getVoidTy(ctx.llvm_context);
-    case Type::int_t:
+    case BuiltinTypeKind::int_t:
       return llvm::Type::getInt64Ty(ctx.llvm_context);
-    case Type::flt_t:
+    case BuiltinTypeKind::flt_t:
       return llvm::Type::getDoubleTy(ctx.llvm_context);
-    case Type::boo_t:
+    case BuiltinTypeKind::boo_t:
       return llvm::Type::getInt1Ty(ctx.llvm_context);
-    case Type::chr_t:
+    case BuiltinTypeKind::chr_t:
       return llvm::Type::getInt8Ty(ctx.llvm_context); // no unicode
-    case Type::str_t:
+    case BuiltinTypeKind::str_t:
       return llvm::Type::getInt8PtrTy(ctx.llvm_context);
     default:
       throw CodeGenError("Unknown type id " + getTypeName(type));
@@ -54,88 +54,88 @@ llvm::AllocaInst *createEntryBlockAlloca(llvm::Function *fn,
 }
 
 #define SWITCH_CANNOT_CAST                                                     \
-  case Type::vac_t:                                                            \
-  case Type::none:                                                             \
-  case Type::inferred:                                                         \
+  case BuiltinTypeKind::vac_t:                                                            \
+  case BuiltinTypeKind::none:                                                             \
+  case BuiltinTypeKind::inferred:                                                         \
   default:                                                                     \
     return CastMode::None
 
-CastMode castMode(Type from, Type to)
+CastMode castMode(BuiltinTypeKind from, BuiltinTypeKind to)
 {
   switch (from)
   {
-    case Type::int_t:
+    case BuiltinTypeKind::int_t:
       switch (to)
       {
-        case Type::int_t:
+        case BuiltinTypeKind::int_t:
           return CastMode::Same;
-        case Type::flt_t:
+        case BuiltinTypeKind::flt_t:
           return CastMode::Implicit;
-        case Type::chr_t:
+        case BuiltinTypeKind::chr_t:
           return CastMode::Explicit;
-        case Type::boo_t:
+        case BuiltinTypeKind::boo_t:
           return CastMode::Explicit;
-        case Type::str_t:
+        case BuiltinTypeKind::str_t:
           return CastMode::None;
           SWITCH_CANNOT_CAST;
       }
-    case Type::flt_t:
+    case BuiltinTypeKind::flt_t:
       switch (to)
       {
-        case Type::int_t:
+        case BuiltinTypeKind::int_t:
           return CastMode::Explicit;
-        case Type::flt_t:
+        case BuiltinTypeKind::flt_t:
           return CastMode::Same;
-        case Type::chr_t:
+        case BuiltinTypeKind::chr_t:
           return CastMode::Explicit;
-        case Type::boo_t:
+        case BuiltinTypeKind::boo_t:
           return CastMode::Explicit;
-        case Type::str_t:
+        case BuiltinTypeKind::str_t:
           return CastMode::None;
           SWITCH_CANNOT_CAST;
       }
-    case Type::chr_t:
+    case BuiltinTypeKind::chr_t:
       switch (to)
       {
-        case Type::int_t:
+        case BuiltinTypeKind::int_t:
           return CastMode::Implicit;
-        case Type::flt_t:
+        case BuiltinTypeKind::flt_t:
           return CastMode::Implicit;
-        case Type::chr_t:
+        case BuiltinTypeKind::chr_t:
           return CastMode::Same;
-        case Type::boo_t:
+        case BuiltinTypeKind::boo_t:
           return CastMode::Explicit;
-        case Type::str_t:
+        case BuiltinTypeKind::str_t:
           return CastMode::None;
           SWITCH_CANNOT_CAST;
       }
-    case Type::boo_t:
+    case BuiltinTypeKind::boo_t:
       switch (to)
       {
-        case Type::int_t:
+        case BuiltinTypeKind::int_t:
           return CastMode::Implicit;
-        case Type::flt_t:
+        case BuiltinTypeKind::flt_t:
           return CastMode::Implicit;
-        case Type::chr_t:
+        case BuiltinTypeKind::chr_t:
           return CastMode::Implicit;
-        case Type::boo_t:
+        case BuiltinTypeKind::boo_t:
           return CastMode::Same;
-        case Type::str_t:
+        case BuiltinTypeKind::str_t:
           return CastMode::None;
           SWITCH_CANNOT_CAST;
       }
-    case Type::str_t:
+    case BuiltinTypeKind::str_t:
       switch (to)
       {
-        case Type::int_t:
+        case BuiltinTypeKind::int_t:
           return CastMode::None;
-        case Type::flt_t:
+        case BuiltinTypeKind::flt_t:
           return CastMode::None;
-        case Type::chr_t:
+        case BuiltinTypeKind::chr_t:
           return CastMode::None;
-        case Type::boo_t:
+        case BuiltinTypeKind::boo_t:
           return CastMode::None;
-        case Type::str_t:
+        case BuiltinTypeKind::str_t:
           return CastMode::Same;
           SWITCH_CANNOT_CAST;
       }
@@ -146,83 +146,83 @@ CastMode castMode(Type from, Type to)
 #undef SWITCH_CANNOT_CAST
 
 #define NO_CAST                                                                \
-  case Type::vac_t:                                                            \
-  case Type::none:                                                             \
-  case Type::inferred:                                                         \
+  case BuiltinTypeKind::vac_t:                                                            \
+  case BuiltinTypeKind::none:                                                             \
+  case BuiltinTypeKind::inferred:                                                         \
   default:                                                                     \
     return nullptr
 
-llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type from, Type to,
+llvm::Value *generateCast(Context &ctx, llvm::Value *val, BuiltinTypeKind from, BuiltinTypeKind to,
                           const llvm::Twine &valName)
 {
   auto &builder = ctx.global.builder;
   auto targetType = getLLVMTypeFromType(ctx.global, to);
   switch (from)
   {
-    case Type::int_t:
+    case BuiltinTypeKind::int_t:
       switch (to)
       {
-        case Type::int_t:
+        case BuiltinTypeKind::int_t:
           return val;
-        case Type::flt_t:
+        case BuiltinTypeKind::flt_t:
           return builder.CreateSIToFP(val, targetType, valName);
-        case Type::chr_t:
+        case BuiltinTypeKind::chr_t:
           return builder.CreateIntCast(val, targetType, true, valName);
-        case Type::boo_t:
+        case BuiltinTypeKind::boo_t:
           return builder.CreateIsNotNull(val, valName);
-        case Type::str_t:
+        case BuiltinTypeKind::str_t:
           NO_CAST;
       }
-    case Type::flt_t:
+    case BuiltinTypeKind::flt_t:
       switch (to)
       {
-        case Type::int_t:
-        case Type::chr_t:
+        case BuiltinTypeKind::int_t:
+        case BuiltinTypeKind::chr_t:
           return builder.CreateFPToSI(val, targetType, valName);
-        case Type::flt_t:
+        case BuiltinTypeKind::flt_t:
           return val;
-        case Type::boo_t:
+        case BuiltinTypeKind::boo_t:
           return builder.CreateFCmpONE(val, FltNumberExpr({}, 0.0).codegen(ctx),
                                        valName);
-        case Type::str_t:
+        case BuiltinTypeKind::str_t:
           NO_CAST;
       }
-    case Type::chr_t:
+    case BuiltinTypeKind::chr_t:
       switch (to)
       {
-        case Type::int_t:
+        case BuiltinTypeKind::int_t:
           return builder.CreateIntCast(val, targetType, true, valName);
-        case Type::flt_t:
+        case BuiltinTypeKind::flt_t:
           return builder.CreateSIToFP(val, targetType, valName);
-        case Type::chr_t:
+        case BuiltinTypeKind::chr_t:
           return val;
-        case Type::boo_t:
+        case BuiltinTypeKind::boo_t:
           return builder.CreateIsNotNull(val, valName);
-        case Type::str_t:
+        case BuiltinTypeKind::str_t:
           NO_CAST;
       }
-    case Type::boo_t:
+    case BuiltinTypeKind::boo_t:
       switch (to)
       {
-        case Type::int_t:
-        case Type::chr_t:
+        case BuiltinTypeKind::int_t:
+        case BuiltinTypeKind::chr_t:
           return builder.CreateIntCast(val, targetType, true, valName);
-        case Type::flt_t:
+        case BuiltinTypeKind::flt_t:
           return builder.CreateSIToFP(val, targetType, valName);
-        case Type::boo_t:
+        case BuiltinTypeKind::boo_t:
           return val;
-        case Type::str_t:
+        case BuiltinTypeKind::str_t:
           NO_CAST;
       }
-    case Type::str_t:
+    case BuiltinTypeKind::str_t:
       switch (to)
       {
-        case Type::str_t:
+        case BuiltinTypeKind::str_t:
           return val;
-        case Type::int_t:
-        case Type::flt_t:
-        case Type::chr_t:
-        case Type::boo_t:
+        case BuiltinTypeKind::int_t:
+        case BuiltinTypeKind::flt_t:
+        case BuiltinTypeKind::chr_t:
+        case BuiltinTypeKind::boo_t:
           NO_CAST;
       }
       NO_CAST;
@@ -232,60 +232,60 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type from, Type to,
 #undef NO_CAST
 
 #define NO_COMMON                                                              \
-  case Type::str_t:                                                            \
-  case Type::vac_t:                                                            \
-  case Type::none:                                                             \
-  case Type::inferred:                                                         \
+  case BuiltinTypeKind::str_t:                                                            \
+  case BuiltinTypeKind::vac_t:                                                            \
+  case BuiltinTypeKind::none:                                                             \
+  case BuiltinTypeKind::inferred:                                                         \
   default:                                                                     \
-    return Type::none
+    return BuiltinTypeKind::none
 
-Type commonType(Type t1, Type t2)
+BuiltinTypeKind commonType(BuiltinTypeKind t1, BuiltinTypeKind t2)
 {
   if (t1 == t2) return t1;
   switch (t1)
   {
-    case Type::int_t:
+    case BuiltinTypeKind::int_t:
       switch (t2)
       {
-        case Type::flt_t:
-          return Type::flt_t;
-        case Type::chr_t:
-          return Type::int_t;
-        case Type::boo_t:
-          return Type::int_t;
+        case BuiltinTypeKind::flt_t:
+          return BuiltinTypeKind::flt_t;
+        case BuiltinTypeKind::chr_t:
+          return BuiltinTypeKind::int_t;
+        case BuiltinTypeKind::boo_t:
+          return BuiltinTypeKind::int_t;
           NO_COMMON;
       }
-    case Type::flt_t:
+    case BuiltinTypeKind::flt_t:
       switch (t2)
       {
-        case Type::int_t:
-          return Type::flt_t;
-        case Type::chr_t:
-          return Type::flt_t;
-        case Type::boo_t:
-          return Type::flt_t;
+        case BuiltinTypeKind::int_t:
+          return BuiltinTypeKind::flt_t;
+        case BuiltinTypeKind::chr_t:
+          return BuiltinTypeKind::flt_t;
+        case BuiltinTypeKind::boo_t:
+          return BuiltinTypeKind::flt_t;
           NO_COMMON;
       }
-    case Type::chr_t:
+    case BuiltinTypeKind::chr_t:
       switch (t2)
       {
-        case Type::int_t:
-          return Type::int_t;
-        case Type::flt_t:
-          return Type::flt_t;
-        case Type::boo_t:
-          return Type::chr_t;
+        case BuiltinTypeKind::int_t:
+          return BuiltinTypeKind::int_t;
+        case BuiltinTypeKind::flt_t:
+          return BuiltinTypeKind::flt_t;
+        case BuiltinTypeKind::boo_t:
+          return BuiltinTypeKind::chr_t;
           NO_COMMON;
       }
-    case Type::boo_t:
+    case BuiltinTypeKind::boo_t:
       switch (t2)
       {
-        case Type::int_t:
-          return Type::int_t;
-        case Type::flt_t:
-          return Type::flt_t;
-        case Type::chr_t:
-          return Type::chr_t;
+        case BuiltinTypeKind::int_t:
+          return BuiltinTypeKind::int_t;
+        case BuiltinTypeKind::flt_t:
+          return BuiltinTypeKind::flt_t;
+        case BuiltinTypeKind::chr_t:
+          return BuiltinTypeKind::chr_t;
           NO_COMMON;
       }
       NO_COMMON;
@@ -294,21 +294,21 @@ Type commonType(Type t1, Type t2)
 
 #undef NO_COMMON
 
-llvm::Constant *getIntConst(Context &ctx, Type intType, int val)
+llvm::Constant *getIntConst(Context &ctx, BuiltinTypeKind intType, int val)
 {
   auto bits = 0;
   auto is_signed = false;
   switch (intType)
   {
-    case Type::int_t:
+    case BuiltinTypeKind::int_t:
       bits = 64;
       is_signed = true;
       break;
-    case Type::chr_t:
+    case BuiltinTypeKind::chr_t:
       bits = 8;
       is_signed = true;
       break;
-    case Type::boo_t:
+    case BuiltinTypeKind::boo_t:
       bits = 1;
       is_signed = false;
       break;
@@ -319,34 +319,34 @@ llvm::Constant *getIntConst(Context &ctx, Type intType, int val)
                                 llvm::APInt(bits, val, is_signed));
 }
 
-ExprPtr getIntConstExpr(Type intType, int val)
+ExprPtr getIntConstExpr(BuiltinTypeKind intType, int val)
 {
   switch (intType)
   {
-    case Type::int_t:
+    case BuiltinTypeKind::int_t:
       return make_EPtr<IntNumberExpr>({}, val);
-    case Type::chr_t:
+    case BuiltinTypeKind::chr_t:
       return make_EPtr<CharConstExpr>({}, val);
-    case Type::boo_t:
+    case BuiltinTypeKind::boo_t:
       return make_EPtr<BoolConstExpr>({}, val != 0);
     default:
       throw CodeGenError("invalid int type " + getTypeName(intType));
   }
 }
 
-llvm::Constant *createDefaultValueConst(Context &ctx, Type type)
+llvm::Constant *createDefaultValueConst(Context &ctx, BuiltinTypeKind type)
 {
   switch (type)
   {
-    case Type::int_t:
+    case BuiltinTypeKind::int_t:
       return IntNumberExpr({}, 0).codegen(ctx);
-    case Type::flt_t:
+    case BuiltinTypeKind::flt_t:
       return FltNumberExpr({}, 0.0).codegen(ctx);
-    case Type::chr_t:
+    case BuiltinTypeKind::chr_t:
       return CharConstExpr({}, '\0').codegen(ctx);
-    case Type::boo_t:
+    case BuiltinTypeKind::boo_t:
       return BoolConstExpr({}, false).codegen(ctx);
-    case Type::str_t:
+    case BuiltinTypeKind::str_t:
     default:
       throw CodeGenError("no default value for type " + getTypeName(type));
   }
@@ -393,7 +393,7 @@ int getCompAssigOpBaseOp(int op)
     throw CodeGenError("operation '" + Lexer::getTokenName(op) +               \
                        "' not supported for type '" + getTypeName(ty) + "'");
 
-llvm::Value *createUnOp(Context &ctx, int op, Type type, llvm::Value *rhs)
+llvm::Value *createUnOp(Context &ctx, int op, BuiltinTypeKind type, llvm::Value *rhs)
 {
   //   using Tok = Token::TokenType;
   // valid unops:
@@ -410,26 +410,26 @@ llvm::Value *createUnOp(Context &ctx, int op, Type type, llvm::Value *rhs)
     case '!':
       switch (type)
       {
-        case Type::boo_t:
+        case BuiltinTypeKind::boo_t:
           return builder.CreateNot(rhs, "not");
           OP_NOT_SUPPORTED(op, type);
       }
     case '~':
       switch (type)
       {
-        case Type::int_t:
-        case Type::chr_t:
-        case Type::boo_t:
+        case BuiltinTypeKind::int_t:
+        case BuiltinTypeKind::chr_t:
+        case BuiltinTypeKind::boo_t:
           return builder.CreateXor(rhs, getIntConst(ctx, type, -1), "bitcmpl");
           OP_NOT_SUPPORTED(op, type);
       }
     case '-':
       switch (type)
       {
-        case Type::int_t:
-        case Type::chr_t:
+        case BuiltinTypeKind::int_t:
+        case BuiltinTypeKind::chr_t:
           return builder.CreateNeg(rhs, "ineg");
-        case Type::flt_t:
+        case BuiltinTypeKind::flt_t:
           return builder.CreateFNeg(rhs, "fneg");
           OP_NOT_SUPPORTED(op, type);
       }
@@ -470,7 +470,7 @@ llvm::Value *createUnOp(Context &ctx, int op, Type type, llvm::Value *rhs)
   return nullptr;
 }
 
-llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
+llvm::Value *createBinOp(Context &ctx, int op, BuiltinTypeKind commonType,
                          llvm::Value *lhs, llvm::Value *rhs)
 {
   using Tok = Token::TokenType;
@@ -501,9 +501,9 @@ llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
 
   switch (commonType)
   {
-    case Type::int_t:
-    case Type::chr_t:
-    case Type::boo_t:
+    case BuiltinTypeKind::int_t:
+    case BuiltinTypeKind::chr_t:
+    case BuiltinTypeKind::boo_t:
       switch (op)
       {
         // arithmetic operations
@@ -514,13 +514,13 @@ llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
         case '*':
           return builder.CreateMul(lhs, rhs, "prod");
         case '/':
-          if (commonType == Type::boo_t)
+          if (commonType == BuiltinTypeKind::boo_t)
             // return builder.CreateUDiv(lhs, rhs, "quot");
             throw CodeGenError("cannot divide two booleans");
           else
             return builder.CreateSDiv(lhs, rhs, "quot");
         case '%':
-          if (commonType == Type::boo_t)
+          if (commonType == BuiltinTypeKind::boo_t)
             // return builder.CreateURem(lhs, rhs, "rem");
             throw CodeGenError("cannot calculate rem of two booleans");
           else
@@ -531,22 +531,22 @@ llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
 
         // boolean operations
         case '<':
-          if (commonType == Type::boo_t)
+          if (commonType == BuiltinTypeKind::boo_t)
             return builder.CreateICmpULT(lhs, rhs, "cmp_lt");
           else
             return builder.CreateICmpSLT(lhs, rhs, "cmp_lt");
         case '>':
-          if (commonType == Type::boo_t)
+          if (commonType == BuiltinTypeKind::boo_t)
             return builder.CreateICmpUGT(lhs, rhs, "cmp_gt");
           else
             return builder.CreateICmpSGT(lhs, rhs, "cmp_gt");
         case Tok::lte:
-          if (commonType == Type::boo_t)
+          if (commonType == BuiltinTypeKind::boo_t)
             return builder.CreateICmpULE(lhs, rhs, "cmp_lte");
           else
             return builder.CreateICmpSLE(lhs, rhs, "cmp_lte");
         case Tok::gte:
-          if (commonType == Type::boo_t)
+          if (commonType == BuiltinTypeKind::boo_t)
             return builder.CreateICmpUGE(lhs, rhs, "cmp_gte");
           else
             return builder.CreateICmpSGE(lhs, rhs, "cmp_gte");
@@ -556,7 +556,7 @@ llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
           return builder.CreateICmpNE(lhs, rhs, "cmp_neq");
 
         case Tok::log_and:
-          if (commonType != Type::boo_t) {
+          if (commonType != BuiltinTypeKind::boo_t) {
             lhs = builder.CreateIsNotNull(lhs, "boo_cst");
             rhs = builder.CreateIsNotNull(rhs, "boo_cst");
             //             throw CodeGenError("cannot implicitly convert " +
@@ -564,7 +564,7 @@ llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
           }
           return builder.CreateAnd(lhs, rhs, "logand");
         case Tok::log_or:
-          if (commonType != Type::boo_t) {
+          if (commonType != BuiltinTypeKind::boo_t) {
             lhs = builder.CreateIsNotNull(lhs, "boo_cst");
             rhs = builder.CreateIsNotNull(rhs, "boo_cst");
             //             throw CodeGenError("cannot implicitly convert " +
@@ -580,12 +580,12 @@ llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
         case '^':
           return builder.CreateXor(lhs, rhs, "bitxor");
         case Tok::lshift:
-          if (commonType == Type::boo_t)
+          if (commonType == BuiltinTypeKind::boo_t)
             throw CodeGenError("cannot bitshift boolean type");
           else
             return builder.CreateShl(lhs, rhs, "shl");
         case Tok::rshift:
-          if (commonType == Type::boo_t)
+          if (commonType == BuiltinTypeKind::boo_t)
             throw CodeGenError("cannot bitshift boolean type");
           else
             return builder.CreateAShr(lhs, rhs, "shr");
@@ -593,7 +593,7 @@ llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
           // unsupported
           OP_NOT_SUPPORTED(op, commonType);
       }
-    case Type::flt_t:
+    case BuiltinTypeKind::flt_t:
       switch (op)
       {
         // arithmetic operations
@@ -628,7 +628,7 @@ llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
           // unsupported
           OP_NOT_SUPPORTED(op, commonType);
       }
-    case Type::str_t:
+    case BuiltinTypeKind::str_t:
       switch (op)
       {
         //         case '+':
@@ -662,12 +662,12 @@ llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
 
 #undef OP_NOT_SUPPORTED
 
-Type getBinOpReturnType(int op, Type inType)
+BuiltinTypeKind getBinOpReturnType(int op, BuiltinTypeKind inType)
 {
   static constexpr const char *bool_binops = "<>";
   if ((op >= Token::TokenType::lte && op <= Token::TokenType::log_or) ||
       std::strchr(bool_binops, op) != nullptr)
-    return Type::boo_t;
+    return BuiltinTypeKind::boo_t;
   return inType;
 }
 

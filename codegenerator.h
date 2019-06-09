@@ -32,13 +32,13 @@ public:
 
 class CodeGenerator
 {
-  Compilationunit compUnit;
+  CompilationUnit compUnit;
   Parser parser;
   GlobalContext gl_ctx;
   llvm::Function* mainFn = nullptr;
 
 public:
-  CodeGenerator(Compilationunit input) : compUnit(std::move(input)) {}
+  CodeGenerator(CompilationUnit input) : compUnit(std::move(input)) {}
 
   void generateCode(int optLevel);
 

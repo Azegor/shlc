@@ -40,7 +40,7 @@ public:
 
   int run()
   {
-    CodeGenerator codegen(Compilationunit{inFile});
+    CodeGenerator codegen(CompilationUnit{inFile});
     try
     {
         codegen.generateCode(optLevel);

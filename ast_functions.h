@@ -23,7 +23,7 @@
 
 class GlobalContext;
 
-using ArgVector = std::vector<std::pair<Type, std::string>>;
+using ArgVector = std::vector<std::pair<BuiltinTypeKind, std::string>>;
 
 class FunctionHead : public AstNode
 {
@@ -44,13 +44,13 @@ private:
   std::string name;
   std::string bindName;
   ArgVector args;
-  Type retType;
+    BuiltinTypeKind retType;
   Binding binding;
   llvm::Function *llvm_fn = nullptr;
 
 public:
   FunctionHead(SourceLocation loc, std::string fnName, ArgVector args,
-               Type retType, Binding bind = Binding::Intern)
+                 BuiltinTypeKind retType, Binding bind = Binding::Intern)
       : AstNode(loc),
         name(std::move(fnName)),
         args(std::move(args)),
@@ -90,16 +90,16 @@ public:
   const std::string &getName() const { return name; }
   void setBindName(const std::string &name) { bindName = name; }
   std::string getMangledName() const;
-  Type getReturnType() const { return retType; }
+    BuiltinTypeKind getReturnType() const { return retType; }
   llvm::Function *codegen(Context &ctx);
   void createArgumentAllocas(Context &ctx, llvm::Function *fn);
   void setBinding(Binding b) { binding = b; }
   llvm::Function *get_llvm_fn() { return llvm_fn; }
 
-  std::vector<Type> getArgTypes() const;
+  std::vector<BuiltinTypeKind> getArgTypes() const;
   bool hasSameArgsAs(const FunctionHead &o);
-  bool canCallWithArgs(const std::vector<Type> &types) const;
-  OverloadFit getOverloadFit(const std::vector<Type> &types) const;
+  bool canCallWithArgs(const std::vector<BuiltinTypeKind> &types) const;
+  OverloadFit getOverloadFit(const std::vector<BuiltinTypeKind> &types) const;
   std::string sigString() const;
 
 private:

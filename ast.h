@@ -22,5 +22,6 @@
 #include "ast_expressions.h"
 #include "ast_functions.h"
 #include "ast_statements.h"
+#include "ast_types.h"
 
 #endif // AST_H

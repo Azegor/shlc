@@ -14,37 +14,22 @@
  * limitations under the License.
  *
  */
+#include "ast_types.h"
 
-#ifndef TYPE_H
-#define TYPE_H
-
-#include <string>
-
-enum class BuiltinTypeKind : int
-{
-  none,
-  inferred,
-  int_t,
-  flt_t,
-  chr_t,
-  boo_t,
-  str_t,
-  vac_t,
-};
-
-namespace types
-{
-using int_t = long long;
-// using flt_t = long double;
-using flt_t = double;
-using chr_t = signed char;
-using boo_t = bool;
-// using str_t = std::string;
-using str_t = char const *;
+void BuiltinType::print(int indent) {
+    printIndent(indent);
+    std::cout << getTypeName(typeKind);
 }
 
-std::string getTypeName(BuiltinTypeKind t);
-char getMangleName(BuiltinTypeKind t);
-BuiltinTypeKind getTypeFromToken(int tok);
+void ClassType::print(int indent) {
+    printIndent(indent);
+    std::cout << "cls " << name << " { ... }";
+}
 
-#endif // TYPE_H
+TypeRegistry::TypeRegistry() :
+    builtinTypes(), classTypes()
+{
+    for (int btc = (int)BuiltinTypeKind::none; btc <= (int)BuiltinTypeKind::vac_t; ++btc) {
+        builtinTypes[btc] = std::make_unique<BuiltinType>((BuiltinTypeKind)btc);
+    }
+}

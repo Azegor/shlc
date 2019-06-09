@@ -38,7 +38,7 @@ bool readFile(std::string input)
     return true;
   }
   includedFiles.insert(input);
-  Lexer lex((Compilationunit(input)));
+  Lexer lex((CompilationUnit(input)));
   try
   {
     Token token;
@@ -132,7 +132,7 @@ void testParser(const char *filename)
   Parser parser;
   try
   {
-    auto parseRes = parser.parse(Compilationunit(filename));
+    auto parseRes = parser.parse(CompilationUnit(filename));
     for (auto &r : parseRes)
       r->print();
   }
@@ -157,7 +157,7 @@ void testCodeGen(const char *filename, const char *outName, bool optimize)
   Parser parser;
   try
   {
-    auto parseRes = parser.parse(Compilationunit(filename));
+    auto parseRes = parser.parse(CompilationUnit(filename));
     GlobalContext gl_ctx;
     gl_ctx.optimizeLevel = optimize ? 3 : 0;
     gl_ctx.initFPM();

@@ -5,27 +5,27 @@
 
 #include "ast_base.h"
 
-std::string getTypeName(Type t)
+std::string getTypeName(BuiltinTypeKind t)
 {
-  static std::map<Type, std::string> names = {{Type::none, "none"}, // *
-                                              {Type::inferred, "inferred"},
-                                              {Type::int_t, "int_t"},
-                                              {Type::flt_t, "flt_t"},
-                                              {Type::chr_t, "chr_t"},
-                                              {Type::boo_t, "boo_t"},
-                                              {Type::str_t, "str_t"},
-                                              {Type::vac_t, "vac_t"}};
+  static std::map<BuiltinTypeKind, std::string> names = {{BuiltinTypeKind::none, "none"}, // *
+                                              {BuiltinTypeKind::inferred, "inferred"},
+                                              {BuiltinTypeKind::int_t, "int_t"},
+                                              {BuiltinTypeKind::flt_t, "flt_t"},
+                                              {BuiltinTypeKind::chr_t, "chr_t"},
+                                              {BuiltinTypeKind::boo_t, "boo_t"},
+                                              {BuiltinTypeKind::str_t, "str_t"},
+                                              {BuiltinTypeKind::vac_t, "vac_t"}};
   return names[t];
 }
 
-char getMangleName(Type t)
+char getMangleName(BuiltinTypeKind t)
 {
-  static std::map<Type, char> names = {{Type::int_t, 'i'},
-                                       {Type::flt_t, 'f'},
-                                       {Type::chr_t, 'c'},
-                                       {Type::boo_t, 'b'},
-                                       {Type::str_t, 's'},
-                                       {Type::vac_t, 'v'}};
+  static std::map<BuiltinTypeKind, char> names = {{BuiltinTypeKind::int_t, 'i'},
+                                       {BuiltinTypeKind::flt_t, 'f'},
+                                       {BuiltinTypeKind::chr_t, 'c'},
+                                       {BuiltinTypeKind::boo_t, 'b'},
+                                       {BuiltinTypeKind::str_t, 's'},
+                                       {BuiltinTypeKind::vac_t, 'v'}};
   auto pos = names.find(t);
   if (pos == names.end())
     throw CodeGenError("invalid mangle name for type '" + getTypeName(t) +
@@ -33,15 +33,15 @@ char getMangleName(Type t)
   return pos->second;
 }
 
-Type getTypeFromToken(int tok)
+BuiltinTypeKind getTypeFromToken(int tok)
 {
-  static std::unordered_map<int, Type> types = {
-    {Token::id_int, Type::int_t}, // *
-    {Token::id_flt, Type::flt_t},
-    {Token::id_chr, Type::chr_t},
-    {Token::id_boo, Type::boo_t},
-    {Token::id_str, Type::str_t},
-    {Token::id_vac, Type::vac_t}};
+  static std::unordered_map<int, BuiltinTypeKind> types = {
+    {Token::id_int, BuiltinTypeKind::int_t}, // *
+    {Token::id_flt, BuiltinTypeKind::flt_t},
+    {Token::id_chr, BuiltinTypeKind::chr_t},
+    {Token::id_boo, BuiltinTypeKind::boo_t},
+    {Token::id_str, BuiltinTypeKind::str_t},
+    {Token::id_vac, BuiltinTypeKind::vac_t}};
   auto pos = types.find(tok);
   if (pos == types.end())
     throw CodeGenError("token '" + Lexer::getTokenName(tok) + "' is no type");

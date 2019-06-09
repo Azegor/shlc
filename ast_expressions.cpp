@@ -156,7 +156,7 @@ llvm::Value *StringConstExpr::codegen(Context &ctx)
     GV->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
 
     globalVarName = GV->getName();
-    ctx.global.putGlobalVar(globalVarName, Type::str_t, GV);
+    ctx.global.putGlobalVar(globalVarName, BuiltinTypeKind::str_t, GV);
     ctx.global.stringConstants.insert({value, globalVarName});
   }
   else
@@ -173,15 +173,15 @@ void FunctionCallExpr::findFunction(Context &ctx)
   if (!fnHead) throw CodeGenError("no viable function found for " + name, this);
 }
 
-Type FunctionCallExpr::getType(Context &ctx)
+BuiltinTypeKind FunctionCallExpr::getType(Context &ctx)
 {
   if (!fnHead) findFunction(ctx);
   return fnHead->getReturnType();
 }
 
-std::vector<Type> FunctionCallExpr::getArgTypes(Context &ctx) const
+std::vector<BuiltinTypeKind> FunctionCallExpr::getArgTypes(Context &ctx) const
 {
-  std::vector<Type> res;
+  std::vector<BuiltinTypeKind> res;
   res.reserve(args.size());
   for (auto &arg : args)
   {
@@ -194,7 +194,7 @@ llvm::Value *FunctionCallExpr::codegen(Context &ctx)
 {
   if (!fnHead) findFunction(ctx);
   auto callArgs = getArgTypes(ctx);
-  std::vector<Type> argTypes;
+  std::vector<BuiltinTypeKind> argTypes;
   argTypes.reserve(args.size());
   for (auto &arg : args)
     argTypes.push_back(arg->getType(ctx));
@@ -212,7 +212,7 @@ llvm::Value *FunctionCallExpr::codegen(Context &ctx)
                                     functionArgs[i]);
     params[i] = args[i]->codegen(ctx);
   }
-  if (fnHead->getReturnType() == Type::vac_t) {
+  if (fnHead->getReturnType() == BuiltinTypeKind::vac_t) {
     return ctx.global.builder.CreateCall(
       fnHead->get_llvm_fn(),
       llvm::ArrayRef<llvm::Value *>(params.get(), args.size()));
@@ -225,14 +225,14 @@ llvm::Value *FunctionCallExpr::codegen(Context &ctx)
   }
 }
 
-Type VariableExpr::getType(Context &ctx) { return ctx.getVariableType(name); }
+BuiltinTypeKind VariableExpr::getType(Context &ctx) { return ctx.getVariableType(name); }
 
 llvm::Value *VariableExpr::codegen(Context &ctx)
 {
   return ctx.global.builder.CreateLoad(ctx.getVarAlloca(name), name);
 }
 
-Type GlobalVarExpr::getType(Context &ctx)
+BuiltinTypeKind GlobalVarExpr::getType(Context &ctx)
 {
   return ctx.global.getGlobalVarType(name);
 }
@@ -240,7 +240,7 @@ Type GlobalVarExpr::getType(Context &ctx)
 llvm::Value *GlobalVarExpr::codegen(Context &ctx)
 {
   auto var = ctx.global.getGlobalVar(name);
-  if (var.type == Type::str_t)
+  if (var.type == BuiltinTypeKind::str_t)
     return ctx.global.builder.CreateConstGEP2_32(nullptr, var.var, 0, 0); // FIXME
   else
     return ctx.global.builder.CreateConstGEP1_32(var.var, 0);
@@ -264,12 +264,12 @@ llvm::Value *CastExpr::codegen(Context &ctx)
   return generateCast(ctx, val, from, newType, castName);
 }
 
-Type BinOpExpr::getCommonType(Context &ctx)
+BuiltinTypeKind BinOpExpr::getCommonType(Context &ctx)
 {
   auto t1 = lhs->getType(ctx);
   auto t2 = rhs->getType(ctx);
   auto ct = commonType(t1, t2);
-  if (ct == Type::none)
+  if (ct == BuiltinTypeKind::none)
     throw CodeGenError("no common type for types " + getTypeName(t1) + " and " +
                          getTypeName(t2),
                        this);
@@ -288,7 +288,7 @@ Type BinOpExpr::getCommonType(Context &ctx)
   return ct;
 }
 
-Type BinOpExpr::getType(Context &ctx)
+BuiltinTypeKind BinOpExpr::getType(Context &ctx)
 {
   auto ct = getCommonType(ctx);
   return getBinOpReturnType(op, ct);
@@ -344,7 +344,7 @@ llvm::Value *BinOpExpr::codegen(Context &ctx)
                      this);
 }
 
-Type UnOpExpr::getType(Context &ctx)
+BuiltinTypeKind UnOpExpr::getType(Context &ctx)
 {
   return rhs->getType(ctx); // for now, some might change type!?!
 }

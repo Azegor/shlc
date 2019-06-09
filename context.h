@@ -63,7 +63,7 @@ struct GlobalVars
 {
   struct GlobVarInfo
   {
-    Type type;
+        BuiltinTypeKind type;
     llvm::GlobalVariable *var;
   };
   std::map<std::string, GlobVarInfo> globVars;
@@ -97,6 +97,7 @@ public:
   std::unordered_map<std::string, std::string> stringConstants;
 
   GlobalContext();
+  ~GlobalContext();
 
   void initPMB();
 
@@ -108,9 +109,9 @@ public:
 
   FunctionHead *getFunction(const std::string &name) const; // unused!
   FunctionHead *getFunctionOverload(const std::string &name,
-                                    const std::vector<Type> &args) const;
+                                    const std::vector<BuiltinTypeKind> &args) const;
 
-  void putGlobalVar(const std::string &name, Type type,
+  void putGlobalVar(const std::string &name, BuiltinTypeKind type,
                     llvm::GlobalVariable *globVar)
   {
     auto var = globalVars.globVars.find(name);
@@ -130,7 +131,7 @@ public:
     return getGlobalVar(name).var;
   }
 
-  Type getGlobalVarType(const std::string &name) const
+    BuiltinTypeKind getGlobalVarType(const std::string &name) const
   {
     return getGlobalVar(name).type;
   }
@@ -140,7 +141,7 @@ struct ContextFrame
 {
   struct VarInfo
   {
-    Type type;
+        BuiltinTypeKind type;
     llvm::AllocaInst *alloca;
   };
   //   std::map<std::pair<std::string, llvm::Type>, llvm::AllocaInst *>
@@ -150,7 +151,7 @@ struct ContextFrame
 
 struct ReturnData
 {
-  Type type = Type::none;
+    BuiltinTypeKind type = BuiltinTypeKind::none;
   llvm::AllocaInst *val = nullptr;
   llvm::BasicBlock *BB = nullptr;
 };
@@ -182,7 +183,7 @@ public:
     else
       top = &frames.back();
   }
-  void putVar(const std::string &name, Type type, llvm::AllocaInst *aInst)
+  void putVar(const std::string &name, BuiltinTypeKind type, llvm::AllocaInst *aInst)
   {
     if (top->variables.find(name) != top->variables.end())
       throw VariableAlreadyDefinedError(name);
@@ -202,7 +203,7 @@ public:
   {
     return getVar(name).alloca;
   }
-  Type getVariableType(const std::string &name) const
+    BuiltinTypeKind getVariableType(const std::string &name) const
   {
     return getVar(name).type;
   }

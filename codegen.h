@@ -30,7 +30,7 @@ class Context;
 class GlobalContext;
 class VariableExpr;
 
-llvm::Type *getLLVMTypeFromType(GlobalContext &ctx, Type tokID);
+llvm::Type *getLLVMTypeFromType(GlobalContext &ctx, BuiltinTypeKind tokID);
 
 llvm::AllocaInst *createEntryBlockAlloca(llvm::Function *fn,
                                          const std::string &varName,
@@ -44,30 +44,30 @@ enum class CastMode
   Same
 };
 
-CastMode castMode(Type from, Type to);
+CastMode castMode(BuiltinTypeKind from, BuiltinTypeKind to);
 
-inline bool canImplicitlyCast(Type from, Type to)
+inline bool canImplicitlyCast(BuiltinTypeKind from, BuiltinTypeKind to)
 {
   auto mode = castMode(from, to);
   return mode == CastMode::Implicit || mode == CastMode::Same;
 }
 
-inline bool canCast(Type from, Type to)
+inline bool canCast(BuiltinTypeKind from, BuiltinTypeKind to)
 {
   auto mode = castMode(from, to);
   return mode == CastMode::Explicit || mode == CastMode::Implicit ||
          mode == CastMode::Same;
 }
 
-llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type from, Type to,
+llvm::Value *generateCast(Context &ctx, llvm::Value *val, BuiltinTypeKind from, BuiltinTypeKind to,
                           const llvm::Twine &valName = "");
 
-Type commonType(Type t1, Type t2);
+BuiltinTypeKind commonType(BuiltinTypeKind t1, BuiltinTypeKind t2);
 
-llvm::Constant *getIntConst(Context &ctx, Type intType, int val);
-ExprPtr getIntConstExpr(Type intType, int val);
+llvm::Constant *getIntConst(Context &ctx, BuiltinTypeKind intType, int val);
+ExprPtr getIntConstExpr(BuiltinTypeKind intType, int val);
 
-llvm::Constant *createDefaultValueConst(Context &ctx, Type type);
+llvm::Constant *createDefaultValueConst(Context &ctx, BuiltinTypeKind type);
 
 inline bool isBinOp(int op)
 {
@@ -97,12 +97,12 @@ inline int getIncDecOpBaseOp(int op)
   throw CodeGenError("invalid inc/dec op " + Lexer::getTokenName(op));
 }
 
-llvm::Value *createUnOp(Context &ctx, int op, Type type, llvm::Value *rhs);
+llvm::Value *createUnOp(Context &ctx, int op, BuiltinTypeKind type, llvm::Value *rhs);
 
-llvm::Value *createBinOp(Context &ctx, int op, Type commonType,
+llvm::Value *createBinOp(Context &ctx, int op, BuiltinTypeKind commonType,
                          llvm::Value *lhs, llvm::Value *rhs);
 
-Type getBinOpReturnType(int op, Type inType);
+BuiltinTypeKind getBinOpReturnType(int op, BuiltinTypeKind inType);
 
 llvm::Value *createAssignment(Context &ctx, llvm::Value *val,
                               VariableExpr *var);

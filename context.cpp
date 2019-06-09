@@ -94,6 +94,11 @@ GlobalContext::GlobalContext()
   //   mpm.addPass(llvm::createDeadArgEliminationPass());
 }
 
+GlobalContext::~GlobalContext()
+{
+    delete execEngine;
+}
+
 void GlobalContext::initPMB()
 {
   pm_builder.Inliner = llvm::createFunctionInliningPass(optimizeLevel, 275, false);
@@ -124,7 +129,7 @@ FunctionHead *GlobalContext::getFunction(const std::string &name) const
 }
 
 FunctionHead *GlobalContext::getFunctionOverload(
-  const std::string &name, const std::vector<Type> &args) const
+  const std::string &name, const std::vector<BuiltinTypeKind> &args) const
 {
   auto range = declaredFunctions.equal_range(name);
   if (range.first == range.second) return nullptr;
