@@ -30,7 +30,8 @@ class Context;
 class GlobalContext;
 class VariableExpr;
 
-llvm::Type *getLLVMTypeFromType(GlobalContext &ctx, BuiltinTypeKind tokID);
+llvm::Type *getLLVMTypeFromType(GlobalContext &ctx, Type *type);
+llvm::Type *getLLVMTypeFromBuiltinType(GlobalContext &ctx, BuiltinTypeKind tokID);
 
 llvm::AllocaInst *createEntryBlockAlloca(llvm::Function *fn,
                                          const std::string &varName,
@@ -45,21 +46,20 @@ enum class CastMode
 };
 
 CastMode castMode(BuiltinTypeKind from, BuiltinTypeKind to);
-
-inline bool canImplicitlyCast(BuiltinTypeKind from, BuiltinTypeKind to)
+inline bool canImplicitlyCast(Type *from, Type *to)
 {
-  auto mode = castMode(from, to);
+  auto mode = castMode(from->getKind(), to->getKind());
   return mode == CastMode::Implicit || mode == CastMode::Same;
 }
 
-inline bool canCast(BuiltinTypeKind from, BuiltinTypeKind to)
+inline bool canCast(Type *from, Type *to)
 {
-  auto mode = castMode(from, to);
+  auto mode = castMode(from->getKind(), to->getKind());
   return mode == CastMode::Explicit || mode == CastMode::Implicit ||
          mode == CastMode::Same;
 }
 
-llvm::Value *generateCast(Context &ctx, llvm::Value *val, BuiltinTypeKind from, BuiltinTypeKind to,
+llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type *from, Type *to,
                           const llvm::Twine &valName = "");
 
 BuiltinTypeKind commonType(BuiltinTypeKind t1, BuiltinTypeKind t2);
@@ -67,7 +67,7 @@ BuiltinTypeKind commonType(BuiltinTypeKind t1, BuiltinTypeKind t2);
 llvm::Constant *getIntConst(Context &ctx, BuiltinTypeKind intType, int val);
 ExprPtr getIntConstExpr(BuiltinTypeKind intType, int val);
 
-llvm::Constant *createDefaultValueConst(Context &ctx, BuiltinTypeKind type);
+llvm::Constant *createDefaultValueConst(Context &ctx, Type *type);
 
 inline bool isBinOp(int op)
 {

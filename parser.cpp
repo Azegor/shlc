@@ -211,7 +211,7 @@ FunctionPtr Parser::parseFunctionDef()
 
   readNextToken(); // eat ')'
 
-    BuiltinTypeKind retType = BuiltinTypeKind::vac_t;
+  Type *retType = TypeRegistry::getVoidType();
   if (curTok.type == ':') // with return type
   {
     readNextToken();
@@ -260,7 +260,7 @@ FunctionPtr Parser::parseFunctionDef()
 void Parser::parseFunctionArguments(ArgVector &args)
 {
   // assert (isVarTypeId(curTok));
-    BuiltinTypeKind argType = getTypeFromToken(curTok.type);
+  Type *argType = getTypeFromToken(curTok.type);
   readNextToken();
   do
   {
@@ -635,13 +635,12 @@ StmtPtr Parser::parseVarDeclStmt()
       error("unexpected '" + curTok.str + "', expected ':', '=' or ','");
     readNextToken(); // eat ','
   }
-    BuiltinTypeKind type = BuiltinTypeKind::inferred;
+  Type *type = nullptr;
   if (inferred==Inferred::NO) {
     readNextToken(); // eat ':'
-    if (!isVarTypeId(curTok.type))
-      error("unexpected '" + curTok.str + "', expected type");
-    type = getTypeFromToken(curTok.type);
-    readNextToken(); // eat type
+    type = parseTypeName();
+  } else {
+    type = nullptr;
   }
 
   return make_SPtr<VarDeclStmt>(endSLContextPrevToken(), type, std::move(vars));
@@ -651,7 +650,7 @@ Type *Parser::parseTypeName()
 {
   Type *type = nullptr;
   if (isVarTypeId(curTok.type)) {
-    type = typeRegistry.getBuiltinType(getTypeFromToken(curTok.type));
+    type = getTypeFromToken(curTok.type);
   } else {
     error("unexpected '" + curTok.str + "', expected type");
   }

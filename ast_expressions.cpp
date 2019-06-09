@@ -27,6 +27,7 @@
 #include "ast.h"
 #include "context.h"
 #include "ast_functions.h"
+#include "ast_types.h"
 #include "codegen.h"
 
 void VariableExpr::print(int indent)
@@ -53,7 +54,7 @@ void FunctionCallExpr::print(int indent)
 void ConstantExpr::print(int indent)
 {
   printIndent(indent);
-  std::cout << "[Number, type: " << getTypeName(type) << "]";
+  std::cout << "[Number, type: " << type->getName() << "]";
 }
 void IntNumberExpr::print(int indent)
 {
@@ -91,7 +92,7 @@ void VarDeclStmt::print(int indent)
             {
     return s.first;
   });
-  std::cout << " : " << getTypeName(type) << ']' << std::endl;
+  std::cout << " : " << type->getName() << ']' << std::endl;
 }
 
 void BinOpExpr::print(int indent)
@@ -156,7 +157,7 @@ llvm::Value *StringConstExpr::codegen(Context &ctx)
     GV->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
 
     globalVarName = GV->getName();
-    ctx.global.putGlobalVar(globalVarName, BuiltinTypeKind::str_t, GV);
+    ctx.global.putGlobalVar(globalVarName, TypeRegistry::getBuiltinType(BuiltinTypeKind::str_t), GV);
     ctx.global.stringConstants.insert({value, globalVarName});
   }
   else
@@ -173,15 +174,15 @@ void FunctionCallExpr::findFunction(Context &ctx)
   if (!fnHead) throw CodeGenError("no viable function found for " + name, this);
 }
 
-BuiltinTypeKind FunctionCallExpr::getType(Context &ctx)
+Type *FunctionCallExpr::getType(Context &ctx)
 {
   if (!fnHead) findFunction(ctx);
   return fnHead->getReturnType();
 }
 
-std::vector<BuiltinTypeKind> FunctionCallExpr::getArgTypes(Context &ctx) const
+std::vector<Type*> FunctionCallExpr::getArgTypes(Context &ctx) const
 {
-  std::vector<BuiltinTypeKind> res;
+  std::vector<Type*> res;
   res.reserve(args.size());
   for (auto &arg : args)
   {
@@ -194,7 +195,7 @@ llvm::Value *FunctionCallExpr::codegen(Context &ctx)
 {
   if (!fnHead) findFunction(ctx);
   auto callArgs = getArgTypes(ctx);
-  std::vector<BuiltinTypeKind> argTypes;
+  std::vector<Type*> argTypes;
   argTypes.reserve(args.size());
   for (auto &arg : args)
     argTypes.push_back(arg->getType(ctx));
@@ -212,7 +213,7 @@ llvm::Value *FunctionCallExpr::codegen(Context &ctx)
                                     functionArgs[i]);
     params[i] = args[i]->codegen(ctx);
   }
-  if (fnHead->getReturnType() == BuiltinTypeKind::vac_t) {
+  if (fnHead->getReturnType() == TypeRegistry::getVoidType()) {
     return ctx.global.builder.CreateCall(
       fnHead->get_llvm_fn(),
       llvm::ArrayRef<llvm::Value *>(params.get(), args.size()));
@@ -225,14 +226,14 @@ llvm::Value *FunctionCallExpr::codegen(Context &ctx)
   }
 }
 
-BuiltinTypeKind VariableExpr::getType(Context &ctx) { return ctx.getVariableType(name); }
+Type *VariableExpr::getType(Context &ctx) { return ctx.getVariableType(name); }
 
 llvm::Value *VariableExpr::codegen(Context &ctx)
 {
   return ctx.global.builder.CreateLoad(ctx.getVarAlloca(name), name);
 }
 
-BuiltinTypeKind GlobalVarExpr::getType(Context &ctx)
+Type *GlobalVarExpr::getType(Context &ctx)
 {
   return ctx.global.getGlobalVarType(name);
 }
@@ -240,7 +241,7 @@ BuiltinTypeKind GlobalVarExpr::getType(Context &ctx)
 llvm::Value *GlobalVarExpr::codegen(Context &ctx)
 {
   auto var = ctx.global.getGlobalVar(name);
-  if (var.type == BuiltinTypeKind::str_t)
+  if (var.type == TypeRegistry::getBuiltinType(BuiltinTypeKind::str_t))
     return ctx.global.builder.CreateConstGEP2_32(nullptr, var.var, 0, 0); // FIXME
   else
     return ctx.global.builder.CreateConstGEP1_32(var.var, 0);
@@ -255,43 +256,43 @@ llvm::Value *CastExpr::codegen(Context &ctx)
 {
   auto from = expr->getType(ctx);
   if (!canCast(from, newType))
-    throw CodeGenError("invalid cast from type '" + getTypeName(from) +
-                         "' to '" + getTypeName(newType) + '\'',
+    throw CodeGenError("invalid cast from type '" + from->getName() +
+                         "' to '" + newType->getName() + '\'',
                        this);
   auto val = expr->codegen(ctx);
   auto valName = val->getName();
-  auto castName = valName + "_cst_" + getTypeName(newType);
+  auto castName = valName + "_cst_" + newType->getName();
   return generateCast(ctx, val, from, newType, castName);
 }
 
-BuiltinTypeKind BinOpExpr::getCommonType(Context &ctx)
+Type *BinOpExpr::getCommonType(Context &ctx)
 {
   auto t1 = lhs->getType(ctx);
   auto t2 = rhs->getType(ctx);
-  auto ct = commonType(t1, t2);
-  if (ct == BuiltinTypeKind::none)
-    throw CodeGenError("no common type for types " + getTypeName(t1) + " and " +
-                         getTypeName(t2),
+  auto ct = TypeRegistry::getBuiltinType(commonType(t1->getKind(), t2->getKind()));
+  if (!ct)
+    throw CodeGenError("no common type for types " + t1->getName() + " and " +
+                         t2->getName(),
                        this);
   if (!canImplicitlyCast(t1, ct))
     throw CodeGenError("cannot implicitly convert right argument of binop '" +
                          Lexer::getTokenName(op) + "' of type '" +
-                         getTypeName(t1) + "' to type '" + getTypeName(ct) +
+                         t1->getName() + "' to type '" + ct->getName() +
                          '\'',
                        this);
   if (!canImplicitlyCast(t2, ct))
     throw CodeGenError("cannot implicitly convert right argument of binop '" +
                          Lexer::getTokenName(op) + "' of type '" +
-                         getTypeName(t2) + "' to type '" + getTypeName(ct) +
+                         t2->getName() + "' to type '" + ct->getName() +
                          '\'',
                        this);
   return ct;
 }
 
-BuiltinTypeKind BinOpExpr::getType(Context &ctx)
+Type *BinOpExpr::getType(Context &ctx)
 {
   auto ct = getCommonType(ctx);
-  return getBinOpReturnType(op, ct);
+  return TypeRegistry::getBuiltinType(getBinOpReturnType(op, ct->getKind()));
 }
 
 llvm::Value *BinOpExpr::codegen(Context &ctx)
@@ -300,7 +301,7 @@ llvm::Value *BinOpExpr::codegen(Context &ctx)
     auto commonType = getCommonType(ctx);
     lhs = make_EPtr<CastExpr>(lhs->srcLoc, std::move(lhs), commonType);
     rhs = make_EPtr<CastExpr>(rhs->srcLoc, std::move(rhs), commonType);
-    return createBinOp(ctx, op, commonType, lhs->codegen(ctx),
+    return createBinOp(ctx, op, commonType->getKind(), lhs->codegen(ctx),
                        rhs->codegen(ctx));
   }
   if (isCompAssign(op)) {
@@ -315,11 +316,11 @@ llvm::Value *BinOpExpr::codegen(Context &ctx)
     if (!canImplicitlyCast(rightType, targetType))
       throw CodeGenError("cannot implicitly convert right argument of binop '" +
                            Lexer::getTokenName(op) + "' of type '" +
-                           getTypeName(rightType) + "' to type '" +
-                           getTypeName(targetType) + '\'',
+                           rightType->getName() + "' to type '" +
+                           targetType->getName() + '\'',
                          this);
     rhs = make_EPtr<CastExpr>(rhs->srcLoc, std::move(rhs), targetType);
-    auto assignVal = createBinOp(ctx, assign_op, targetType, lhs->codegen(ctx),
+    auto assignVal = createBinOp(ctx, assign_op, targetType->getKind(), lhs->codegen(ctx),
                                  rhs->codegen(ctx));
     return createAssignment(ctx, assignVal, varexpr);
   }
@@ -334,7 +335,7 @@ llvm::Value *BinOpExpr::codegen(Context &ctx)
     if (!canImplicitlyCast(rightType, targetType))
       throw CodeGenError(
         "cannot implicitly convert right argument of assignment '" +
-          getTypeName(rightType) + "' to type '" + getTypeName(targetType) +
+          rightType->getName() + "' to type '" + targetType->getName() +
           '\'',
         this);
     rhs = make_EPtr<CastExpr>(rhs->srcLoc, std::move(rhs), targetType);
@@ -344,7 +345,7 @@ llvm::Value *BinOpExpr::codegen(Context &ctx)
                      this);
 }
 
-BuiltinTypeKind UnOpExpr::getType(Context &ctx)
+Type *UnOpExpr::getType(Context &ctx)
 {
   return rhs->getType(ctx); // for now, some might change type!?!
 }
@@ -352,7 +353,7 @@ BuiltinTypeKind UnOpExpr::getType(Context &ctx)
 llvm::Value *UnOpExpr::codegen(Context &ctx)
 {
   if (isUnOp(op)) {
-    return createUnOp(ctx, op, getType(ctx), rhs->codegen(ctx));
+    return createUnOp(ctx, op, getType(ctx)->getKind(), rhs->codegen(ctx));
   }
   else if (op == Token::TokenType::increment ||
            op == Token::TokenType::decrement)
@@ -364,7 +365,7 @@ llvm::Value *UnOpExpr::codegen(Context &ctx)
     // the following is a bit of a hack, can be improved
     return BinOpExpr(srcLoc, getIncDecOpBaseOp(op),
                      make_EPtr<VariableExpr>(*varexpr),
-                     getIntConstExpr(varexpr->getType(ctx), 1)).codegen(ctx);
+                     getIntConstExpr(varexpr->getType(ctx)->getKind(), 1)).codegen(ctx);
   }
   throw CodeGenError("invalid unary operation " + Lexer::getTokenName(op),
                      this);

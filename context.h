@@ -63,7 +63,7 @@ struct GlobalVars
 {
   struct GlobVarInfo
   {
-        BuiltinTypeKind type;
+    Type *type;
     llvm::GlobalVariable *var;
   };
   std::map<std::string, GlobVarInfo> globVars;
@@ -109,9 +109,9 @@ public:
 
   FunctionHead *getFunction(const std::string &name) const; // unused!
   FunctionHead *getFunctionOverload(const std::string &name,
-                                    const std::vector<BuiltinTypeKind> &args) const;
+                                    const std::vector<Type*> &args) const;
 
-  void putGlobalVar(const std::string &name, BuiltinTypeKind type,
+  void putGlobalVar(const std::string &name, Type *type,
                     llvm::GlobalVariable *globVar)
   {
     auto var = globalVars.globVars.find(name);
@@ -131,7 +131,7 @@ public:
     return getGlobalVar(name).var;
   }
 
-    BuiltinTypeKind getGlobalVarType(const std::string &name) const
+  Type *getGlobalVarType(const std::string &name) const
   {
     return getGlobalVar(name).type;
   }
@@ -141,7 +141,7 @@ struct ContextFrame
 {
   struct VarInfo
   {
-        BuiltinTypeKind type;
+    Type *type;
     llvm::AllocaInst *alloca;
   };
   //   std::map<std::pair<std::string, llvm::Type>, llvm::AllocaInst *>
@@ -151,7 +151,7 @@ struct ContextFrame
 
 struct ReturnData
 {
-    BuiltinTypeKind type = BuiltinTypeKind::none;
+  Type *type = nullptr;
   llvm::AllocaInst *val = nullptr;
   llvm::BasicBlock *BB = nullptr;
 };
@@ -183,7 +183,7 @@ public:
     else
       top = &frames.back();
   }
-  void putVar(const std::string &name, BuiltinTypeKind type, llvm::AllocaInst *aInst)
+  void putVar(const std::string &name, Type *type, llvm::AllocaInst *aInst)
   {
     if (top->variables.find(name) != top->variables.end())
       throw VariableAlreadyDefinedError(name);
@@ -203,7 +203,7 @@ public:
   {
     return getVar(name).alloca;
   }
-    BuiltinTypeKind getVariableType(const std::string &name) const
+  Type *getVariableType(const std::string &name) const
   {
     return getVar(name).type;
   }

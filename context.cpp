@@ -129,7 +129,7 @@ FunctionHead *GlobalContext::getFunction(const std::string &name) const
 }
 
 FunctionHead *GlobalContext::getFunctionOverload(
-  const std::string &name, const std::vector<BuiltinTypeKind> &args) const
+  const std::string &name, const std::vector<Type*> &args) const
 {
   auto range = declaredFunctions.equal_range(name);
   if (range.first == range.second) return nullptr;

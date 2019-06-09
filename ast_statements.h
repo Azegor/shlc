@@ -19,6 +19,7 @@
 #define ASTSTATEMENTS_H
 
 #include "ast_base.h"
+#include "ast_types.h"
 
 class VarDeclStmt : public Statement
 {
@@ -26,16 +27,16 @@ public:
   using VarEnties = std::vector<std::pair<std::string, ExprPtr>>;
 
 private:
-    BuiltinTypeKind type;
+  Type *type;
   VarEnties vars;
 
 public:
-  VarDeclStmt(SourceLocation loc, BuiltinTypeKind type, VarEnties vars)
+  VarDeclStmt(SourceLocation loc, Type *type, VarEnties vars)
       : Statement(loc), type(type), vars(std::move(vars))
   {
   }
   void print(int indent = 0) override;
-    BuiltinTypeKind getType(Context &ctx);
+  Type *getType(Context &ctx);
   llvm::Value *codegen(Context &ctx) override;
 };
 

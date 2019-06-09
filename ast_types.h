@@ -21,23 +21,29 @@
 #include "ast_base.h"
 #include <vector>
 
+Type *getTypeFromToken(int tok);
+
 class Type : public AstNode
 {
 public:
-    Type(SourceLocation loc) : AstNode(loc) {}
+    Type(SourceLocation loc, BuiltinTypeKind tk) : AstNode(loc), typeKind(tk) {}
     virtual ~Type() {}
+    virtual const std::string& getName() const = 0;
+
+    BuiltinTypeKind getKind() const { return typeKind; }
+
+protected:
+    BuiltinTypeKind typeKind;
 };
 
 class BuiltinType : public Type
 {
 public:
-    BuiltinType(BuiltinTypeKind tk) : Type({}), typeKind(tk) {}
+    BuiltinType(BuiltinTypeKind tk) : Type({}, tk) {}
     virtual ~BuiltinType() {}
 
     virtual void print(int indent = 0) override;
-
-private:
-    BuiltinTypeKind typeKind;
+    virtual const std::string& getName() const override;
 };
 
 struct ClassField
@@ -53,9 +59,15 @@ using ClassFieldVec = std::vector<ClassField>;
 class ClassType : public Type
 {
 public:
-    ClassType(SourceLocation loc, std::string name, ClassFieldVec fields) : Type(loc), name(std::move(name)), fields(std::move(fields)) {}
+    ClassType(SourceLocation loc, std::string name, ClassFieldVec fields)
+        : Type(loc, BuiltinTypeKind::cls_t),
+          name(std::move(name)),
+          fields(std::move(fields))
+    {
+    }
 
     virtual void print(int indent = 0) override;
+    virtual const std::string& getName() const override { return name; }
 private:
     std::string name;
     ClassFieldVec fields;
@@ -63,18 +75,28 @@ private:
 
 using ClassTypePtr = std::unique_ptr<ClassType>;
 
+struct BuiltinTypeArray
+{
+    BuiltinTypeArray();
+    static const int numBuiltinTypes = (int)BuiltinTypeKind::cls_t+1;
+    std::unique_ptr<BuiltinType> types[numBuiltinTypes];
+};
+
 class TypeRegistry
 {
 private:
-    static const int numBuiltinTypes = (int)BuiltinTypeKind::vac_t+1;
-    std::unique_ptr<BuiltinType> builtinTypes[numBuiltinTypes];
     std::vector<std::unique_ptr<ClassType>> classTypes;
+    static const BuiltinTypeArray builtinTypes;
 
 public:
     TypeRegistry();
-    BuiltinType *getBuiltinType(BuiltinTypeKind tk) {
-      return builtinTypes[(int)tk].get();
+    static BuiltinType *getBuiltinType(BuiltinTypeKind tk) {
+      return builtinTypes.types[(int)tk].get();
     }
+    static BuiltinType *getVoidType() {
+      return builtinTypes.types[(int)BuiltinTypeKind::vac_t].get();
+    }
+
     void registerClassType(std::unique_ptr<ClassType> ct) {
       classTypes.push_back(std::move(ct));
     }
