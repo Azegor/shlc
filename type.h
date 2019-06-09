@@ -23,13 +23,13 @@
 enum class BuiltinTypeKind : int
 {
   none,
-  inferred,
+  vac_t,
   int_t,
   flt_t,
   chr_t,
   boo_t,
   str_t,
-  vac_t,
+  cls_t,
 };
 
 namespace types
@@ -43,8 +43,10 @@ using boo_t = bool;
 using str_t = char const *;
 }
 
-std::string getTypeName(BuiltinTypeKind t);
-char getMangleName(BuiltinTypeKind t);
-BuiltinTypeKind getTypeFromToken(int tok);
+class Type;
+
+const std::string &getTypeName(BuiltinTypeKind t);
+const std::string &getMangleName(BuiltinTypeKind t);
+std::string getMangleName(Type *t);
 
 #endif // TYPE_H

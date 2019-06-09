@@ -23,7 +23,15 @@
 #include "context.h"
 #include "ast_expressions.h"
 
-llvm::Type *getLLVMTypeFromType(GlobalContext &ctx, BuiltinTypeKind type)
+llvm::Type *getLLVMTypeFromType(GlobalContext &ctx, Type *type) {
+    if (auto builtinType = dynamic_cast<BuiltinType*>(type)) {
+        return getLLVMTypeFromBuiltinType(ctx, builtinType->getKind());
+    } else {
+        throw CodeGenError("TODO implement other types in LLVM");
+    }
+}
+
+llvm::Type *getLLVMTypeFromBuiltinType(GlobalContext &ctx, BuiltinTypeKind type)
 {
   switch (type)
   {
@@ -56,7 +64,6 @@ llvm::AllocaInst *createEntryBlockAlloca(llvm::Function *fn,
 #define SWITCH_CANNOT_CAST                                                     \
   case BuiltinTypeKind::vac_t:                                                            \
   case BuiltinTypeKind::none:                                                             \
-  case BuiltinTypeKind::inferred:                                                         \
   default:                                                                     \
     return CastMode::None
 
@@ -146,21 +153,21 @@ CastMode castMode(BuiltinTypeKind from, BuiltinTypeKind to)
 #undef SWITCH_CANNOT_CAST
 
 #define NO_CAST                                                                \
-  case BuiltinTypeKind::vac_t:                                                            \
-  case BuiltinTypeKind::none:                                                             \
-  case BuiltinTypeKind::inferred:                                                         \
+  case BuiltinTypeKind::vac_t:                                                 \
+  case BuiltinTypeKind::cls_t:                                                 \
+  case BuiltinTypeKind::none:                                                  \
   default:                                                                     \
     return nullptr
 
-llvm::Value *generateCast(Context &ctx, llvm::Value *val, BuiltinTypeKind from, BuiltinTypeKind to,
+llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type *from, Type *to,
                           const llvm::Twine &valName)
 {
   auto &builder = ctx.global.builder;
   auto targetType = getLLVMTypeFromType(ctx.global, to);
-  switch (from)
+  switch (from->getKind())
   {
     case BuiltinTypeKind::int_t:
-      switch (to)
+      switch (to->getKind())
       {
         case BuiltinTypeKind::int_t:
           return val;
@@ -174,7 +181,7 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, BuiltinTypeKind from, 
           NO_CAST;
       }
     case BuiltinTypeKind::flt_t:
-      switch (to)
+      switch (to->getKind())
       {
         case BuiltinTypeKind::int_t:
         case BuiltinTypeKind::chr_t:
@@ -188,7 +195,7 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, BuiltinTypeKind from, 
           NO_CAST;
       }
     case BuiltinTypeKind::chr_t:
-      switch (to)
+      switch (to->getKind())
       {
         case BuiltinTypeKind::int_t:
           return builder.CreateIntCast(val, targetType, true, valName);
@@ -202,7 +209,7 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, BuiltinTypeKind from, 
           NO_CAST;
       }
     case BuiltinTypeKind::boo_t:
-      switch (to)
+      switch (to->getKind())
       {
         case BuiltinTypeKind::int_t:
         case BuiltinTypeKind::chr_t:
@@ -215,7 +222,7 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, BuiltinTypeKind from, 
           NO_CAST;
       }
     case BuiltinTypeKind::str_t:
-      switch (to)
+      switch (to->getKind())
       {
         case BuiltinTypeKind::str_t:
           return val;
@@ -235,7 +242,6 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, BuiltinTypeKind from, 
   case BuiltinTypeKind::str_t:                                                            \
   case BuiltinTypeKind::vac_t:                                                            \
   case BuiltinTypeKind::none:                                                             \
-  case BuiltinTypeKind::inferred:                                                         \
   default:                                                                     \
     return BuiltinTypeKind::none
 
@@ -334,9 +340,9 @@ ExprPtr getIntConstExpr(BuiltinTypeKind intType, int val)
   }
 }
 
-llvm::Constant *createDefaultValueConst(Context &ctx, BuiltinTypeKind type)
+llvm::Constant *createDefaultValueConst(Context &ctx, Type *type)
 {
-  switch (type)
+  switch (type->getKind())
   {
     case BuiltinTypeKind::int_t:
       return IntNumberExpr({}, 0).codegen(ctx);
@@ -348,7 +354,7 @@ llvm::Constant *createDefaultValueConst(Context &ctx, BuiltinTypeKind type)
       return BoolConstExpr({}, false).codegen(ctx);
     case BuiltinTypeKind::str_t:
     default:
-      throw CodeGenError("no default value for type " + getTypeName(type));
+      throw CodeGenError("no default value for type " + type->getName());
   }
 }
 

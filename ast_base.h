@@ -34,6 +34,8 @@ namespace llvm
 class BasicBlock;
 }
 
+class Type;
+
 class AstNode
 {
 public:
@@ -104,7 +106,7 @@ protected:
 public:
   Expr(SourceLocation loc) : AstNode(loc) {}
   virtual ~Expr() {}
-  virtual BuiltinTypeKind getType(Context &cc) = 0;
+  virtual Type *getType(Context &cc) = 0;
   virtual llvm::Value *codegen(Context &ctx) = 0;
 };
 

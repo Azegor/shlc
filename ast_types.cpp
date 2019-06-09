@@ -16,9 +16,34 @@
  */
 #include "ast_types.h"
 
+Type *getTypeFromToken(int tok)
+{
+  switch(tok) {
+    case Token::id_int:
+      return TypeRegistry::getBuiltinType(BuiltinTypeKind::int_t);
+    case Token::id_flt:
+      return TypeRegistry::getBuiltinType(BuiltinTypeKind::flt_t);
+    case Token::id_chr:
+      return TypeRegistry::getBuiltinType(BuiltinTypeKind::chr_t);
+    case Token::id_boo:
+      return TypeRegistry::getBuiltinType(BuiltinTypeKind::boo_t);
+    case Token::id_str:
+      return TypeRegistry::getBuiltinType(BuiltinTypeKind::str_t);
+    case Token::id_vac:
+      return TypeRegistry::getBuiltinType(BuiltinTypeKind::vac_t);
+    default:
+      throw CodeGenError("token '" + Lexer::getTokenName(tok) + "' is no type");
+  }
+}
+
 void BuiltinType::print(int indent) {
     printIndent(indent);
-    std::cout << getTypeName(typeKind);
+    std::cout << getName();
+}
+
+const std::string& BuiltinType::getName() const
+{
+    return getTypeName(typeKind);
 }
 
 void ClassType::print(int indent) {
@@ -26,10 +51,16 @@ void ClassType::print(int indent) {
     std::cout << "cls " << name << " { ... }";
 }
 
-TypeRegistry::TypeRegistry() :
-    builtinTypes(), classTypes()
+BuiltinTypeArray::BuiltinTypeArray()
 {
-    for (int btc = (int)BuiltinTypeKind::none; btc <= (int)BuiltinTypeKind::vac_t; ++btc) {
-        builtinTypes[btc] = std::make_unique<BuiltinType>((BuiltinTypeKind)btc);
+    // none & cls stay nullptr!
+    for (int btc = (int)BuiltinTypeKind::none + 1; btc < (int)BuiltinTypeKind::cls_t; ++btc) {
+        types[btc] = std::make_unique<BuiltinType>((BuiltinTypeKind)btc);
     }
 }
+
+TypeRegistry::TypeRegistry() : classTypes()
+{
+}
+
+const BuiltinTypeArray TypeRegistry::builtinTypes;

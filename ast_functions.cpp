@@ -33,9 +33,9 @@ void FunctionHead::print(int indent)
   std::cout << name << '(';
   printList(args, [](ArgVector::value_type &e)
             {
-    return getTypeName(e.first) + " " + e.second;
+    return e.first->getName() + " " + e.second;
   });
-  std::cout << ") : " << getTypeName(retType) << std::endl;
+  std::cout << ") : " << retType->getName() << std::endl;
 }
 
 llvm::Function *FunctionHead::codegen(Context &ctx)
@@ -120,9 +120,9 @@ void FunctionHead::createArgumentAllocas(Context &ctx, llvm::Function *fn)
   }
 }
 
-std::vector<BuiltinTypeKind> FunctionHead::getArgTypes() const
+std::vector<Type*> FunctionHead::getArgTypes() const
 {
-  std::vector<BuiltinTypeKind> res;
+  std::vector<Type*> res;
   res.reserve(args.size());
   for (auto &arg : args)
     res.push_back(arg.first);
@@ -139,14 +139,14 @@ bool FunctionHead::hasSameArgsAs(const FunctionHead &o)
   return true;
 }
 
-bool FunctionHead::canCallWithArgs(const std::vector<BuiltinTypeKind> &types) const
+bool FunctionHead::canCallWithArgs(const std::vector<Type*> &types) const
 {
   auto fit = getOverloadFit(types);
   return fit == OverloadFit::Perfect || fit == OverloadFit::Cast;
 }
 
 FunctionHead::OverloadFit FunctionHead::getOverloadFit(
-  const std::vector<BuiltinTypeKind> &types) const
+  const std::vector<Type*> &types) const
 {
   if (types.size() != args.size()) return OverloadFit::None;
   OverloadFit fit = OverloadFit::Perfect;
@@ -166,12 +166,12 @@ std::string FunctionHead::sigString() const
   for (auto &arg : args)
   {
     if (first) {
-      res += getTypeName(arg.first);
+      res += arg.first->getName();
       first = false;
     }
     else
     {
-      res += ", " + getTypeName(arg.first);
+      res += ", " + arg.first->getName();
     }
   }
   res += ')';
@@ -214,7 +214,7 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
 
   head->createArgumentAllocas(ctx, fn);
 
-  if (ctx.ret.type != BuiltinTypeKind::vac_t) {
+  if (ctx.ret.type != TypeRegistry::getBuiltinType(BuiltinTypeKind::vac_t)) {
     ctx.ret.val = builder.CreateAlloca(
       getLLVMTypeFromType(gl_ctx, head->getReturnType()), 0, "retval");
   }
@@ -242,7 +242,7 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
 
   auto CFR = body->codeFlowReturn();
   if (CFR != Statement::CodeFlowReturn::Never) {
-    if (head->getReturnType() == BuiltinTypeKind::vac_t) // missing return statement
+    if (head->getReturnType() == TypeRegistry::getVoidType()) // missing return statement
     {
       ReturnStmt({}).codegen(ctx);
     }
@@ -254,7 +254,7 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
 
   fn->getBasicBlockList().push_back(ctx.ret.BB); // add return block last!
   builder.SetInsertPoint(ctx.ret.BB);
-  if (ctx.ret.type == BuiltinTypeKind::vac_t)
+  if (ctx.ret.type == TypeRegistry::getVoidType())
     builder.CreateRetVoid();
   else
     builder.CreateRet(builder.CreateLoad(ctx.ret.val));

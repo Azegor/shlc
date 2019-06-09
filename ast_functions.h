@@ -19,11 +19,12 @@
 #define ASTFUNCTIONS_H
 
 #include "ast_base.h"
+#include "ast_types.h"
 #include "ast_expressions.h"
 
 class GlobalContext;
 
-using ArgVector = std::vector<std::pair<BuiltinTypeKind, std::string>>;
+using ArgVector = std::vector<std::pair<Type*, std::string>>;
 
 class FunctionHead : public AstNode
 {
@@ -44,13 +45,13 @@ private:
   std::string name;
   std::string bindName;
   ArgVector args;
-    BuiltinTypeKind retType;
+  Type *retType;
   Binding binding;
   llvm::Function *llvm_fn = nullptr;
 
 public:
   FunctionHead(SourceLocation loc, std::string fnName, ArgVector args,
-                 BuiltinTypeKind retType, Binding bind = Binding::Intern)
+                 Type *retType, Binding bind = Binding::Intern)
       : AstNode(loc),
         name(std::move(fnName)),
         args(std::move(args)),
@@ -90,16 +91,16 @@ public:
   const std::string &getName() const { return name; }
   void setBindName(const std::string &name) { bindName = name; }
   std::string getMangledName() const;
-    BuiltinTypeKind getReturnType() const { return retType; }
+  Type *getReturnType() const { return retType; }
   llvm::Function *codegen(Context &ctx);
   void createArgumentAllocas(Context &ctx, llvm::Function *fn);
   void setBinding(Binding b) { binding = b; }
   llvm::Function *get_llvm_fn() { return llvm_fn; }
 
-  std::vector<BuiltinTypeKind> getArgTypes() const;
+  std::vector<Type*> getArgTypes() const;
   bool hasSameArgsAs(const FunctionHead &o);
-  bool canCallWithArgs(const std::vector<BuiltinTypeKind> &types) const;
-  OverloadFit getOverloadFit(const std::vector<BuiltinTypeKind> &types) const;
+  bool canCallWithArgs(const std::vector<Type*> &types) const;
+  OverloadFit getOverloadFit(const std::vector<Type*> &types) const;
   std::string sigString() const;
 
 private:

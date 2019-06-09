@@ -45,7 +45,7 @@ void CastExpr::print(int indent)
   expr->print(indent + 1);
   std::cout << std::endl;
   printIndent(indent);
-  std::cout << "] to " << getTypeName(newType) << std::endl;
+  std::cout << "] to " << newType->getName() << std::endl;
 }
 
 void IfStmt::print(int indent)
@@ -123,21 +123,21 @@ llvm::Value *ReturnStmt::codegen(Context &ctx)
 {
   if (!expr) // void
   {
-    if (ctx.ret.type != BuiltinTypeKind::vac_t)
+    if (ctx.ret.type != TypeRegistry::getVoidType())
       throw CodeGenError("cannot return void in non-void function", this);
     ctx.global.builder.CreateBr(ctx.ret.BB);
   }
   else
   {
-        BuiltinTypeKind type = expr->getType(ctx);
+    Type *type = expr->getType(ctx);
     if (ctx.ret.type != type) {
       if (canImplicitlyCast(type, ctx.ret.type)) {
         expr = make_EPtr<CastExpr>(expr->srcLoc, std::move(expr), ctx.ret.type);
       }
       else
       {
-        throw CodeGenError("incompatible return types '" + getTypeName(type) +
-                             "' and '" + getTypeName(ctx.ret.type) + '\'',
+        throw CodeGenError("incompatible return types '" + type->getName() +
+                             "' and '" + ctx.ret.type->getName() + '\'',
                            this);
       }
     }
@@ -154,9 +154,9 @@ llvm::Value *IfStmt::codegen(Context &ctx)
   ctx.pushFrame();
 
   auto condType = cond->getType(ctx);
-  if (condType != BuiltinTypeKind::boo_t) {
-    if (canCast(condType, BuiltinTypeKind::boo_t)) {
-      cond = make_EPtr<CastExpr>(cond->srcLoc, std::move(cond), BuiltinTypeKind::boo_t);
+  if (condType != TypeRegistry::getBuiltinType(BuiltinTypeKind::boo_t)) {
+    if (canCast(condType, TypeRegistry::getBuiltinType(BuiltinTypeKind::boo_t))) {
+      cond = make_EPtr<CastExpr>(cond->srcLoc, std::move(cond), TypeRegistry::getBuiltinType(BuiltinTypeKind::boo_t));
     }
     else
     {
@@ -209,9 +209,9 @@ llvm::Value *WhileStmt::codegen(Context &ctx)
   ctx.pushFrame();
 
   auto condType = cond->getType(ctx);
-  if (condType != BuiltinTypeKind::boo_t) {
-    if (canCast(condType, BuiltinTypeKind::boo_t)) {
-      cond = make_EPtr<CastExpr>(cond->srcLoc, std::move(cond), BuiltinTypeKind::boo_t);
+  if (condType != TypeRegistry::getBuiltinType(BuiltinTypeKind::boo_t)) {
+    if (canCast(condType, TypeRegistry::getBuiltinType(BuiltinTypeKind::boo_t))) {
+      cond = make_EPtr<CastExpr>(cond->srcLoc, std::move(cond), TypeRegistry::getBuiltinType(BuiltinTypeKind::boo_t));
     }
     else
     {
@@ -259,9 +259,9 @@ llvm::Value *DoWhileStmt::codegen(Context &ctx)
   ctx.pushFrame();
 
   auto condType = cond->getType(ctx);
-  if (condType != BuiltinTypeKind::boo_t) {
-    if (canCast(condType, BuiltinTypeKind::boo_t)) {
-      cond = make_EPtr<CastExpr>(cond->srcLoc, std::move(cond), BuiltinTypeKind::boo_t);
+  if (condType != TypeRegistry::getBuiltinType(BuiltinTypeKind::boo_t)) {
+    if (canCast(condType, TypeRegistry::getBuiltinType(BuiltinTypeKind::boo_t))) {
+      cond = make_EPtr<CastExpr>(cond->srcLoc, std::move(cond), TypeRegistry::getBuiltinType(BuiltinTypeKind::boo_t));
     }
     else
     {
@@ -346,9 +346,9 @@ llvm::Value *ForStmt::codegen(Context &ctx)
   builder.SetInsertPoint(headBB);
   if (cond) {
     auto condType = cond->getType(ctx);
-    if (condType != BuiltinTypeKind::boo_t) {
-      if (canCast(condType, BuiltinTypeKind::boo_t)) {
-        cond = make_EPtr<CastExpr>(cond->srcLoc, std::move(cond), BuiltinTypeKind::boo_t);
+    if (condType != TypeRegistry::getBuiltinType(BuiltinTypeKind::boo_t)) {
+      if (canCast(condType, TypeRegistry::getBuiltinType(BuiltinTypeKind::boo_t))) {
+        cond = make_EPtr<CastExpr>(cond->srcLoc, std::move(cond), TypeRegistry::getBuiltinType(BuiltinTypeKind::boo_t));
       }
       else
       {
@@ -399,14 +399,14 @@ llvm::Value *ExprStmt::codegen(Context &ctx)
   return nullptr;
 }
 
-BuiltinTypeKind VarDeclStmt::getType(Context &ctx)
+Type *VarDeclStmt::getType(Context &ctx)
 {
-  if (type == BuiltinTypeKind::inferred) {
-        BuiltinTypeKind t = BuiltinTypeKind::none;
+  if (!type) {
+    Type *t = nullptr;
     for (auto &var : vars)
     {
-            BuiltinTypeKind varType = var.second->getType(ctx);
-      if (t == BuiltinTypeKind::none) {
+      Type *varType = var.second->getType(ctx);
+      if (!t) {
         t = varType;
       }
       else if (t != varType)

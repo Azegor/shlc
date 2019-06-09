@@ -23,6 +23,7 @@
 #include <llvm/IR/Constant.h>
 
 #include "ast_base.h"
+#include "ast_types.h"
 #include "codegen.h"
 
 class FunctionHead;
@@ -38,7 +39,7 @@ public:
   }
   VariableExpr(const VariableExpr &o) : Expr(o.srcLoc), name(o.name) {}
   void print(int indent = 0) override;
-    BuiltinTypeKind getType(Context &ctx) override;
+  Type *getType(Context &ctx) override;
   llvm::AllocaInst *getAlloca(Context &ctx);
   llvm::Value *codegen(Context &ctx) override;
 };
@@ -53,7 +54,7 @@ public:
   {
   }
   void print(int indent = 0) override;
-    BuiltinTypeKind getType(Context &ctx) override;
+  Type *getType(Context &ctx) override;
   //   llvm::GlobalVariable *getGlobalVarInst(Context &ctx);
   llvm::Value *codegen(Context &ctx) override;
 };
@@ -70,8 +71,8 @@ public:
   {
   }
   void print(int indent = 0) override;
-    BuiltinTypeKind getType(Context &ctx) override;
-  std::vector<BuiltinTypeKind> getArgTypes(Context &ctx) const;
+  Type *getType(Context &ctx) override;
+  std::vector<Type*> getArgTypes(Context &ctx) const;
   llvm::Value *codegen(Context &ctx) override;
 
 private:
@@ -80,12 +81,12 @@ private:
 
 class ConstantExpr : public Expr
 {
-    BuiltinTypeKind type;
+  Type *type;
 
 public:
-  ConstantExpr(SourceLocation loc, BuiltinTypeKind type) : Expr(loc), type(type) {}
+  ConstantExpr(SourceLocation loc, Type *type) : Expr(loc), type(type) {}
   void print(int indent = 0) override;
-    BuiltinTypeKind getType(Context &) override { return type; }
+  Type *getType(Context &) override { return type; }
   llvm::Value *codegen(Context &ctx) override = 0;
 };
 
@@ -95,7 +96,7 @@ class IntNumberExpr : public ConstantExpr
 
 public:
   IntNumberExpr(SourceLocation loc, long long val)
-      : ConstantExpr(loc, BuiltinTypeKind::int_t), value(val)
+      : ConstantExpr(loc, TypeRegistry::getBuiltinType(BuiltinTypeKind::int_t)), value(val)
   {
   }
   void print(int indent = 0) override;
@@ -108,7 +109,7 @@ class CharConstExpr : public ConstantExpr
 
 public:
   CharConstExpr(SourceLocation loc, char val)
-      : ConstantExpr(loc, BuiltinTypeKind::chr_t), value(val)
+      : ConstantExpr(loc, TypeRegistry::getBuiltinType(BuiltinTypeKind::chr_t)), value(val)
   {
   }
   void print(int indent = 0) override;
@@ -121,7 +122,7 @@ class FltNumberExpr : public ConstantExpr
 
 public:
   FltNumberExpr(SourceLocation loc, long double val)
-      : ConstantExpr(loc, BuiltinTypeKind::flt_t), value(val)
+      : ConstantExpr(loc, TypeRegistry::getBuiltinType(BuiltinTypeKind::flt_t)), value(val)
   {
   }
   void print(int indent = 0) override;
@@ -134,7 +135,7 @@ class BoolConstExpr : public ConstantExpr
 
 public:
   BoolConstExpr(SourceLocation loc, bool val)
-      : ConstantExpr(loc, BuiltinTypeKind::boo_t), value(val)
+      : ConstantExpr(loc, TypeRegistry::getBuiltinType(BuiltinTypeKind::boo_t)), value(val)
   {
   }
   void print(int indent = 0) override;
@@ -147,7 +148,7 @@ class StringConstExpr : public ConstantExpr
 
 public:
   StringConstExpr(SourceLocation loc, std::string val)
-      : ConstantExpr(loc, BuiltinTypeKind::str_t), value(std::move(val))
+      : ConstantExpr(loc, TypeRegistry::getBuiltinType(BuiltinTypeKind::str_t)), value(std::move(val))
   {
   }
   void print(int indent = 0) override;
@@ -165,8 +166,8 @@ public:
   {
   }
   void print(int indent = 0) override;
-    BuiltinTypeKind getCommonType(Context &ctx);
-    BuiltinTypeKind getType(Context &ctx) override;
+  Type *getCommonType(Context &ctx);
+  Type *getType(Context &ctx) override;
   llvm::Value *codegen(Context &ctx) override;
 };
 
@@ -181,26 +182,26 @@ public:
   {
   }
   void print(int indent = 0) override;
-    BuiltinTypeKind getType(Context &ctx) override;
+  Type *getType(Context &ctx) override;
   llvm::Value *codegen(Context &ctx) override;
 };
 
 class CastExpr : public Expr
 {
   ExprPtr expr;
-    BuiltinTypeKind newType;
+  Type *newType;
 
 public:
-  CastExpr(ExprPtr expr, BuiltinTypeKind newType)
+  CastExpr(ExprPtr expr, Type *newType)
       : Expr(expr->srcLoc), expr(std::move(expr)), newType(newType)
   {
   }
-  CastExpr(SourceLocation loc, ExprPtr expr, BuiltinTypeKind newType)
+  CastExpr(SourceLocation loc, ExprPtr expr, Type *newType)
       : Expr(loc), expr(std::move(expr)), newType(newType)
   {
   }
   void print(int indent = 0) override;
-    BuiltinTypeKind getType(Context &) override { return newType; }
+  Type *getType(Context &) override { return newType; }
   llvm::Value *codegen(Context &ctx) override;
 };
 
