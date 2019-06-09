@@ -20,7 +20,7 @@
 
 #include <string>
 
-enum class Type : int
+enum class BuiltinTypeKind : int
 {
   none,
   inferred,
@@ -43,8 +43,8 @@ using boo_t = bool;
 using str_t = char const *;
 }
 
-std::string getTypeName(Type t);
-char getMangleName(Type t);
-Type getTypeFromToken(int tok);
+std::string getTypeName(BuiltinTypeKind t);
+char getMangleName(BuiltinTypeKind t);
+BuiltinTypeKind getTypeFromToken(int tok);
 
 #endif // TYPE_H

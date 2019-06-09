@@ -129,6 +129,7 @@ struct Token
     id_ret,
     id_native,
     id_op,
+    id_cls,
 
     // type IDs
     id_var,
@@ -192,7 +193,7 @@ class Lexer
 {
 private:
   int lexerNr;
-  Compilationunit compUnit;
+    CompilationUnit compUnit;
   std::istream *input;
   int lastChar = ' '; // ' ' will be skipped immediately
   std::string tokenString;
@@ -265,7 +266,7 @@ private:
 public:
   const std::string filename;
 
-  Lexer(Compilationunit inputCU)
+  Lexer(CompilationUnit inputCU)
       : lines(1), currentLine(&lines[0]), compUnit(std::move(inputCU)), input(compUnit.getStream())
   {
     checkStream();

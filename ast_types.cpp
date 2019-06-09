@@ -14,14 +14,22 @@
  * limitations under the License.
  *
  */
-
-#ifndef AST_H
-#define AST_H
-
-#include "ast_base.h"
-#include "ast_expressions.h"
-#include "ast_functions.h"
-#include "ast_statements.h"
 #include "ast_types.h"
 
-#endif // AST_H
+void BuiltinType::print(int indent) {
+    printIndent(indent);
+    std::cout << getTypeName(typeKind);
+}
+
+void ClassType::print(int indent) {
+    printIndent(indent);
+    std::cout << "cls " << name << " { ... }";
+}
+
+TypeRegistry::TypeRegistry() :
+    builtinTypes(), classTypes()
+{
+    for (int btc = (int)BuiltinTypeKind::none; btc <= (int)BuiltinTypeKind::vac_t; ++btc) {
+        builtinTypes[btc] = std::make_unique<BuiltinType>((BuiltinTypeKind)btc);
+    }
+}

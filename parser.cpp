@@ -119,7 +119,7 @@ int Parser::getTokenPrecedence(int type)
   return pos->second;
 }
 
-std::vector<FunctionPtr> Parser::parse(Compilationunit compUnit)
+std::vector<FunctionPtr> Parser::parse(CompilationUnit compUnit)
 {
   pushLexer(std::move(compUnit));
   // outer:
@@ -133,7 +133,7 @@ std::vector<FunctionPtr> Parser::parse(Compilationunit compUnit)
       switch (curTok.type)
       {
         default:
-          assertTokens({Token::id_use, Token::id_fn, Token::eof});
+          assertTokens({Token::id_use, Token::id_fn, Token::id_cls, Token::eof});
         //           error("unexpected token");
         //           std::cerr << "unexpected token '" << curTok.str << "' at "
         //                     << curTok.line << ':' << curTok.col << std::endl;
@@ -163,6 +163,9 @@ std::vector<FunctionPtr> Parser::parse(Compilationunit compUnit)
         }
         case Token::id_fn:
           toplevelFunctions.push_back(parseFunctionDef());
+          break;
+        case Token::id_cls:
+          typeRegistry.registerClassType(parseClassDef());
           break;
         case Token::eof:
           //           std::cout << "Reached end of file in " <<
@@ -208,7 +211,7 @@ FunctionPtr Parser::parseFunctionDef()
 
   readNextToken(); // eat ')'
 
-  Type retType = Type::vac_t;
+    BuiltinTypeKind retType = BuiltinTypeKind::vac_t;
   if (curTok.type == ':') // with return type
   {
     readNextToken();
@@ -257,7 +260,7 @@ FunctionPtr Parser::parseFunctionDef()
 void Parser::parseFunctionArguments(ArgVector &args)
 {
   // assert (isVarTypeId(curTok));
-  Type argType = getTypeFromToken(curTok.type);
+    BuiltinTypeKind argType = getTypeFromToken(curTok.type);
   readNextToken();
   do
   {
@@ -443,7 +446,7 @@ ExprPtr Parser::parsePrimaryExpr()
 ExprPtr Parser::parseIdentifierExpr()
 {
   startSLContext();
-  auto idName = curTok.str;
+  auto idName = std::move(curTok.str);
   readNextToken(); // eat identifier
   if (curTok.type != '(')
     return make_EPtr<VariableExpr>(endSLContextPrevToken(), std::move(idName));
@@ -632,7 +635,7 @@ StmtPtr Parser::parseVarDeclStmt()
       error("unexpected '" + curTok.str + "', expected ':', '=' or ','");
     readNextToken(); // eat ','
   }
-  Type type = Type::inferred;
+    BuiltinTypeKind type = BuiltinTypeKind::inferred;
   if (inferred==Inferred::NO) {
     readNextToken(); // eat ':'
     if (!isVarTypeId(curTok.type))
@@ -642,4 +645,39 @@ StmtPtr Parser::parseVarDeclStmt()
   }
 
   return make_SPtr<VarDeclStmt>(endSLContextPrevToken(), type, std::move(vars));
+}
+
+Type *Parser::parseTypeName()
+{
+  Type *type = nullptr;
+  if (isVarTypeId(curTok.type)) {
+    type = typeRegistry.getBuiltinType(getTypeFromToken(curTok.type));
+  } else {
+    error("unexpected '" + curTok.str + "', expected type");
+  }
+  readNextToken();
+  return type;
+}
+
+ClassTypePtr Parser::parseClassDef()
+{
+  startSLContext();
+  // assertToken(Token::id_cls);
+  assertNextToken(Token::identifier);
+  std::string className = std::move(curTok.str);
+  assertNextToken('{');
+  readNextToken();
+  ClassFieldVec fieldL;
+  while (curTok.type != '}') {
+      assertToken(Token::identifier);
+      std::string fieldName = std::move(curTok.str);
+      assertNextToken(':');
+      readNextToken();
+      Type *fieldType = parseTypeName();
+      assertToken(';');
+      fieldL.emplace_back(std::move(fieldName), fieldType);
+      readNextToken();
+  }
+  readNextToken(); // eat '}'
+  return ClassTypePtr{new ClassType(endSLContextPrevToken(), std::move(className), std::move(fieldL))};
 }

@@ -54,12 +54,13 @@ public:
 
 class Parser
 {
+  TypeRegistry typeRegistry;
   std::deque<Lexer> allLexers;
   std::stack<Lexer *> lexers;
   std::stack<Token> lastTokens;
   int currentLexerNr = 0;
 
-  void pushLexer(Compilationunit compUnit)
+  void pushLexer(CompilationUnit compUnit)
   {
     lastTokens.push(curTok);
     allLexers.emplace_back(std::move(compUnit));
@@ -123,6 +124,11 @@ class Parser
     return curTok = currentLexer->nextToken();
   }
 
+  void assertNextToken(int token) {
+      readNextToken();
+      assertToken(token);
+  }
+
   static bool isUnaryOperator(int type);
   static int getTokenPrecedence(int type);
 
@@ -149,8 +155,13 @@ class Parser
   StmtPtr parseDoStmt();
   StmtPtr parseRetStmt();
 
+  // Types:
+  Type *parseTypeName();
+  ClassTypePtr parseClassDef();
+
   // helpers
   void parseFunctionArguments(ArgVector &args);
+
 
   [[noreturn]] void error(std::string msg)
   {
@@ -180,7 +191,7 @@ class Parser
 public:
   Parser() = default;
 
-  std::vector<FunctionPtr> parse(Compilationunit compUnit);
+  std::vector<FunctionPtr> parse(CompilationUnit compUnit);
 
   const Lexer &getLexer(int nr) const { return allLexers[nr]; }
 };

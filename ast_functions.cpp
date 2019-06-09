@@ -120,9 +120,9 @@ void FunctionHead::createArgumentAllocas(Context &ctx, llvm::Function *fn)
   }
 }
 
-std::vector<Type> FunctionHead::getArgTypes() const
+std::vector<BuiltinTypeKind> FunctionHead::getArgTypes() const
 {
-  std::vector<Type> res;
+  std::vector<BuiltinTypeKind> res;
   res.reserve(args.size());
   for (auto &arg : args)
     res.push_back(arg.first);
@@ -139,14 +139,14 @@ bool FunctionHead::hasSameArgsAs(const FunctionHead &o)
   return true;
 }
 
-bool FunctionHead::canCallWithArgs(const std::vector<Type> &types) const
+bool FunctionHead::canCallWithArgs(const std::vector<BuiltinTypeKind> &types) const
 {
   auto fit = getOverloadFit(types);
   return fit == OverloadFit::Perfect || fit == OverloadFit::Cast;
 }
 
 FunctionHead::OverloadFit FunctionHead::getOverloadFit(
-  const std::vector<Type> &types) const
+  const std::vector<BuiltinTypeKind> &types) const
 {
   if (types.size() != args.size()) return OverloadFit::None;
   OverloadFit fit = OverloadFit::Perfect;
@@ -214,7 +214,7 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
 
   head->createArgumentAllocas(ctx, fn);
 
-  if (ctx.ret.type != Type::vac_t) {
+  if (ctx.ret.type != BuiltinTypeKind::vac_t) {
     ctx.ret.val = builder.CreateAlloca(
       getLLVMTypeFromType(gl_ctx, head->getReturnType()), 0, "retval");
   }
@@ -242,7 +242,7 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
 
   auto CFR = body->codeFlowReturn();
   if (CFR != Statement::CodeFlowReturn::Never) {
-    if (head->getReturnType() == Type::vac_t) // missing return statement
+    if (head->getReturnType() == BuiltinTypeKind::vac_t) // missing return statement
     {
       ReturnStmt({}).codegen(ctx);
     }
@@ -254,7 +254,7 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
 
   fn->getBasicBlockList().push_back(ctx.ret.BB); // add return block last!
   builder.SetInsertPoint(ctx.ret.BB);
-  if (ctx.ret.type == Type::vac_t)
+  if (ctx.ret.type == BuiltinTypeKind::vac_t)
     builder.CreateRetVoid();
   else
     builder.CreateRet(builder.CreateLoad(ctx.ret.val));
@@ -336,7 +336,7 @@ std::string FunctionHead::getMangledName() const
   if (binding == Binding::Intern) {
     std::string res = "_Z" + std::to_string(name.length()) + name;
     if (args.empty())
-      res += getMangleName(Type::vac_t);
+      res += getMangleName(BuiltinTypeKind::vac_t);
     else
       for (auto &arg : args)
       {

@@ -21,13 +21,13 @@
 #include <string>
 #include <istream>
 
-class Compilationunit
+class CompilationUnit
 {
 public:
-    Compilationunit(std::string file, std::istream *is = nullptr) : fileName(std::move(file)), istream(is) {}
+    CompilationUnit(std::string file, std::istream *is = nullptr) : fileName(std::move(file)), istream(is) {}
     
-    Compilationunit(const Compilationunit &o) = delete;
-    Compilationunit(Compilationunit &&o) {
+    CompilationUnit(const CompilationUnit &o) = delete;
+    CompilationUnit(CompilationUnit &&o) {
         fileName = std::move(o.fileName);
         istream = o.istream;
         ownsStream = o.ownsStream;
@@ -36,7 +36,7 @@ public:
         o.ownsStream = false;
     };
     
-    ~Compilationunit() {
+    ~CompilationUnit() {
         if (ownsStream)
             delete istream;
     }

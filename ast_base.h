@@ -104,7 +104,7 @@ protected:
 public:
   Expr(SourceLocation loc) : AstNode(loc) {}
   virtual ~Expr() {}
-  virtual Type getType(Context &cc) = 0;
+  virtual BuiltinTypeKind getType(Context &cc) = 0;
   virtual llvm::Value *codegen(Context &ctx) = 0;
 };
 

@@ -25,7 +25,7 @@ message(STATUS "Linking the following LLVM libs: ${LLVM_LIBS}")
 
 link_directories(/home/tpriesner/Programming/shlc/libFuzzer)
 
-add_executable(compiler stdlib.cpp ast_functions.cpp ast_expressions.cpp ast_statements.cpp context.cpp ast_base.cpp parser.cpp lexer.cpp codegen.cpp type.cpp codegenerator.cpp compiler.cpp main.cpp)
+add_executable(compiler stdlib.cpp ast_functions.cpp ast_expressions.cpp ast_statements.cpp ast_types.cpp context.cpp ast_base.cpp parser.cpp lexer.cpp codegen.cpp type.cpp codegenerator.cpp compiler.cpp main.cpp)
 add_executable(fuzzshl stdlib.cpp ast_functions.cpp ast_expressions.cpp ast_statements.cpp context.cpp ast_base.cpp parser.cpp lexer.cpp codegen.cpp type.cpp codegenerator.cpp fuzz.cpp)
 
 # add_executable(fuzzshl stdlib.cpp ast_functions.cpp ast_expressions.cpp ast_statements.cpp context.cpp ast_base.cpp parser.cpp lexer.cpp codegen.cpp type.cpp codegenerator.cpp fuzz.cpp)

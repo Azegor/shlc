@@ -123,13 +123,13 @@ llvm::Value *ReturnStmt::codegen(Context &ctx)
 {
   if (!expr) // void
   {
-    if (ctx.ret.type != Type::vac_t)
+    if (ctx.ret.type != BuiltinTypeKind::vac_t)
       throw CodeGenError("cannot return void in non-void function", this);
     ctx.global.builder.CreateBr(ctx.ret.BB);
   }
   else
   {
-    Type type = expr->getType(ctx);
+        BuiltinTypeKind type = expr->getType(ctx);
     if (ctx.ret.type != type) {
       if (canImplicitlyCast(type, ctx.ret.type)) {
         expr = make_EPtr<CastExpr>(expr->srcLoc, std::move(expr), ctx.ret.type);
@@ -154,9 +154,9 @@ llvm::Value *IfStmt::codegen(Context &ctx)
   ctx.pushFrame();
 
   auto condType = cond->getType(ctx);
-  if (condType != Type::boo_t) {
-    if (canCast(condType, Type::boo_t)) {
-      cond = make_EPtr<CastExpr>(cond->srcLoc, std::move(cond), Type::boo_t);
+  if (condType != BuiltinTypeKind::boo_t) {
+    if (canCast(condType, BuiltinTypeKind::boo_t)) {
+      cond = make_EPtr<CastExpr>(cond->srcLoc, std::move(cond), BuiltinTypeKind::boo_t);
     }
     else
     {
@@ -209,9 +209,9 @@ llvm::Value *WhileStmt::codegen(Context &ctx)
   ctx.pushFrame();
 
   auto condType = cond->getType(ctx);
-  if (condType != Type::boo_t) {
-    if (canCast(condType, Type::boo_t)) {
-      cond = make_EPtr<CastExpr>(cond->srcLoc, std::move(cond), Type::boo_t);
+  if (condType != BuiltinTypeKind::boo_t) {
+    if (canCast(condType, BuiltinTypeKind::boo_t)) {
+      cond = make_EPtr<CastExpr>(cond->srcLoc, std::move(cond), BuiltinTypeKind::boo_t);
     }
     else
     {
@@ -259,9 +259,9 @@ llvm::Value *DoWhileStmt::codegen(Context &ctx)
   ctx.pushFrame();
 
   auto condType = cond->getType(ctx);
-  if (condType != Type::boo_t) {
-    if (canCast(condType, Type::boo_t)) {
-      cond = make_EPtr<CastExpr>(cond->srcLoc, std::move(cond), Type::boo_t);
+  if (condType != BuiltinTypeKind::boo_t) {
+    if (canCast(condType, BuiltinTypeKind::boo_t)) {
+      cond = make_EPtr<CastExpr>(cond->srcLoc, std::move(cond), BuiltinTypeKind::boo_t);
     }
     else
     {
@@ -346,9 +346,9 @@ llvm::Value *ForStmt::codegen(Context &ctx)
   builder.SetInsertPoint(headBB);
   if (cond) {
     auto condType = cond->getType(ctx);
-    if (condType != Type::boo_t) {
-      if (canCast(condType, Type::boo_t)) {
-        cond = make_EPtr<CastExpr>(cond->srcLoc, std::move(cond), Type::boo_t);
+    if (condType != BuiltinTypeKind::boo_t) {
+      if (canCast(condType, BuiltinTypeKind::boo_t)) {
+        cond = make_EPtr<CastExpr>(cond->srcLoc, std::move(cond), BuiltinTypeKind::boo_t);
       }
       else
       {
@@ -399,14 +399,14 @@ llvm::Value *ExprStmt::codegen(Context &ctx)
   return nullptr;
 }
 
-Type VarDeclStmt::getType(Context &ctx)
+BuiltinTypeKind VarDeclStmt::getType(Context &ctx)
 {
-  if (type == Type::inferred) {
-    Type t = Type::none;
+  if (type == BuiltinTypeKind::inferred) {
+        BuiltinTypeKind t = BuiltinTypeKind::none;
     for (auto &var : vars)
     {
-      Type varType = var.second->getType(ctx);
-      if (t == Type::none) {
+            BuiltinTypeKind varType = var.second->getType(ctx);
+      if (t == BuiltinTypeKind::none) {
         t = varType;
       }
       else if (t != varType)
