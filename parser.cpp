@@ -426,6 +426,9 @@ ExprPtr Parser::parsePrimaryExpr()
       res = make_EPtr<BoolConstExpr>(getSLContextSingleCurToken(), false);
       readNextToken();
       break;
+    case Token::id_new:
+      res = parseNewExpr();
+      break;
     case '(':
       res = parseParenExpr();
       break;
@@ -510,6 +513,23 @@ ExprPtr Parser::parseParenExpr()
   readNextToken(); // eat ')'
   return expr;
 }
+ExprPtr Parser::parseNewExpr()
+{
+  startSLContext();
+  readNextToken();
+  auto type = parseTypeName();
+  auto classType = dynamic_cast<ClassType*>(type);
+  if (!classType) {
+    error("cannot use builtin types with new expressions");
+  }
+  assertToken('(');
+  // TODO
+  assertNextToken(')');
+  auto res = make_EPtr<NewExpr>(endSLContextHere(), classType);
+  readNextToken();
+  return res;
+}
+
 StmtPtr Parser::parseIfStmt()
 {
   startSLContext();

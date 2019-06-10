@@ -146,6 +146,7 @@ class Parser
   ExprPtr parseIdentifierExpr();
   ExprPtr parseNumberExpr();
   ExprPtr parseParenExpr();
+  ExprPtr parseNewExpr();
 
   // Statements:
   StmtPtr parseVarDeclStmt();

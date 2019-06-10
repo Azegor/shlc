@@ -205,4 +205,16 @@ public:
   llvm::Value *codegen(Context &ctx) override;
 };
 
+class NewExpr : public Expr
+{
+  ClassType *cls;
+
+public:
+  NewExpr(SourceLocation loc, ClassType *cls) : Expr(loc), cls(cls) {}
+
+  void print(int indent = 0) override;
+  Type *getType(Context &) override { return cls; }
+  llvm::Value *codegen(Context &ct) override;
+};
+
 #endif // ASTEXPRESSIONS_H

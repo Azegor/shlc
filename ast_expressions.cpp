@@ -370,3 +370,21 @@ llvm::Value *UnOpExpr::codegen(Context &ctx)
   throw CodeGenError("invalid unary operation " + Lexer::getTokenName(op),
                      this);
 }
+
+void NewExpr::print(int indent)
+{
+  printIndent(indent);
+  std::cout << "New: [" << cls->getName() << ']' << std::endl;
+}
+
+llvm::Value *NewExpr::codegen(Context &ctx)
+{
+    auto mallocFn = ctx.global.getMallocFn();
+    auto classPtrType = ctx.global.llvmTypeRegistry.getClassType(cls);
+    auto classType = classPtrType->getPointerElementType();
+    size_t allocSize = ctx.global.module->getDataLayout().getTypeAllocSize(classType);
+    auto allocSizeVal = llvm::ConstantInt::get(ctx.global.llvm_context,
+                                llvm::APInt(64, allocSize, false));
+    auto rawPointer = ctx.global.builder.CreateCall(mallocFn, {allocSizeVal}, "allocmemory");
+    return ctx.global.builder.CreateBitCast(rawPointer, classPtrType, "allocres");
+}

@@ -97,6 +97,8 @@ public:
   GlobalVars globalVars;
   std::unordered_map<std::string, std::string> stringConstants;
 
+  llvm::Function *mallocFunction = nullptr;
+
   GlobalContext();
   ~GlobalContext();
 
@@ -136,6 +138,8 @@ public:
   {
     return getGlobalVar(name).type;
   }
+
+  llvm::Function *getMallocFn() const { return mallocFunction; }
 };
 
 struct ContextFrame
