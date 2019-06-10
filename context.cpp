@@ -26,6 +26,7 @@ GlobalContext::GlobalContext()
 //     : llvm_context(llvm::getGlobalContext()),
     : _llvm_context(std::make_unique<llvm::LLVMContext>()),
       llvm_context(*_llvm_context),
+      llvmTypeRegistry(llvm_context),
       module(new llvm::Module("shl_global_module", llvm_context)),
       builder(llvm_context),
       pm_builder(),

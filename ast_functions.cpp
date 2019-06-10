@@ -82,11 +82,11 @@ llvm::Function *FunctionHead::createLLVMFunction(GlobalContext &gl_ctx)
     argumentTypes.reserve(args.size());
     for (auto &arg : args)
     {
-      argumentTypes.push_back(getLLVMTypeFromType(gl_ctx, arg.first));
+      argumentTypes.push_back(gl_ctx.llvmTypeRegistry.getType(arg.first));
     }
 
     llvm::FunctionType *ft = llvm::FunctionType::get(
-      getLLVMTypeFromType(gl_ctx, retType), argumentTypes, false);
+      gl_ctx.llvmTypeRegistry.getType(retType), argumentTypes, false);
 
     // TODO: maybe change linkage for internal functions to something fast?
     auto linkage = llvm::Function::ExternalLinkage;
@@ -110,7 +110,7 @@ void FunctionHead::createArgumentAllocas(Context &ctx, llvm::Function *fn)
   {
     // Create an alloca for this variable.
     llvm::AllocaInst *alloca = createEntryBlockAlloca(
-      fn, args[idx].second, getLLVMTypeFromType(ctx.global, args[idx].first));
+      fn, args[idx].second, ctx.global.llvmTypeRegistry.getType(args[idx].first));
 
     // Store the initial value into the alloca.
     ctx.global.builder.CreateStore(&*ai, alloca);
@@ -216,7 +216,7 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
 
   if (ctx.ret.type != TypeRegistry::getBuiltinType(BuiltinTypeKind::vac_t)) {
     ctx.ret.val = builder.CreateAlloca(
-      getLLVMTypeFromType(gl_ctx, head->getReturnType()), 0, "retval");
+      gl_ctx.llvmTypeRegistry.getType(head->getReturnType()), 0, "retval");
   }
   ctx.ret.BB = llvm::BasicBlock::Create(gl_ctx.llvm_context, "ret");
 

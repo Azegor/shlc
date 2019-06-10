@@ -421,7 +421,7 @@ Type *VarDeclStmt::getType(Context &ctx)
 
 llvm::Value *VarDeclStmt::codegen(Context &ctx)
 {
-  auto llvm_type = getLLVMTypeFromType(ctx.global, getType(ctx));
+  auto llvm_type = ctx.global.llvmTypeRegistry.getType(getType(ctx));
   for (auto &var : vars)
   {
     auto alloca = createEntryBlockAlloca(ctx.currentFn, var.first, llvm_type);
@@ -433,7 +433,7 @@ llvm::Value *VarDeclStmt::codegen(Context &ctx)
     }
     else
     {
-      init = createDefaultValueConst(ctx, type);
+      init = createDefaultValueConst(ctx, llvm_type);
     }
     VariableExpr tmpVarExp(srcLoc, var.first);
     createAssignment(ctx, init, &tmpVarExp);

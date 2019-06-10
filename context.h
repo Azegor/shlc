@@ -74,6 +74,7 @@ class GlobalContext
   std::unique_ptr<llvm::LLVMContext> _llvm_context;
 public:
   llvm::LLVMContext &llvm_context;
+  LLVMTypeRegistry llvmTypeRegistry;
   llvm::Module *const module;
   llvm::IRBuilder<> builder;
   llvm::PassManagerBuilder pm_builder;

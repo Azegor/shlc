@@ -58,6 +58,7 @@ using ClassFieldVec = std::vector<ClassField>;
 
 class ClassType : public Type
 {
+    friend class LLVMTypeRegistry;
 public:
     ClassType(SourceLocation loc, std::string name, ClassFieldVec fields)
         : Type(loc, BuiltinTypeKind::cls_t),

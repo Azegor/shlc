@@ -30,9 +30,6 @@ class Context;
 class GlobalContext;
 class VariableExpr;
 
-llvm::Type *getLLVMTypeFromType(GlobalContext &ctx, Type *type);
-llvm::Type *getLLVMTypeFromBuiltinType(GlobalContext &ctx, BuiltinTypeKind tokID);
-
 llvm::AllocaInst *createEntryBlockAlloca(llvm::Function *fn,
                                          const std::string &varName,
                                          llvm::Type *varType);
@@ -67,7 +64,7 @@ BuiltinTypeKind commonType(BuiltinTypeKind t1, BuiltinTypeKind t2);
 llvm::Constant *getIntConst(Context &ctx, BuiltinTypeKind intType, int val);
 ExprPtr getIntConstExpr(BuiltinTypeKind intType, int val);
 
-llvm::Constant *createDefaultValueConst(Context &ctx, Type *type);
+llvm::Constant *createDefaultValueConst(Context &ctx, llvm::Type *type);
 
 inline bool isBinOp(int op)
 {
