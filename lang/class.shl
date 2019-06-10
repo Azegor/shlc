@@ -1,9 +1,26 @@
-cls Test {
+cls Test1 {
     i : int;
+}
+
+cls Test2 {
+    f : flt;
+    c : chr;
+    b : boo;
+    s : str;
+}
+
+cls Test3 {
+    t1 : Test1;
+    t2 : Test2;
+    i : int;
+    b : boo;
+    f : flt;
 }
 
 fn main()
 {
-    i : int;
-    // t : Test;
+    var i : int;
+    var t1 : Test1;
+    var t2 : Test2;
+    var t3 : Test3;
 }

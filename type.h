@@ -19,6 +19,7 @@
 #define TYPE_H
 
 #include <string>
+#include <unordered_map>
 
 enum class BuiltinTypeKind : int
 {
@@ -44,9 +45,35 @@ using str_t = char const *;
 }
 
 class Type;
+class ClassType;
+
+namespace llvm {
+class Type;
+class PointerType;
+} // namespace llvm
 
 const std::string &getTypeName(BuiltinTypeKind t);
 const std::string &getMangleName(BuiltinTypeKind t);
 std::string getMangleName(Type *t);
+
+namespace llvm {
+class LLVMContext;
+} // namespace llvm
+
+class LLVMTypeRegistry
+{
+public:
+    LLVMTypeRegistry(llvm::LLVMContext &llvm_context) : llvm_context(llvm_context) {}
+
+    llvm::Type *getType(Type *t);
+    llvm::PointerType *getClassType(ClassType *t);
+    llvm::Type *getBuiltinType(BuiltinTypeKind tk);
+
+private:
+    llvm::LLVMContext &llvm_context;
+    std::unordered_map<ClassType*, llvm::PointerType*> classTypeMap;
+
+    llvm::PointerType *createLLVMClassType(ClassType *ct);
+};
 
 #endif // TYPE_H

@@ -23,36 +23,6 @@
 #include "context.h"
 #include "ast_expressions.h"
 
-llvm::Type *getLLVMTypeFromType(GlobalContext &ctx, Type *type) {
-    if (auto builtinType = dynamic_cast<BuiltinType*>(type)) {
-        return getLLVMTypeFromBuiltinType(ctx, builtinType->getKind());
-    } else {
-        throw CodeGenError("TODO implement other types in LLVM");
-    }
-}
-
-llvm::Type *getLLVMTypeFromBuiltinType(GlobalContext &ctx, BuiltinTypeKind type)
-{
-  switch (type)
-  {
-    // int_t, flt_t, chr_t, boo_t, str_t, vac_t
-    case BuiltinTypeKind::vac_t:
-      return llvm::Type::getVoidTy(ctx.llvm_context);
-    case BuiltinTypeKind::int_t:
-      return llvm::Type::getInt64Ty(ctx.llvm_context);
-    case BuiltinTypeKind::flt_t:
-      return llvm::Type::getDoubleTy(ctx.llvm_context);
-    case BuiltinTypeKind::boo_t:
-      return llvm::Type::getInt1Ty(ctx.llvm_context);
-    case BuiltinTypeKind::chr_t:
-      return llvm::Type::getInt8Ty(ctx.llvm_context); // no unicode
-    case BuiltinTypeKind::str_t:
-      return llvm::Type::getInt8PtrTy(ctx.llvm_context);
-    default:
-      throw CodeGenError("Unknown type id " + getTypeName(type));
-  }
-}
-
 llvm::AllocaInst *createEntryBlockAlloca(llvm::Function *fn,
                                          const std::string &varName,
                                          llvm::Type *varType)
@@ -163,7 +133,7 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type *from, Type *to,
                           const llvm::Twine &valName)
 {
   auto &builder = ctx.global.builder;
-  auto targetType = getLLVMTypeFromType(ctx.global, to);
+  auto targetType = ctx.global.llvmTypeRegistry.getType(to);
   switch (from->getKind())
   {
     case BuiltinTypeKind::int_t:
@@ -340,21 +310,27 @@ ExprPtr getIntConstExpr(BuiltinTypeKind intType, int val)
   }
 }
 
-llvm::Constant *createDefaultValueConst(Context &ctx, Type *type)
+llvm::Constant *createDefaultValueConst(Context &ctx, llvm::Type *type)
 {
-  switch (type->getKind())
+  switch (type->getTypeID())
   {
-    case BuiltinTypeKind::int_t:
-      return IntNumberExpr({}, 0).codegen(ctx);
-    case BuiltinTypeKind::flt_t:
+      case llvm::Type::IntegerTyID:
+        switch(type->getIntegerBitWidth()) {
+        case 1:
+          return BoolConstExpr({}, false).codegen(ctx);
+        case 8:
+          return CharConstExpr({}, '\0').codegen(ctx);
+        case 64:
+          return IntNumberExpr({}, 0).codegen(ctx);
+        default:
+          throw CodeGenError("unknown integer size" + std::to_string(type->getIntegerBitWidth()));
+        }
+    case llvm::Type::DoubleTyID:
       return FltNumberExpr({}, 0.0).codegen(ctx);
-    case BuiltinTypeKind::chr_t:
-      return CharConstExpr({}, '\0').codegen(ctx);
-    case BuiltinTypeKind::boo_t:
-      return BoolConstExpr({}, false).codegen(ctx);
-    case BuiltinTypeKind::str_t:
+    case llvm::Type::PointerTyID:
+      return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(type));
     default:
-      throw CodeGenError("no default value for type " + type->getName());
+      throw CodeGenError("no default value for type!");
   }
 }
 
