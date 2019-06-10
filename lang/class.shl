@@ -1,3 +1,9 @@
 cls Test {
     i : int;
 }
+
+fn main()
+{
+    i : int;
+    // t : Test;
+}

@@ -434,10 +434,8 @@ ExprPtr Parser::parsePrimaryExpr()
   {
     dupSLContextTop(); // use same start as to-cast expression
     auto startTok = prevTok;
-    if (!isVarTypeId(readNextToken().type))
-      error("unexpected '" + curTok.str + "', expected type");
-    auto type = getTypeFromToken(curTok.type);
     readNextToken();
+    auto type = parseTypeName();
     return make_EPtr<CastExpr>(endSLContextPrevToken(), std::move(res), type);
   }
   return res;
@@ -652,7 +650,10 @@ Type *Parser::parseTypeName()
   if (isVarTypeId(curTok.type)) {
     type = getTypeFromToken(curTok.type);
   } else {
-    error("unexpected '" + curTok.str + "', expected type");
+    type = typeRegistry.findClassType(curTok.str);
+    if (!type) {
+      error("unknown type name '" + curTok.str + "'");
+    }
   }
   readNextToken();
   return type;
