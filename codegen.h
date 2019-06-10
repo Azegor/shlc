@@ -45,12 +45,18 @@ enum class CastMode
 CastMode castMode(BuiltinTypeKind from, BuiltinTypeKind to);
 inline bool canImplicitlyCast(Type *from, Type *to)
 {
+  if (from == to) {
+    return true;
+  }
   auto mode = castMode(from->getKind(), to->getKind());
   return mode == CastMode::Implicit || mode == CastMode::Same;
 }
 
 inline bool canCast(Type *from, Type *to)
 {
+  if (from == to) {
+    return true;
+  }
   auto mode = castMode(from->getKind(), to->getKind());
   return mode == CastMode::Explicit || mode == CastMode::Implicit ||
          mode == CastMode::Same;
