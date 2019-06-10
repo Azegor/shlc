@@ -19,7 +19,7 @@
 #define ASTTYPES_H
 
 #include "ast_base.h"
-#include <vector>
+#include <unordered_map>
 
 Type *getTypeFromToken(int tok);
 
@@ -85,7 +85,7 @@ struct BuiltinTypeArray
 class TypeRegistry
 {
 private:
-    std::vector<std::unique_ptr<ClassType>> classTypes;
+    std::unordered_map<std::string, std::unique_ptr<ClassType>> classTypes;
     static const BuiltinTypeArray builtinTypes;
 
 public:
@@ -98,7 +98,11 @@ public:
     }
 
     void registerClassType(std::unique_ptr<ClassType> ct) {
-      classTypes.push_back(std::move(ct));
+      std::string name = ct->getName(); // copy
+      classTypes.emplace(std::move(name), std::move(ct));
+    }
+    Type *findClassType(const std::string &name) {
+        return classTypes[name].get(); // default should return nullptr
     }
 };
 
