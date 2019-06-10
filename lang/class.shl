@@ -23,4 +23,7 @@ fn main()
     var t1 : Test1;
     var t2 : Test2;
     var t3 : Test3;
+    var t4 = t3;
+    var t5 : Test1;
+    t5 = t1;
 }

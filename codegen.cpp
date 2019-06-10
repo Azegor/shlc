@@ -53,6 +53,7 @@ CastMode castMode(BuiltinTypeKind from, BuiltinTypeKind to)
         case BuiltinTypeKind::boo_t:
           return CastMode::Explicit;
         case BuiltinTypeKind::str_t:
+        case BuiltinTypeKind::cls_t:
           return CastMode::None;
           SWITCH_CANNOT_CAST;
       }
@@ -68,6 +69,7 @@ CastMode castMode(BuiltinTypeKind from, BuiltinTypeKind to)
         case BuiltinTypeKind::boo_t:
           return CastMode::Explicit;
         case BuiltinTypeKind::str_t:
+        case BuiltinTypeKind::cls_t:
           return CastMode::None;
           SWITCH_CANNOT_CAST;
       }
@@ -83,6 +85,7 @@ CastMode castMode(BuiltinTypeKind from, BuiltinTypeKind to)
         case BuiltinTypeKind::boo_t:
           return CastMode::Explicit;
         case BuiltinTypeKind::str_t:
+        case BuiltinTypeKind::cls_t:
           return CastMode::None;
           SWITCH_CANNOT_CAST;
       }
@@ -98,6 +101,7 @@ CastMode castMode(BuiltinTypeKind from, BuiltinTypeKind to)
         case BuiltinTypeKind::boo_t:
           return CastMode::Same;
         case BuiltinTypeKind::str_t:
+        case BuiltinTypeKind::cls_t:
           return CastMode::None;
           SWITCH_CANNOT_CAST;
       }
@@ -105,15 +109,25 @@ CastMode castMode(BuiltinTypeKind from, BuiltinTypeKind to)
       switch (to)
       {
         case BuiltinTypeKind::int_t:
-          return CastMode::None;
         case BuiltinTypeKind::flt_t:
-          return CastMode::None;
         case BuiltinTypeKind::chr_t:
-          return CastMode::None;
         case BuiltinTypeKind::boo_t:
+        case BuiltinTypeKind::cls_t:
           return CastMode::None;
         case BuiltinTypeKind::str_t:
           return CastMode::Same;
+          SWITCH_CANNOT_CAST;
+      }
+    case BuiltinTypeKind::cls_t:
+      switch (to)
+      {
+        case BuiltinTypeKind::int_t:
+        case BuiltinTypeKind::flt_t:
+        case BuiltinTypeKind::chr_t:
+        case BuiltinTypeKind::boo_t:
+        case BuiltinTypeKind::str_t:
+        case BuiltinTypeKind::cls_t:
+          return CastMode::None;
           SWITCH_CANNOT_CAST;
       }
       SWITCH_CANNOT_CAST;
@@ -124,7 +138,6 @@ CastMode castMode(BuiltinTypeKind from, BuiltinTypeKind to)
 
 #define NO_CAST                                                                \
   case BuiltinTypeKind::vac_t:                                                 \
-  case BuiltinTypeKind::cls_t:                                                 \
   case BuiltinTypeKind::none:                                                  \
   default:                                                                     \
     return nullptr
@@ -148,6 +161,7 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type *from, Type *to,
         case BuiltinTypeKind::boo_t:
           return builder.CreateIsNotNull(val, valName);
         case BuiltinTypeKind::str_t:
+        case BuiltinTypeKind::cls_t:
           NO_CAST;
       }
     case BuiltinTypeKind::flt_t:
@@ -162,6 +176,7 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type *from, Type *to,
           return builder.CreateFCmpONE(val, FltNumberExpr({}, 0.0).codegen(ctx),
                                        valName);
         case BuiltinTypeKind::str_t:
+        case BuiltinTypeKind::cls_t:
           NO_CAST;
       }
     case BuiltinTypeKind::chr_t:
@@ -176,6 +191,7 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type *from, Type *to,
         case BuiltinTypeKind::boo_t:
           return builder.CreateIsNotNull(val, valName);
         case BuiltinTypeKind::str_t:
+        case BuiltinTypeKind::cls_t:
           NO_CAST;
       }
     case BuiltinTypeKind::boo_t:
@@ -189,6 +205,7 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type *from, Type *to,
         case BuiltinTypeKind::boo_t:
           return val;
         case BuiltinTypeKind::str_t:
+        case BuiltinTypeKind::cls_t:
           NO_CAST;
       }
     case BuiltinTypeKind::str_t:
@@ -200,6 +217,19 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type *from, Type *to,
         case BuiltinTypeKind::flt_t:
         case BuiltinTypeKind::chr_t:
         case BuiltinTypeKind::boo_t:
+        case BuiltinTypeKind::cls_t:
+          NO_CAST;
+      }
+    case BuiltinTypeKind::cls_t:
+      switch (to->getKind())
+      {
+        case BuiltinTypeKind::cls_t:
+          return val;
+        case BuiltinTypeKind::int_t:
+        case BuiltinTypeKind::flt_t:
+        case BuiltinTypeKind::chr_t:
+        case BuiltinTypeKind::boo_t:
+        case BuiltinTypeKind::str_t:
           NO_CAST;
       }
       NO_CAST;
