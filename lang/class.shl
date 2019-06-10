@@ -26,4 +26,8 @@ fn main()
     var t4 = t3;
     var t5 : Test1;
     t5 = t1;
+    // i = new int(); // illegal
+    t1 = new Test1();
+    var t6 = new Test2();
+    var t7 = new Test3();
 }

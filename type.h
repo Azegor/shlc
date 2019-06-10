@@ -63,15 +63,18 @@ class LLVMContext;
 class LLVMTypeRegistry
 {
 public:
-    LLVMTypeRegistry(llvm::LLVMContext &llvm_context) : llvm_context(llvm_context) {}
+    LLVMTypeRegistry(llvm::LLVMContext &llvm_context);
 
     llvm::Type *getType(Type *t);
     llvm::PointerType *getClassType(ClassType *t);
     llvm::Type *getBuiltinType(BuiltinTypeKind tk);
 
+    llvm::PointerType *getVoidPointerType() const { return voidPointerType; }
+
 private:
     llvm::LLVMContext &llvm_context;
     std::unordered_map<ClassType*, llvm::PointerType*> classTypeMap;
+    llvm::PointerType *voidPointerType;
 
     llvm::PointerType *createLLVMClassType(ClassType *ct);
 };

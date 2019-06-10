@@ -93,6 +93,17 @@ GlobalContext::GlobalContext()
   //   mpm.addPass(llvm::createFunctionInliningPass());
   //   mpm.addPass(llvm::createGlobalOptimizerPass());
   //   mpm.addPass(llvm::createDeadArgEliminationPass());
+
+  // others
+  mallocFunction = llvm::Function::Create(
+    llvm::FunctionType::get(
+      llvmTypeRegistry.getVoidPointerType(),
+      {llvmTypeRegistry.getBuiltinType(BuiltinTypeKind::int_t)},
+      false),
+    llvm::Function::ExternalLinkage,
+    "malloc",
+    module
+  );
 }
 
 GlobalContext::~GlobalContext()

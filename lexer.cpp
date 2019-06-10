@@ -42,7 +42,8 @@ std::unordered_map<std::string, Token::TokenType> Lexer::identifierTokens{
   {"ret", Token::id_ret},
   {"native", Token::id_native},
   {"op", Token::id_op},
-  {"cls", Token::id_cls}};
+  {"cls", Token::id_cls},
+  {"new", Token::id_new}};
 
 std::unordered_map<char, char> Lexer::escapeCharacters{
   {'\'', '\''}, // --------------
@@ -117,6 +118,7 @@ std::unordered_map<int, std::string> Lexer::tokenNames{
   {Token::id_native, "id_native"},
   {Token::id_op, "id_op"},
   {Token::id_cls, "id_cls"},
+  {Token::id_new, "id_new"},
 
   // type IDs
   {Token::id_var, "id_var"},

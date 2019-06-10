@@ -46,6 +46,12 @@ std::string getMangleName(Type *t)
   }
 }
 
+LLVMTypeRegistry::LLVMTypeRegistry(llvm::LLVMContext &llvm_context)
+  : llvm_context(llvm_context)
+{
+    voidPointerType = llvm::Type::getInt8PtrTy(llvm_context); // is void in llvm
+}
+
 llvm::Type *LLVMTypeRegistry::getType(Type *t)
 {
     if (auto *ct = dynamic_cast<ClassType*>(t)) {

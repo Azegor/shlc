@@ -130,6 +130,7 @@ struct Token
     id_native,
     id_op,
     id_cls,
+    id_new,
 
     // type IDs
     id_var,
