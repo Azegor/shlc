@@ -218,11 +218,8 @@ FunctionPtr Parser::parseFunctionDef()
   if (curTok.type == ':') // with return type
   {
     readNextToken();
-    if (!isVarTypeId(curTok.type) && curTok.type != Token::TokenType::id_vac)
-      error("unexpected '" + curTok.str + "', expected type");
-    retType = getTypeFromToken(curTok.type);
-    markSLContextEnd();
-    readNextToken();
+    retType = parseTypeName();
+    markSLContextEndPrevToken();
   }
 
   auto head = FunctionHeadPtr{new FunctionHead(

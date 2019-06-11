@@ -17,6 +17,16 @@ cls Test3 {
     f : flt;
 }
 
+fn allocateTest3() : Test3 {
+    var res = new Test3();
+    res.t1 = new Test1();
+    res.t2 = new Test2();
+    res.i = 42;
+    res.b = T;
+    res.f = 3.14;
+    ret res;
+}
+
 fn main()
 {
     var i : int;
@@ -26,11 +36,18 @@ fn main()
     var t4 = t3;
     var t5 : Test1;
     t5 = t1;
-    // i = new int(); // illegal
     t1 = new Test1();
-    var t6 = new Test2();
-    var t7 = new Test3();
+    var t6 = new Test1();
+    var t7 = new Test2();
+    var t8 = new Test3();
 
     var x = t1.i;
+    t2 = new Test2();
     var y = t2.b;
+    t6.i = t2.c;
+
+    t8.t1 = t6;
+    t8.t2 = t7;
+
+    var test3 = allocateTest3();
 }
