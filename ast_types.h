@@ -48,10 +48,12 @@ public:
 
 struct ClassField
 {
-    ClassField(std::string name, Type *type) : name(std::move(name)), type(type) {}
+    ClassField(std::string name, Type *type, unsigned idx) : name(std::move(name)), type(type), index(idx) {}
 
     std::string name;
     Type *type;
+    unsigned index;
+    llvm::Type *llvmType = nullptr;
 };
 
 using ClassFieldVec = std::vector<ClassField>;
@@ -60,18 +62,23 @@ class ClassType : public Type
 {
     friend class LLVMTypeRegistry;
 public:
-    ClassType(SourceLocation loc, std::string name, ClassFieldVec fields)
+    ClassType(SourceLocation loc, std::string name, ClassFieldVec classFields)
         : Type(loc, BuiltinTypeKind::cls_t),
           name(std::move(name)),
-          fields(std::move(fields))
+          fields(std::move(classFields))
     {
+        for (auto &f : fields) {
+            fieldMap.emplace(f.name, &f);
+        }
     }
 
     virtual void print(int indent = 0) override;
     virtual const std::string& getName() const override { return name; }
+    const ClassField *getField(const std::string &name) const;
 private:
     std::string name;
     ClassFieldVec fields;
+    std::unordered_map<std::string, ClassField*> fieldMap;
 };
 
 using ClassTypePtr = std::unique_ptr<ClassType>;

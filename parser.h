@@ -93,18 +93,21 @@ class Parser
   void markSLContextEnd() { endPos = {curTok, true}; }
   SourceLocation endSLContextHere()
   {
+    assert(startPositions.size());
     auto start = startPositions.back();
     startPositions.pop_back();
     return {currentLexerNr, start, TokenPos(curTok, true)};
   }
   SourceLocation endSLContextPrevToken()
   {
+    assert(startPositions.size());
     auto start = startPositions.back();
     startPositions.pop_back();
     return {currentLexerNr, start, TokenPos(prevTok, true)};
   }
   SourceLocation getSLContextMarkedEnd()
   {
+    assert(startPositions.size());
     auto start = startPositions.back();
     startPositions.pop_back();
     return {currentLexerNr, start, endPos};

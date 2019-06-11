@@ -214,7 +214,26 @@ public:
 
   void print(int indent = 0) override;
   Type *getType(Context &) override { return cls; }
-  llvm::Value *codegen(Context &ct) override;
+  llvm::Value *codegen(Context &ctx) override;
+};
+
+class FieldAccessExpr : public Expr
+{
+    ExprPtr expr;
+    std::string field;
+
+public:
+    FieldAccessExpr(SourceLocation loc, ExprPtr expr, std::string field)
+        : Expr(loc), expr(std::move(expr)), field(std::move(field))
+    {
+    }
+
+    void print(int indent = 0) override;
+    Type *getType(Context &ctx) override { return getClassField(ctx)->type; }
+    llvm::Value *codegen(Context &ctx) override;
+
+private:
+    const ClassField *getClassField(Context &ctx) const ;
 };
 
 #endif // ASTEXPRESSIONS_H

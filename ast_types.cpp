@@ -51,6 +51,15 @@ void ClassType::print(int indent) {
     std::cout << "cls " << name << " { ... }";
 }
 
+const ClassField *ClassType::getField(const std::string &name) const
+{
+    auto pos = fieldMap.find(name);
+    if (pos == fieldMap.end()) {
+        return nullptr;
+    }
+    return pos->second;
+}
+
 BuiltinTypeArray::BuiltinTypeArray()
 {
     // none & cls stay nullptr!

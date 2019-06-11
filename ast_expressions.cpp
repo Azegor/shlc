@@ -388,3 +388,32 @@ llvm::Value *NewExpr::codegen(Context &ctx)
     auto rawPointer = ctx.global.builder.CreateCall(mallocFn, {allocSizeVal}, "allocmemory");
     return ctx.global.builder.CreateBitCast(rawPointer, classPtrType, "allocres");
 }
+
+void FieldAccessExpr::print(int indent)
+{
+    printIndent(indent);
+    std::cout << "FieldAccess: [\n";
+    printIndent(indent + 1);
+    expr->print(indent + 1);
+    std::cout << "->" << field << std::endl;
+    printIndent(indent);
+    std::cout << ']' << std::endl;
+}
+
+llvm::Value *FieldAccessExpr::codegen(Context &ctx)
+{
+    auto &builder = ctx.global.builder;
+    auto classField = getClassField(ctx);
+    auto zeroIdx = llvm::ConstantInt::get(ctx.global.llvm_context, llvm::APInt(32, 0, true));
+    auto fieldIdx = llvm::ConstantInt::get(ctx.global.llvm_context, llvm::APInt(32, classField->index, true));
+    auto fieldPtr = builder.CreateInBoundsGEP(expr->codegen(ctx), {zeroIdx, fieldIdx}, field + "_fieldptr");
+    return builder.CreateLoad(fieldPtr, field + "_field");
+}
+
+const ClassField *FieldAccessExpr::getClassField(Context &ctx) const
+{
+    auto type = expr->getType(ctx);
+    assert(type->getKind() == BuiltinTypeKind::cls_t);
+    auto classType = dynamic_cast<ClassType*>(type);
+    return classType->getField(field);
+}

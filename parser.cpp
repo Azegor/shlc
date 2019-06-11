@@ -90,6 +90,9 @@ std::unordered_map<int, int> binOpPrecedence{
 
   // 120
   {Token::power, 120},
+
+  // 130
+  {'.', 130}
 };
 
 static inline bool isRightAssociative(int tokenType)
@@ -362,18 +365,27 @@ ExprPtr Parser::parseBinOpRHS(int exprPrec, ExprPtr lhs)
     auto binOp = curTok.type;
     readNextToken(); // eat binop
 
-    auto rhs = parseUnaryExpr();
+    if (binOp == '.') {
+        std::string fieldName = std::move(curTok.str);
+        dupSLContextTop();
+        auto loc = endSLContextHere();
+        readNextToken();
+        lhs = make_EPtr<FieldAccessExpr>(loc, std::move(lhs), fieldName);
+    } else {
+        auto rhs = parseUnaryExpr();
 
-    int nextPrec = getTokenPrecedence(curTok.type); // one operator after that
-    // if new op binds less tightly take current op as its LHS
-    // with right hand precedence let next OP be "stronger"
-    int offset = isRightAssociative(binOp) ? -1 : 1;
-    if (tokPrec < nextPrec || isRightAssociative(binOp)) rhs = parseBinOpRHS(tokPrec + offset, std::move(rhs));
+        int nextPrec = getTokenPrecedence(curTok.type); // one operator after that
+        // if new op binds less tightly take current op as its LHS
+        // with right hand precedence let next OP be "stronger"
+        int offset = isRightAssociative(binOp) ? -1 : 1;
+        if (tokPrec < nextPrec || isRightAssociative(binOp)) rhs = parseBinOpRHS(tokPrec + offset, std::move(rhs));
 
-    dupSLContextTop();
-    // eat next OP and continue looping (this OP was stringer)
-    lhs = make_EPtr<BinOpExpr>(endSLContextPrevToken(), binOp, std::move(lhs),
-                               std::move(rhs));
+        dupSLContextTop();
+        // eat next OP and continue looping (this OP was stringer)
+
+        lhs = make_EPtr<BinOpExpr>(endSLContextPrevToken(), binOp, std::move(lhs),
+                                    std::move(rhs));
+    }
   }
 }
 
@@ -688,6 +700,7 @@ ClassTypePtr Parser::parseClassDef()
   assertNextToken('{');
   readNextToken();
   ClassFieldVec fieldL;
+  unsigned fieldIdx = 0;
   while (curTok.type != '}') {
       assertToken(Token::identifier);
       std::string fieldName = std::move(curTok.str);
@@ -695,7 +708,7 @@ ClassTypePtr Parser::parseClassDef()
       readNextToken();
       Type *fieldType = parseTypeName();
       assertToken(';');
-      fieldL.emplace_back(std::move(fieldName), fieldType);
+      fieldL.emplace_back(std::move(fieldName), fieldType, fieldIdx++);
       readNextToken();
   }
   readNextToken(); // eat '}'
