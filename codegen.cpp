@@ -689,3 +689,11 @@ llvm::Value *createAssignment(Context &ctx, llvm::Value *val, VariableExpr *var)
   ctx.global.builder.CreateStore(val, alloca);
   return val;
 }
+
+
+llvm::Value *createAssignment(Context &ctx, llvm::Value *val, FieldAccessExpr *fa)
+{
+  auto fieldAddr = fa->codegenFieldAddress(ctx);
+  ctx.global.builder.CreateStore(val, fieldAddr);
+  return val;
+}
