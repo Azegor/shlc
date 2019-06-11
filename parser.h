@@ -90,6 +90,7 @@ class Parser
   void startSLContext() { startPositions.push_back({curTok, false}); }
   void dupSLContextTop() { startPositions.push_back(startPositions.back()); }
   void popSLContext() { startPositions.pop_back(); }
+  void markSLContextEndPrevToken() { endPos = {prevTok, true}; }
   void markSLContextEnd() { endPos = {curTok, true}; }
   SourceLocation endSLContextHere()
   {
