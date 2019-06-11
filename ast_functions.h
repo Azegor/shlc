@@ -43,10 +43,10 @@ public:
 
 private:
   std::string name;
-  std::string bindName;
   ArgVector args;
   Type *retType;
   Binding binding;
+  std::string bindName;
   llvm::Function *llvm_fn = nullptr;
 
 public:
