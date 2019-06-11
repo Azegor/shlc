@@ -305,11 +305,6 @@ llvm::Value *BinOpExpr::codegen(Context &ctx)
                        rhs->codegen(ctx));
   }
   if (isCompAssign(op)) {
-    auto varexpr = dynamic_cast<VariableExpr *>(lhs.get());
-    if (!varexpr)
-      throw CodeGenError("left hand side of assignment must be a variable",
-                         this);
-
     int assign_op = getCompAssigOpBaseOp(op);
     auto rightType = rhs->getType(ctx);
     auto targetType = lhs->getType(ctx);
@@ -322,14 +317,16 @@ llvm::Value *BinOpExpr::codegen(Context &ctx)
     rhs = make_EPtr<CastExpr>(rhs->srcLoc, std::move(rhs), targetType);
     auto assignVal = createBinOp(ctx, assign_op, targetType->getKind(), lhs->codegen(ctx),
                                  rhs->codegen(ctx));
-    return createAssignment(ctx, assignVal, varexpr);
+    if (auto varexpr = dynamic_cast<VariableExpr *>(lhs.get())) {
+      return createAssignment(ctx, assignVal, varexpr);
+    } else if (auto fieldexpr = dynamic_cast<FieldAccessExpr *>(lhs.get())) {
+      return createAssignment(ctx, assignVal, fieldexpr);
+    } else {
+      throw CodeGenError("left hand side of compound assignment must be a variable or field access", this);
+    }
   }
   if (op == '=') // normal assignment
   {
-    auto varexpr = dynamic_cast<VariableExpr *>(lhs.get());
-    if (!varexpr)
-      throw CodeGenError("left hand side of assignment must be a variable",
-                         this);
     auto rightType = rhs->getType(ctx);
     auto targetType = lhs->getType(ctx);
     if (!canImplicitlyCast(rightType, targetType))
@@ -339,7 +336,13 @@ llvm::Value *BinOpExpr::codegen(Context &ctx)
           '\'',
         this);
     rhs = make_EPtr<CastExpr>(rhs->srcLoc, std::move(rhs), targetType);
-    return createAssignment(ctx, rhs->codegen(ctx), varexpr);
+    if (auto varexpr = dynamic_cast<VariableExpr *>(lhs.get())) {
+      return createAssignment(ctx, rhs->codegen(ctx), varexpr);
+    } else if (auto fieldexpr = dynamic_cast<FieldAccessExpr *>(lhs.get())) {
+      return createAssignment(ctx, rhs->codegen(ctx), fieldexpr);
+    } else {
+      throw CodeGenError("left hand side of assignment must be a variable or field access", this);
+    }
   }
   throw CodeGenError("invalid binary operation " + Lexer::getTokenName(op),
                      this);
@@ -402,12 +405,15 @@ void FieldAccessExpr::print(int indent)
 
 llvm::Value *FieldAccessExpr::codegen(Context &ctx)
 {
-    auto &builder = ctx.global.builder;
+    return ctx.global.builder.CreateLoad(codegenFieldAddress(ctx), field + "_field");
+}
+
+llvm::Value *FieldAccessExpr::codegenFieldAddress(Context &ctx)
+{
     auto classField = getClassField(ctx);
     auto zeroIdx = llvm::ConstantInt::get(ctx.global.llvm_context, llvm::APInt(32, 0, true));
     auto fieldIdx = llvm::ConstantInt::get(ctx.global.llvm_context, llvm::APInt(32, classField->index, true));
-    auto fieldPtr = builder.CreateInBoundsGEP(expr->codegen(ctx), {zeroIdx, fieldIdx}, field + "_fieldptr");
-    return builder.CreateLoad(fieldPtr, field + "_field");
+    return ctx.global.builder.CreateInBoundsGEP(expr->codegen(ctx), {zeroIdx, fieldIdx}, field + "_fieldptr");
 }
 
 const ClassField *FieldAccessExpr::getClassField(Context &ctx) const

@@ -29,6 +29,7 @@
 class Context;
 class GlobalContext;
 class VariableExpr;
+class FieldAccessExpr;
 
 llvm::AllocaInst *createEntryBlockAlloca(llvm::Function *fn,
                                          const std::string &varName,
@@ -109,5 +110,7 @@ BuiltinTypeKind getBinOpReturnType(int op, BuiltinTypeKind inType);
 
 llvm::Value *createAssignment(Context &ctx, llvm::Value *val,
                               VariableExpr *var);
+llvm::Value *createAssignment(Context &ctx, llvm::Value *val,
+                              FieldAccessExpr *fa);
 
 #endif // CODEGEN_H
