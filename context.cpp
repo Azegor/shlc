@@ -104,6 +104,7 @@ GlobalContext::GlobalContext()
     "malloc",
     module
   );
+  mallocFunction->addFnAttr(llvm::Attribute::NoAlias);
 }
 
 GlobalContext::~GlobalContext()
