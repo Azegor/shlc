@@ -85,8 +85,15 @@ llvm::Function *FunctionHead::createLLVMFunction(GlobalContext &gl_ctx)
       argumentTypes.push_back(gl_ctx.llvmTypeRegistry.getType(arg.first));
     }
 
+    llvm::Type *fnReturnType = nullptr;
+    if (name == "main") {
+        fnReturnType = llvm::Type::getInt32Ty(gl_ctx.llvm_context);
+    } else {
+        fnReturnType = gl_ctx.llvmTypeRegistry.getType(retType);
+    }
+
     llvm::FunctionType *ft = llvm::FunctionType::get(
-      gl_ctx.llvmTypeRegistry.getType(retType), argumentTypes, false);
+      fnReturnType, argumentTypes, false);
 
     // TODO: maybe change linkage for internal functions to something fast?
     auto linkage = llvm::Function::ExternalLinkage;
@@ -252,12 +259,17 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
     }
   }
 
+  bool isMainFunction = head->getName() == "main"; // TODO?
+
   fn->getBasicBlockList().push_back(ctx.ret.BB); // add return block last!
   builder.SetInsertPoint(ctx.ret.BB);
-  if (ctx.ret.type == TypeRegistry::getVoidType())
+  if (isMainFunction) {
+    builder.CreateRet(llvm::ConstantInt::get(ctx.global.llvm_context, llvm::APInt(32, 0, false)));
+  } else if (ctx.ret.type == TypeRegistry::getVoidType()) {
     builder.CreateRetVoid();
-  else
+  } else {
     builder.CreateRet(builder.CreateLoad(ctx.ret.val));
+  }
 
   gl_ctx.fpm->run(*fn);
 
