@@ -202,3 +202,31 @@ llvm::DISubroutineType *GlobalContext::createDIFunctionType(FunctionHead *fnHead
 
   return diBuilder.createSubroutineType(diBuilder.getOrCreateTypeArray(EltTys));
 }
+
+void GlobalContext::enterDebugScope(llvm::DIScope *lexBlock)
+{
+    diLexicalBlocks.push(lexBlock);
+}
+
+void GlobalContext::leaveDebugScope()
+{
+    diLexicalBlocks.pop();
+}
+
+void GlobalContext::setCurrentDISourceLocation(AstNode *astNode)
+{
+  if(!emitDebugInfo) { return; }
+  if (astNode) {
+    // TODO: update current file when changing lexer nr (keep current nr & compare)?!
+    llvm::DIScope *scope;
+    if (diLexicalBlocks.empty()) {
+      scope = diCompUnit;
+    } else {
+      scope = diLexicalBlocks.top();
+    }
+    builder.SetCurrentDebugLocation(
+      llvm::DebugLoc::get(astNode->srcLoc.startToken.line, astNode->srcLoc.startToken.col, scope));
+  } else {
+    builder.SetCurrentDebugLocation(llvm::DebugLoc());
+  }
+}

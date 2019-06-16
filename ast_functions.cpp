@@ -218,6 +218,8 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
       gl_ctx.createDIFunctionType(head.get()), head->srcLoc.startToken.line,
       llvm::DINode::FlagPrototyped, llvm::DISubprogram::SPFlagDefinition);
     fn->setSubprogram(sp);
+    gl_ctx.enterDebugScope(sp);
+    gl_ctx.setCurrentDISourceLocation(nullptr);
   }
 
   // code gen
@@ -242,11 +244,19 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
   auto mainBB = llvm::BasicBlock::Create(gl_ctx.llvm_context, "fnbody", fn);
   builder.SetInsertPoint(mainBB);
 
+  if (gl_ctx.emitDebugInfo) {
+    gl_ctx.setCurrentDISourceLocation(body.get());
+  }
+
   ctx.pushFrame();
 
   body->codegen(ctx);
 
   ctx.popFrame();
+
+  if (gl_ctx.emitDebugInfo) {
+    gl_ctx.leaveDebugScope();
+  }
 
   auto currentInsBlock = builder.GetInsertBlock();
   builder.SetInsertPoint(entryBB);
