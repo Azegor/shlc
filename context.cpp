@@ -29,7 +29,6 @@ GlobalContext::GlobalContext()
       module(new llvm::Module("shl_global_module", llvm_context)),
       builder(llvm_context),
       diBuilder(*module),
-      diCompUnit(diBuilder.createCompileUnit(llvm::dwarf::DW_LANG_C_plus_plus, diBuilder.createFile("main.shl", "."), "SHLC", false, "", 0)),
       llvmTypeRegistry(*this),
       pm_builder(),
       fpm(),
@@ -114,9 +113,25 @@ GlobalContext::~GlobalContext()
     delete execEngine;
 }
 
+void GlobalContext::initCompilationUnit(llvm::StringRef filePath, bool isOptimized)
+{
+    auto idx = filePath.find_last_of('/');
+    idx = idx == llvm::StringRef::npos ? 0 : idx + 1;
+    llvm::StringRef dirName = filePath.take_front(idx);
+    llvm::StringRef fileName = filePath.drop_front(idx);
+
+    diCompUnit = diBuilder.createCompileUnit(llvm::dwarf::DW_LANG_C_plus_plus, diBuilder.createFile(fileName, "."), "SHLC", isOptimized, "", 0);
+    // TODO set different for every included file!
+    diFile = diBuilder.createFile(fileName, dirName);
+}
+
 void GlobalContext::finalizeDIBuilder()
 {
-    diBuilder.finalize();
+  diBuilder.finalize();
+
+  // TODO: this is a fix from "https://groups.google.com/forum/#!topic/llvm-dev/1O955wQjmaQ"
+  module->addModuleFlag(llvm::Module::Warning, "Dwarf Version", 3);
+  module->addModuleFlag(llvm::Module::Error, "Debug Info Version", llvm::DEBUG_METADATA_VERSION);
 }
 
 void GlobalContext::initPMB()
@@ -167,4 +182,23 @@ FunctionHead *GlobalContext::getFunctionOverload(
   }
   if (needCastOverloads.size() == 1) return needCastOverloads[0];
   return nullptr;
+}
+
+llvm::DISubroutineType *GlobalContext::createDIFunctionType(FunctionHead *fnHead)
+{
+  llvm::SmallVector<llvm::Metadata *, 8> EltTys;
+
+  // Add the result type.
+  if (fnHead->getName() == "main") {
+    EltTys.push_back(llvmTypeRegistry.getDIType(TypeRegistry::getBuiltinType(BuiltinTypeKind::int_t)));
+  } else {
+    EltTys.push_back(llvmTypeRegistry.getDIType(fnHead->getReturnType()));
+  }
+
+  for (auto *argType :fnHead->getArgTypes()) {
+    llvm::DIType *argDbgType = llvmTypeRegistry.getDIType(argType);
+    EltTys.push_back(argDbgType);
+  }
+
+  return diBuilder.createSubroutineType(diBuilder.getOrCreateTypeArray(EltTys));
 }

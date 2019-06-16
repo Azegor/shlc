@@ -211,6 +211,16 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
   head->addToFunctionTable(gl_ctx, FunctionHead::FnReg::Define);
   auto fn = head->codegen(ctx);
 
+  // debug info
+
+  llvm::DISubprogram *sp = gl_ctx.diBuilder.createFunction(
+      gl_ctx.diCompUnit, head->getName(), llvm::StringRef(), gl_ctx.diFile, head->srcLoc.startToken.line,
+      gl_ctx.createDIFunctionType(head.get()), head->srcLoc.startToken.line,
+      llvm::DINode::FlagPrototyped, llvm::DISubprogram::SPFlagDefinition);
+  fn->setSubprogram(sp);
+
+  // code gen
+
   ctx.currentFn = fn;
   ctx.ret.type = head->getReturnType();
 
