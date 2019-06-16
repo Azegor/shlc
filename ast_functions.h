@@ -24,7 +24,29 @@
 
 class GlobalContext;
 
-using ArgVector = std::vector<std::pair<Type*, std::string>>;
+struct FunctionArg
+{
+  SourceLocation loc;
+  Type* type;
+  std::string name;
+
+  FunctionArg(SourceLocation loc, Type *type, std::string name)
+     : loc(loc), type(type), name(std::move(name))
+  {}
+
+  bool operator==(const FunctionArg &o) const {
+    return type == o.type && name == o.name;
+  }
+  bool operator<(const FunctionArg &o) const {
+    if (type < o.type) return true;
+    if (type > o.type) return false;
+    if (name < o.name) return true;
+    if (name > o.name) return false;
+    return false;
+  }
+};
+
+using ArgVector = std::vector<FunctionArg>;
 
 class FunctionHead : public AstNode
 {

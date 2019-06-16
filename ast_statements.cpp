@@ -121,6 +121,7 @@ void ExprStmt::print(int indent)
 
 llvm::Value *ReturnStmt::codegen(Context &ctx)
 {
+  ctx.global.emitDILocation(this);
   if (!expr) // void
   {
     if (ctx.ret.type != TypeRegistry::getVoidType())
@@ -166,6 +167,7 @@ llvm::Value *IfStmt::codegen(Context &ctx)
     }
   }
 
+  ctx.global.emitDILocation(this);
   auto &builder = ctx.global.builder;
   auto thenBB =
     llvm::BasicBlock::Create(ctx.global.llvm_context, "then", ctx.currentFn);
@@ -221,6 +223,7 @@ llvm::Value *WhileStmt::codegen(Context &ctx)
     }
   }
 
+  ctx.global.emitDILocation(this);
   auto &builder = ctx.global.builder;
 
   auto headBB =
@@ -271,6 +274,7 @@ llvm::Value *DoWhileStmt::codegen(Context &ctx)
     }
   }
 
+  ctx.global.emitDILocation(this);
   auto &builder = ctx.global.builder;
 
   auto loopBB =
@@ -328,6 +332,7 @@ llvm::Value *ForStmt::codegen(Context &ctx)
   // 3.1 body
   // 3.2 increment
 
+  ctx.global.emitDILocation(this);
   auto &builder = ctx.global.builder;
 
   auto headBB =
@@ -383,18 +388,21 @@ llvm::Value *ForStmt::codegen(Context &ctx)
 
 llvm::Value *BreakStmt::codegen(Context &ctx)
 {
+  ctx.global.emitDILocation(this);
   ctx.global.builder.CreateBr(ctx.currentLoop()->breakTarget());
   return nullptr;
 }
 
 llvm::Value *ContinueStmt::codegen(Context &ctx)
 {
+  ctx.global.emitDILocation(this);
   ctx.global.builder.CreateBr(ctx.currentLoop()->continueTarget());
   return nullptr;
 }
 
 llvm::Value *ExprStmt::codegen(Context &ctx)
 {
+  ctx.global.emitDILocation(this);
   expr->codegen(ctx);
   return nullptr;
 }
@@ -421,6 +429,7 @@ Type *VarDeclStmt::getType(Context &ctx)
 
 llvm::Value *VarDeclStmt::codegen(Context &ctx)
 {
+  ctx.global.emitDILocation(this);
   auto llvm_type = ctx.global.llvmTypeRegistry.getType(getType(ctx));
   for (auto &var : vars)
   {

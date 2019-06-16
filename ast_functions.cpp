@@ -33,7 +33,7 @@ void FunctionHead::print(int indent)
   std::cout << name << '(';
   printList(args, [](ArgVector::value_type &e)
             {
-    return e.first->getName() + " " + e.second;
+    return e.type->getName() + " " + e.name;
   });
   std::cout << ") : " << retType->getName() << std::endl;
 }
@@ -47,7 +47,7 @@ llvm::Function *FunctionHead::codegen(Context &ctx)
   for (llvm::Function::arg_iterator ai = f->arg_begin(); idx != args.size();
        ++ai, ++idx)
   {
-    ai->setName(args[idx].second);
+    ai->setName(args[idx].name);
   }
   return f;
 }
@@ -82,7 +82,7 @@ llvm::Function *FunctionHead::createLLVMFunction(GlobalContext &gl_ctx)
     argumentTypes.reserve(args.size());
     for (auto &arg : args)
     {
-      argumentTypes.push_back(gl_ctx.llvmTypeRegistry.getType(arg.first));
+      argumentTypes.push_back(gl_ctx.llvmTypeRegistry.getType(arg.type));
     }
 
     llvm::Type *fnReturnType = nullptr;
@@ -117,13 +117,27 @@ void FunctionHead::createArgumentAllocas(Context &ctx, llvm::Function *fn)
   {
     // Create an alloca for this variable.
     llvm::AllocaInst *alloca = createEntryBlockAlloca(
-      fn, args[idx].second, ctx.global.llvmTypeRegistry.getType(args[idx].first));
+      fn, args[idx].name, ctx.global.llvmTypeRegistry.getType(args[idx].type));
+
+    auto &gctx = ctx.global;
+
+    if (gctx.emitDebugInfo) {
+        auto *subp = fn->getSubprogram();
+      // Create a debug descriptor for the variable.
+      int lineNr = args[idx].loc.startToken.line;
+      int colNr = args[idx].loc.startToken.col;
+      llvm::DILocalVariable *d = gctx.diBuilder.createParameterVariable(
+          subp, args[idx].name, idx, gctx.diFile, lineNr, gctx.llvmTypeRegistry.getDIType(args[idx].type), true);
+      gctx.diBuilder.insertDeclare(alloca, d, gctx.diBuilder.createExpression(),
+          llvm::DebugLoc::get(lineNr, colNr, subp),
+            gctx.builder.GetInsertBlock());
+    }
 
     // Store the initial value into the alloca.
     ctx.global.builder.CreateStore(&*ai, alloca);
 
     // Add arguments to variable symbol table.
-    ctx.putVar(args[idx].second, args[idx].first, alloca);
+    ctx.putVar(args[idx].name, args[idx].type, alloca);
   }
 }
 
@@ -132,7 +146,7 @@ std::vector<Type*> FunctionHead::getArgTypes() const
   std::vector<Type*> res;
   res.reserve(args.size());
   for (auto &arg : args)
-    res.push_back(arg.first);
+    res.push_back(arg.type);
   return res;
 }
 
@@ -141,7 +155,7 @@ bool FunctionHead::hasSameArgsAs(const FunctionHead &o)
   if (args.size() != o.args.size()) return false;
   for (int i = 0, s = args.size(); i < s; ++i)
   {
-    if (args[i].first != o.args[i].first) return false;
+    if (args[i].type != o.args[i].type) return false;
   }
   return true;
 }
@@ -159,8 +173,8 @@ FunctionHead::OverloadFit FunctionHead::getOverloadFit(
   OverloadFit fit = OverloadFit::Perfect;
   for (int i = 0, s = args.size(); i < s; ++i)
   {
-    if (types[i] == args[i].first) continue;
-    if (!canImplicitlyCast(types[i], args[i].first)) return OverloadFit::None;
+    if (types[i] == args[i].type) continue;
+    if (!canImplicitlyCast(types[i], args[i].type)) return OverloadFit::None;
     fit = OverloadFit::Cast;
   }
   return fit;
@@ -173,12 +187,12 @@ std::string FunctionHead::sigString() const
   for (auto &arg : args)
   {
     if (first) {
-      res += arg.first->getName();
+      res += arg.type->getName();
       first = false;
     }
     else
     {
-      res += ", " + arg.first->getName();
+      res += ", " + arg.type->getName();
     }
   }
   res += ')';
@@ -219,7 +233,7 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
       llvm::DINode::FlagPrototyped, llvm::DISubprogram::SPFlagDefinition);
     fn->setSubprogram(sp);
     gl_ctx.enterDebugScope(sp);
-    gl_ctx.setCurrentDISourceLocation(nullptr);
+    gl_ctx.emitDILocation(nullptr);
   }
 
   // code gen
@@ -245,7 +259,7 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
   builder.SetInsertPoint(mainBB);
 
   if (gl_ctx.emitDebugInfo) {
-    gl_ctx.setCurrentDISourceLocation(body.get());
+    gl_ctx.emitDILocation(body.get());
   }
 
   ctx.pushFrame();
@@ -255,7 +269,7 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
   ctx.popFrame();
 
   if (gl_ctx.emitDebugInfo) {
-    gl_ctx.leaveDebugScope();
+    gl_ctx.emitDILocation(nullptr);
   }
 
   auto currentInsBlock = builder.GetInsertBlock();
@@ -290,6 +304,10 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
     builder.CreateRetVoid();
   } else {
     builder.CreateRet(builder.CreateLoad(ctx.ret.val));
+  }
+
+  if (gl_ctx.emitDebugInfo) {
+    gl_ctx.leaveDebugScope();
   }
 
   gl_ctx.fpm->run(*fn);
@@ -373,7 +391,7 @@ std::string FunctionHead::getMangledName() const
     else
       for (auto &arg : args)
       {
-        res += getMangleName(arg.first);
+        res += getMangleName(arg.type);
       }
     //     res += '_';
     //     res += getMangleName(retType);
