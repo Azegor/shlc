@@ -259,15 +259,17 @@ FunctionPtr Parser::parseFunctionDef()
 // reads until ';' or ')'
 void Parser::parseFunctionArguments(ArgVector &args)
 {
-  // assert (isVarTypeId(curTok));
   Type *argType = getTypeFromToken(curTok.type);
   readNextToken();
   do
   {
-    if (curTok.type != Token::identifier)
+    if (curTok.type != Token::identifier) {
       error("unexpected '" + curTok.str + "', expected identifier");
-    args.emplace_back(std::make_pair(argType, curTok.str));
-    if (readNextToken().type == ',') readNextToken(); // eat ','
+    }
+    args.emplace_back(getSLContextSingleCurToken(), argType, curTok.str);
+    if (readNextToken().type == ',') {
+      readNextToken(); // eat ','
+    }
   } while (curTok.type != ';' && curTok.type != ')');
 }
 

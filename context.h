@@ -154,7 +154,7 @@ public:
   llvm::DISubroutineType *createDIFunctionType(FunctionHead *fnHead);
   void enterDebugScope(llvm::DIScope *lexBlock);
   void leaveDebugScope();
-  void setCurrentDISourceLocation(AstNode *astNode);
+  void emitDILocation(AstNode *astNode);
 };
 
 struct ContextFrame

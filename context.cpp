@@ -213,7 +213,7 @@ void GlobalContext::leaveDebugScope()
     diLexicalBlocks.pop();
 }
 
-void GlobalContext::setCurrentDISourceLocation(AstNode *astNode)
+void GlobalContext::emitDILocation(AstNode *astNode)
 {
   if(!emitDebugInfo) { return; }
   if (astNode) {
