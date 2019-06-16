@@ -212,12 +212,13 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
   auto fn = head->codegen(ctx);
 
   // debug info
-
-  llvm::DISubprogram *sp = gl_ctx.diBuilder.createFunction(
+  if (gl_ctx.emitDebugInfo) {
+    llvm::DISubprogram *sp = gl_ctx.diBuilder.createFunction(
       gl_ctx.diCompUnit, head->getName(), llvm::StringRef(), gl_ctx.diFile, head->srcLoc.startToken.line,
       gl_ctx.createDIFunctionType(head.get()), head->srcLoc.startToken.line,
       llvm::DINode::FlagPrototyped, llvm::DISubprogram::SPFlagDefinition);
-  fn->setSubprogram(sp);
+    fn->setSubprogram(sp);
+  }
 
   // code gen
 

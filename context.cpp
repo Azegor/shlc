@@ -123,15 +123,15 @@ void GlobalContext::initCompilationUnit(llvm::StringRef filePath, bool isOptimiz
     diCompUnit = diBuilder.createCompileUnit(llvm::dwarf::DW_LANG_C_plus_plus, diBuilder.createFile(fileName, "."), "SHLC", isOptimized, "", 0);
     // TODO set different for every included file!
     diFile = diBuilder.createFile(fileName, dirName);
+
+  // TODO: this is a fix from "https://groups.google.com/forum/#!topic/llvm-dev/1O955wQjmaQ"
+  module->addModuleFlag(llvm::Module::Warning, "Dwarf Version", 3);
+  module->addModuleFlag(llvm::Module::Error, "Debug Info Version", llvm::DEBUG_METADATA_VERSION);
 }
 
 void GlobalContext::finalizeDIBuilder()
 {
   diBuilder.finalize();
-
-  // TODO: this is a fix from "https://groups.google.com/forum/#!topic/llvm-dev/1O955wQjmaQ"
-  module->addModuleFlag(llvm::Module::Warning, "Dwarf Version", 3);
-  module->addModuleFlag(llvm::Module::Error, "Debug Info Version", llvm::DEBUG_METADATA_VERSION);
 }
 
 void GlobalContext::initPMB()

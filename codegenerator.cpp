@@ -43,9 +43,7 @@ void CodeGenerator::generateCode(int optLevel, bool emitDebugInfo)
       if (fn && fn->getName() == "main") mainFn = fn;
     }
     // --- codegen end ---
-    if (emitDebugInfo) {
-      gl_ctx.finalizeDIBuilder();
-    }
+    gl_ctx.finalizeDIBuilder();
     gl_ctx.finalizeFPM();
     gl_ctx.initMPM();
     gl_ctx.mpm->run(*gl_ctx.module);
