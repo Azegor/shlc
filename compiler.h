@@ -29,8 +29,9 @@ namespace po = boost::program_options;
 
 class Compiler
 {
-  int optLevel;
+  int optLevel = 0;
   std::string inFile, outFile;
+  bool emitDebugInfo = false;
   bool runCode = false;
 
 public:
@@ -40,7 +41,7 @@ public:
 
   int run()
   {
-    CodeGenerator codegen(CompilationUnit{inFile});
+    CodeGenerator codegen(CompilationUnit{inFile}, emitDebugInfo);
     try
     {
         codegen.generateCode(optLevel);

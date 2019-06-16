@@ -26,10 +26,12 @@ void Compiler::parseArguments(int argc, char* argv[])
     ("help,h", "print this help message") //
     (",O", po::value<int>(&optLevel)->default_value(0),
      "optimization level") //
+    (",g", "emit debug informatino") //
     ("input-file", po::value<std::string>(&inFile),
      "input file") //
     ("output-file,o", po::value<std::string>(&outFile),
-     "output file")("run", "run main method of generated code");
+     "output file") //
+    ("run", "run main method of generated code");
 
   po::variables_map vm;
   try
@@ -58,6 +60,9 @@ void Compiler::parseArguments(int argc, char* argv[])
     }
     if (!vm.count("output-file")) {
       outFile = inFile + ".ll";
+    }
+    if (vm.count("g")) {
+       emitDebugInfo = true;
     }
     if (vm.count("run")) {
       runCode = true;

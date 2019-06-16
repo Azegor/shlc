@@ -36,6 +36,7 @@ void CodeGenerator::generateCode(int optLevel)
       auto fn = r->codegen(gl_ctx);
       if (fn && fn->getName() == "main") mainFn = fn;
     }
+    gl_ctx.finalizeDIBuilder();
     gl_ctx.finalizeFPM();
     gl_ctx.initMPM();
     gl_ctx.mpm->run(*gl_ctx.module);
