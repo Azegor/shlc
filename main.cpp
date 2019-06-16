@@ -190,7 +190,7 @@ void testCodeGen(const char *filename, const char *outName, bool optimize)
     gl_ctx.finalizeMPM();
 
     std::cout << "===============================================" << std::endl;
-    gl_ctx.module->dump();
+    // gl_ctx.module->dump();
 
     std::error_code err;
     llvm::raw_fd_ostream outFile(outName, err, llvm::sys::fs::CD_CreateAlways,
