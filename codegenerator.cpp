@@ -21,22 +21,31 @@
 
 #include <llvm/Support/FileSystem.h>
 
-void CodeGenerator::generateCode(int optLevel)
+void CodeGenerator::generateCode(int optLevel, bool emitDebugInfo)
 {
   std::stringstream errorMsg;
   try
   {
+    std::string inputFileName = compUnit.getFilename();
     auto parseRes = parser.parse(std::move(compUnit));
     gl_ctx.optimizeLevel = optLevel;
+    gl_ctx.emitDebugInfo = emitDebugInfo;
     gl_ctx.initPMB();
     gl_ctx.initFPM();
     //     llvm::Function *mainFn = nullptr;
+    if (emitDebugInfo) {
+      gl_ctx.initCompilationUnit(inputFileName, optLevel != 0);
+    }
+    // --- codegen start ---
     for (auto &r : parseRes)
     {
       auto fn = r->codegen(gl_ctx);
       if (fn && fn->getName() == "main") mainFn = fn;
     }
-    gl_ctx.finalizeDIBuilder();
+    // --- codegen end ---
+    if (emitDebugInfo) {
+      gl_ctx.finalizeDIBuilder();
+    }
     gl_ctx.finalizeFPM();
     gl_ctx.initMPM();
     gl_ctx.mpm->run(*gl_ctx.module);

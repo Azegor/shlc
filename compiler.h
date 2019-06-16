@@ -41,10 +41,10 @@ public:
 
   int run()
   {
-    CodeGenerator codegen(CompilationUnit{inFile}, emitDebugInfo);
+    CodeGenerator codegen(CompilationUnit{inFile});
     try
     {
-        codegen.generateCode(optLevel);
+        codegen.generateCode(optLevel, emitDebugInfo);
     }
     catch (CompileError& err)
     {

@@ -78,7 +78,8 @@ public:
   llvm::Module *const module;
   llvm::IRBuilder<> builder;
   llvm::DIBuilder diBuilder;
-  llvm::DICompileUnit *const diCompUnit;
+  llvm::DICompileUnit *diCompUnit = nullptr;
+  llvm::DIFile * diFile; // TODO: change to
   LLVMTypeRegistry llvmTypeRegistry;
   llvm::PassManagerBuilder pm_builder;
   //   llvm::legacy::FunctionPassManager fpm;
@@ -88,6 +89,7 @@ public:
   std::string errorString;
   llvm::ExecutionEngine *execEngine;
   int optimizeLevel = 0;
+  bool emitDebugInfo = false;
 
   struct Fn
   {
@@ -105,6 +107,7 @@ public:
   GlobalContext();
   ~GlobalContext();
 
+  void initCompilationUnit(llvm::StringRef filePath, bool isOptimized);
   void finalizeDIBuilder();
 
   void initPMB();
@@ -145,6 +148,8 @@ public:
   }
 
   llvm::Function *getMallocFn() const { return mallocFunction; }
+
+  llvm::DISubroutineType *createDIFunctionType(FunctionHead *fnHead);
 };
 
 struct ContextFrame
