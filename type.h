@@ -46,37 +46,41 @@ using str_t = char const *;
 
 class Type;
 class ClassType;
+class GlobalContext;
 
 namespace llvm {
 class Type;
 class PointerType;
+class DIType;
 } // namespace llvm
 
 const std::string &getTypeName(BuiltinTypeKind t);
 const std::string &getMangleName(BuiltinTypeKind t);
 std::string getMangleName(Type *t);
 
-namespace llvm {
-class LLVMContext;
-} // namespace llvm
-
 class LLVMTypeRegistry
 {
 public:
-    LLVMTypeRegistry(llvm::LLVMContext &llvm_context);
+    LLVMTypeRegistry(GlobalContext &gl_ctx);
 
     llvm::Type *getType(Type *t);
     llvm::PointerType *getClassType(ClassType *t);
     llvm::Type *getBuiltinType(BuiltinTypeKind tk);
 
+    llvm::DIType *getDIType(Type *t);
+    llvm::DIType *getDIBuiltinType(BuiltinTypeKind tk);
+
     llvm::PointerType *getVoidPointerType() const { return voidPointerType; }
 
 private:
-    llvm::LLVMContext &llvm_context;
+    GlobalContext &gl_ctx;
     std::unordered_map<ClassType*, llvm::PointerType*> classTypeMap;
     llvm::PointerType *voidPointerType;
+    llvm::DIType *diBuiltinTypes[(int)BuiltinTypeKind::str_t + 1];
+    bool diTypesInitialized = false;
 
     llvm::PointerType *createLLVMClassType(ClassType *ct);
+    void createDIBuiltinTypes();
 };
 
 #endif // TYPE_H

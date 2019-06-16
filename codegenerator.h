@@ -38,7 +38,9 @@ class CodeGenerator
   llvm::Function* mainFn = nullptr;
 
 public:
-  CodeGenerator(CompilationUnit input) : compUnit(std::move(input)) {}
+  CodeGenerator(CompilationUnit input, bool enableDI)
+    : compUnit(std::move(input))
+  {}
 
   void generateCode(int optLevel);
 

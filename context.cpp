@@ -26,9 +26,11 @@ GlobalContext::GlobalContext()
 //     : llvm_context(llvm::getGlobalContext()),
     : _llvm_context(std::make_unique<llvm::LLVMContext>()),
       llvm_context(*_llvm_context),
-      llvmTypeRegistry(llvm_context),
       module(new llvm::Module("shl_global_module", llvm_context)),
       builder(llvm_context),
+      diBuilder(*module),
+      diCompUnit(diBuilder.createCompileUnit(llvm::dwarf::DW_LANG_C_plus_plus, diBuilder.createFile("main.shl", "."), "SHLC", false, "", 0)),
+      llvmTypeRegistry(*this),
       pm_builder(),
       fpm(),
       mpm(),
@@ -110,6 +112,11 @@ GlobalContext::GlobalContext()
 GlobalContext::~GlobalContext()
 {
     delete execEngine;
+}
+
+void GlobalContext::finalizeDIBuilder()
+{
+    diBuilder.finalize();
 }
 
 void GlobalContext::initPMB()

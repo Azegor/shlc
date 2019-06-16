@@ -4,9 +4,11 @@
 #include <unordered_map>
 
 #include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/DIBuilder.h>
 
 #include "ast_base.h"
 #include "ast_types.h"
+#include "context.h"
 
 const std::string &getTypeName(BuiltinTypeKind t)
 {
@@ -46,10 +48,10 @@ std::string getMangleName(Type *t)
   }
 }
 
-LLVMTypeRegistry::LLVMTypeRegistry(llvm::LLVMContext &llvm_context)
-  : llvm_context(llvm_context)
+LLVMTypeRegistry::LLVMTypeRegistry(GlobalContext &gl_ctx)
+  : gl_ctx(gl_ctx)
 {
-    voidPointerType = llvm::Type::getInt8PtrTy(llvm_context); // is void in llvm
+    voidPointerType = llvm::Type::getInt8PtrTy(gl_ctx.llvm_context); // is void in llvm
 }
 
 llvm::Type *LLVMTypeRegistry::getType(Type *t)
@@ -78,17 +80,17 @@ llvm::Type *LLVMTypeRegistry::getBuiltinType(BuiltinTypeKind tk)
   {
     // int_t, flt_t, chr_t, boo_t, str_t, vac_t
     case BuiltinTypeKind::vac_t:
-      return llvm::Type::getVoidTy(llvm_context);
+      return llvm::Type::getVoidTy(gl_ctx.llvm_context);
     case BuiltinTypeKind::int_t:
-      return llvm::Type::getInt64Ty(llvm_context);
+      return llvm::Type::getInt64Ty(gl_ctx.llvm_context);
     case BuiltinTypeKind::flt_t:
-      return llvm::Type::getDoubleTy(llvm_context);
+      return llvm::Type::getDoubleTy(gl_ctx.llvm_context);
     case BuiltinTypeKind::boo_t:
-      return llvm::Type::getInt1Ty(llvm_context);
+      return llvm::Type::getInt1Ty(gl_ctx.llvm_context);
     case BuiltinTypeKind::chr_t:
-      return llvm::Type::getInt8Ty(llvm_context); // no unicode
+      return llvm::Type::getInt8Ty(gl_ctx.llvm_context); // no unicode
     case BuiltinTypeKind::str_t:
-      return llvm::Type::getInt8PtrTy(llvm_context);
+      return llvm::Type::getInt8PtrTy(gl_ctx.llvm_context);
     default:
       throw CodeGenError("Unknown type id " + getTypeName(tk));
   }
@@ -101,6 +103,34 @@ llvm::PointerType *LLVMTypeRegistry::createLLVMClassType(ClassType *ct)
     for (auto &field : ct->fields) {
         members.push_back(getType(field.type));
     }
-    auto structType = llvm::StructType::create(llvm_context, members, ct->getName());
+    auto structType = llvm::StructType::create(gl_ctx.llvm_context, members, ct->getName());
     return llvm::PointerType::get(structType, 0);
+}
+
+llvm::DIType *LLVMTypeRegistry::getDIType(Type *t)
+{
+    if (auto *ct = dynamic_cast<ClassType*>(t)) {
+        throw CodeGenError("todo implement debug class types");
+        // return getClassType(ct);
+    } else {
+        return getDIBuiltinType(t->getKind());
+    }
+}
+llvm::DIType *LLVMTypeRegistry::getDIBuiltinType(BuiltinTypeKind tk)
+{
+  if (!diTypesInitialized) {
+    createDIBuiltinTypes();
+  }
+  return diBuiltinTypes[(int)tk];
+}
+
+void LLVMTypeRegistry::createDIBuiltinTypes()
+{
+    diBuiltinTypes[(int)BuiltinTypeKind::vac_t] = nullptr;
+    diBuiltinTypes[(int)BuiltinTypeKind::int_t] = gl_ctx.diBuilder.createBasicType("int", 64, llvm::dwarf::DW_ATE_signed);
+    diBuiltinTypes[(int)BuiltinTypeKind::flt_t] = gl_ctx.diBuilder.createBasicType("flt", 64, llvm::dwarf::DW_ATE_float);
+    diBuiltinTypes[(int)BuiltinTypeKind::boo_t] = gl_ctx.diBuilder.createBasicType("boo", 8, llvm::dwarf::DW_ATE_boolean);
+    diBuiltinTypes[(int)BuiltinTypeKind::chr_t] = gl_ctx.diBuilder.createBasicType("chr", 8, llvm::dwarf::DW_ATE_signed_char);
+    diBuiltinTypes[(int)BuiltinTypeKind::str_t] = gl_ctx.diBuilder.createPointerType(diBuiltinTypes[(int)BuiltinTypeKind::chr_t], 64, 1, {}, "str");
+    diTypesInitialized = true;
 }

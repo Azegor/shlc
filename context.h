@@ -28,6 +28,7 @@
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/DIBuilder.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
 #include <llvm/IR/PassManager.h>
@@ -74,9 +75,11 @@ class GlobalContext
   std::unique_ptr<llvm::LLVMContext> _llvm_context;
 public:
   llvm::LLVMContext &llvm_context;
-  LLVMTypeRegistry llvmTypeRegistry;
   llvm::Module *const module;
   llvm::IRBuilder<> builder;
+  llvm::DIBuilder diBuilder;
+  llvm::DICompileUnit *const diCompUnit;
+  LLVMTypeRegistry llvmTypeRegistry;
   llvm::PassManagerBuilder pm_builder;
   //   llvm::legacy::FunctionPassManager fpm;
   std::unique_ptr<llvm::legacy::FunctionPassManager> fpm;
@@ -101,6 +104,8 @@ public:
 
   GlobalContext();
   ~GlobalContext();
+
+  void finalizeDIBuilder();
 
   void initPMB();
 
