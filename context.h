@@ -80,6 +80,7 @@ public:
   llvm::DIBuilder diBuilder;
   llvm::DICompileUnit *diCompUnit = nullptr;
   llvm::DIFile * diFile; // TODO: change to
+  std::stack<llvm::DIScope*> diLexicalBlocks;
   LLVMTypeRegistry llvmTypeRegistry;
   llvm::PassManagerBuilder pm_builder;
   //   llvm::legacy::FunctionPassManager fpm;
@@ -149,7 +150,11 @@ public:
 
   llvm::Function *getMallocFn() const { return mallocFunction; }
 
+  // TODO: move into extra class
   llvm::DISubroutineType *createDIFunctionType(FunctionHead *fnHead);
+  void enterDebugScope(llvm::DIScope *lexBlock);
+  void leaveDebugScope();
+  void setCurrentDISourceLocation(AstNode *astNode);
 };
 
 struct ContextFrame
