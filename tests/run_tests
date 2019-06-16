@@ -1,19 +1,19 @@
 #!/bin/sh
-make -C ../build -j4
+cmake --build ../build
 echo --- running unoptimized compilation ---
-../build/compiler tests.shl -o tests.ll
+../build/shlc tests.shl -o tests.ll
 if [[ $? -ne 0 ]]; then
   echo !!! error in non-optimized compilation, terminating !!!
   exit
 fi
 echo --- running optimized compilation ---
-../build/compiler tests.shl -o tests_opt.ll -O3
+../build/shlc tests.shl -o tests_opt.ll -O3
 if [[ $? -ne 0 ]]; then
   echo !!! error in optimized compilation, terminating !!!
   exit
 fi
 echo --- linking optimized binary ---
-clang -O3 tests_opt.ll -o tests -L../build -lstdshl
+clang -O3 -fsanitize=address tests_opt.ll -o tests -L../build -lstdshl
 if [[ $? -ne 0 ]]; then
   echo !!! error in linking of optimized binary, terminating !!!
   exit
