@@ -43,8 +43,8 @@ public:
             delete istream;
     }
     
-    const std::filesystem::path &getFilepath() const { return filePath; }
-    std::string getFilename() const { return filePath.string(); }
+    const std::filesystem::path &getFilePath() const { return filePath; }
+    std::string getFileName() const { return filePath.string(); }
     
     std::istream* getStream() const
     {

@@ -1,4 +1,5 @@
 use std;
+use debuglib;
 
 fn test() {
     prtln("this is test()");
@@ -12,9 +13,12 @@ fn test2(int i) : int {
 }
 
 fn main() {
+    var i = 42;
+    prt_var("i", i);
     prtln("this is main()");
     test();
     var test = test2(42);
+    prt_var("test", test);
     test();
     prtln("main is done");
 }

@@ -214,6 +214,7 @@ public:
   std::vector<FunctionPtr> parse(CompilationUnit compUnit);
 
   const Lexer &getLexer(int nr) const { return allLexers[nr]; }
+  int getNumLexers() const { return allLexers.size(); }
 };
 
 #endif // PARSER_H

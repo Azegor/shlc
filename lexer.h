@@ -265,8 +265,6 @@ private:
   }
 
 public:
-  const std::string filename;
-
   Lexer(CompilationUnit inputCU)
       : lines(1), currentLine(&lines[0]), compUnit(std::move(inputCU)), input(compUnit.getStream())
   {
@@ -290,7 +288,8 @@ public:
   void setNr(int nr) { lexerNr = nr; }
   int getNr() const { return lexerNr; }
 
-  const std::string &getFileName() const { return filename; }
+  std::string getFileName() const { return compUnit.getFileName(); }
+  const std::filesystem::path &getFilePath() const { return compUnit.getFilePath(); }
 
   Token nextToken();
 
