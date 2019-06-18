@@ -155,6 +155,7 @@ public:
   void enterDebugScope(llvm::DIScope *lexBlock);
   void leaveDebugScope();
   void emitDILocation(AstNode *astNode);
+  void emitDILocation(size_t line, size_t col);
 };
 
 struct ContextFrame

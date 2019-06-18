@@ -215,18 +215,22 @@ void GlobalContext::leaveDebugScope()
 
 void GlobalContext::emitDILocation(AstNode *astNode)
 {
-  if(!emitDebugInfo) { return; }
   if (astNode) {
-    // TODO: update current file when changing lexer nr (keep current nr & compare)?!
-    llvm::DIScope *scope;
-    if (diLexicalBlocks.empty()) {
-      scope = diCompUnit;
-    } else {
-      scope = diLexicalBlocks.top();
-    }
-    builder.SetCurrentDebugLocation(
-      llvm::DebugLoc::get(astNode->srcLoc.startToken.line, astNode->srcLoc.startToken.col, scope));
+    emitDILocation(astNode->srcLoc.startToken.line, astNode->srcLoc.startToken.col);
   } else {
     builder.SetCurrentDebugLocation(llvm::DebugLoc());
   }
+}
+
+void GlobalContext::emitDILocation(size_t line, size_t col)
+{
+  if(!emitDebugInfo) { return; }
+  // TODO: update current file when changing lexer nr (keep current nr & compare)?!
+  llvm::DIScope *scope;
+  if (diLexicalBlocks.empty()) {
+      scope = diCompUnit;
+  } else {
+      scope = diLexicalBlocks.top();
+  }
+  builder.SetCurrentDebugLocation(llvm::DebugLoc::get(line, col, scope));
 }

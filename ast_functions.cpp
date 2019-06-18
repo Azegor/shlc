@@ -269,7 +269,7 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
   ctx.popFrame();
 
   if (gl_ctx.emitDebugInfo) {
-    gl_ctx.emitDILocation(nullptr);
+    gl_ctx.emitDILocation(body->srcLoc.endToken.line, body->srcLoc.endToken.col);
   }
 
   auto currentInsBlock = builder.GetInsertBlock();
@@ -286,7 +286,7 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
   if (CFR != Statement::CodeFlowReturn::Never) {
     if (head->getReturnType() == TypeRegistry::getVoidType()) // missing return statement
     {
-      ReturnStmt({}).codegen(ctx);
+      ReturnStmt({0, body->srcLoc.endToken, body->srcLoc.endToken}).codegen(ctx);
     }
     else
     {
