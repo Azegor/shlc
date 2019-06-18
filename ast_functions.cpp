@@ -127,7 +127,7 @@ void FunctionHead::createArgumentAllocas(Context &ctx, llvm::Function *fn)
       int lineNr = args[idx].loc.startToken.line;
       int colNr = args[idx].loc.startToken.col;
       llvm::DILocalVariable *d = gctx.diBuilder.createParameterVariable(
-          subp, args[idx].name, idx, gctx.diFile, lineNr, gctx.llvmTypeRegistry.getDIType(args[idx].type), true);
+          subp, args[idx].name, idx, gctx.currentDIFile, lineNr, gctx.llvmTypeRegistry.getDIType(args[idx].type), true);
       gctx.diBuilder.insertDeclare(alloca, d, gctx.diBuilder.createExpression(),
           llvm::DebugLoc::get(lineNr, colNr, subp),
             gctx.builder.GetInsertBlock());
@@ -220,6 +220,7 @@ void NormalFunction::print(int indent)
 
 llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
 {
+  gl_ctx.enterFunction(this);
   Context ctx(gl_ctx);
   auto &builder = gl_ctx.builder;
   head->addToFunctionTable(gl_ctx, FunctionHead::FnReg::Define);
@@ -228,7 +229,7 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
   // debug info
   if (gl_ctx.emitDebugInfo) {
     llvm::DISubprogram *sp = gl_ctx.diBuilder.createFunction(
-      gl_ctx.diCompUnit, head->getName(), llvm::StringRef(), gl_ctx.diFile, head->srcLoc.startToken.line,
+      gl_ctx.diCompUnit, head->getName(), llvm::StringRef(), gl_ctx.currentDIFile, head->srcLoc.startToken.line,
       gl_ctx.createDIFunctionType(head.get()), head->srcLoc.startToken.line,
       llvm::DINode::FlagPrototyped, llvm::DISubprogram::SPFlagDefinition);
     fn->setSubprogram(sp);
@@ -311,6 +312,8 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
   }
 
   gl_ctx.fpm->run(*fn);
+
+  gl_ctx.leaveFunction();
 
   return fn;
 }

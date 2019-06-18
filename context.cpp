@@ -16,6 +16,7 @@
  */
 
 #include "context.h"
+#include "parser.h"
 
 // #include <llvm/ExecutionEngine/JIT.h> // needed because of error "JIT has not been linked in"
 #include <llvm/Transforms/IPO.h>
@@ -112,17 +113,14 @@ GlobalContext::~GlobalContext()
 {
     delete execEngine;
 }
-
-void GlobalContext::initCompilationUnit(llvm::StringRef filePath, bool isOptimized)
+void GlobalContext::initCompilationUnit(const Parser &p, bool isOptimized)
 {
-    auto idx = filePath.find_last_of('/');
-    idx = idx == llvm::StringRef::npos ? 0 : idx + 1;
-    llvm::StringRef dirName = filePath.take_front(idx);
-    llvm::StringRef fileName = filePath.drop_front(idx);
+  for (int i = 0, numLex = p.getNumLexers(); i < numLex; ++i) {
+    auto &filePath = p.getLexer(i).getFilePath();
+    allDIFiles.emplace_back(diBuilder.createFile(filePath.filename().c_str(), filePath.parent_path().c_str()));
+  }
 
-    diCompUnit = diBuilder.createCompileUnit(llvm::dwarf::DW_LANG_C_plus_plus, diBuilder.createFile(fileName, "."), "SHLC", isOptimized, "", 0);
-    // TODO set different for every included file!
-    diFile = diBuilder.createFile(fileName, dirName);
+  diCompUnit = diBuilder.createCompileUnit(llvm::dwarf::DW_LANG_C_plus_plus, allDIFiles[0], "SHLC", isOptimized, "", 0);
 
   // TODO: this is a fix from "https://groups.google.com/forum/#!topic/llvm-dev/1O955wQjmaQ"
   module->addModuleFlag(llvm::Module::Warning, "Dwarf Version", 3);

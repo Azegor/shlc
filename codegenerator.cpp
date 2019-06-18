@@ -30,16 +30,16 @@ void CodeGenerator::generateCode(int optLevel, bool emitDebugInfo)
 #ifdef STD_LIBRARY_PATH
     parser.addIncludePath(STD_LIBRARY_PATH);
 #endif
-    std::string inputFileName = compUnit.getFilename();
+    std::string inputFileName = compUnit.getFileName();
     auto parseRes = parser.parse(std::move(compUnit));
     gl_ctx.optimizeLevel = optLevel;
     gl_ctx.emitDebugInfo = emitDebugInfo;
+    if (emitDebugInfo) {
+      gl_ctx.initCompilationUnit(parser, optLevel != 0);
+    }
     gl_ctx.initPMB();
     gl_ctx.initFPM();
     //     llvm::Function *mainFn = nullptr;
-    if (emitDebugInfo) {
-      gl_ctx.initCompilationUnit(inputFileName, optLevel != 0);
-    }
     // --- codegen start ---
     for (auto &r : parseRes)
     {

@@ -79,7 +79,8 @@ public:
   llvm::IRBuilder<> builder;
   llvm::DIBuilder diBuilder;
   llvm::DICompileUnit *diCompUnit = nullptr;
-  llvm::DIFile * diFile; // TODO: change to
+  llvm::DIFile * currentDIFile = nullptr;
+  std::vector<llvm::DIFile*> allDIFiles;
   std::stack<llvm::DIScope*> diLexicalBlocks;
   LLVMTypeRegistry llvmTypeRegistry;
   llvm::PassManagerBuilder pm_builder;
@@ -108,7 +109,7 @@ public:
   GlobalContext();
   ~GlobalContext();
 
-  void initCompilationUnit(llvm::StringRef filePath, bool isOptimized);
+  void initCompilationUnit(const Parser &p, bool isOptimized);
   void finalizeDIBuilder();
 
   void initPMB();
@@ -118,6 +119,17 @@ public:
 
   void initMPM();
   void finalizeMPM();
+
+  void enterFunction(Function *fn) {
+    if (emitDebugInfo) {
+      currentDIFile = allDIFiles[fn->srcLoc.lexerNr];
+    }
+  }
+  void leaveFunction() {
+    if (emitDebugInfo) {
+      currentDIFile = allDIFiles[0];
+    }
+  }
 
   FunctionHead *getFunction(const std::string &name) const; // unused!
   FunctionHead *getFunctionOverload(const std::string &name,
