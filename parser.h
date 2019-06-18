@@ -20,6 +20,8 @@
 
 #include <stack>
 #include <stdexcept>
+#include <vector>
+#include <filesystem>
 
 #include "lexer.h"
 #include "ast.h"
@@ -58,6 +60,7 @@ class Parser
   std::deque<Lexer> allLexers;
   std::stack<Lexer *> lexers;
   std::stack<Token> lastTokens;
+  std::vector<std::filesystem::path> includePaths;
   int currentLexerNr = 0;
 
   void pushLexer(CompilationUnit compUnit)
@@ -81,6 +84,8 @@ class Parser
     else
       currentLexer = nullptr;
   }
+
+  std::filesystem::path findHeaderFile(const std::string &name);
 
   Lexer *currentLexer;
   Token prevTok, curTok;
@@ -195,6 +200,16 @@ class Parser
 
 public:
   Parser() = default;
+
+  void addIncludePath(const char *path)
+  {
+    addIncludePath(std::filesystem::path(path));
+  }
+  void addIncludePath(const std::string &path)
+  {
+    addIncludePath(std::filesystem::path(path));
+  }
+  void addIncludePath(std::filesystem::path path);
 
   std::vector<FunctionPtr> parse(CompilationUnit compUnit);
 

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+scriptdir=$(dirname "$0")
+
 if [ "x$1" == "x" ]; then
 	echo Error no input file
 	exit 1
@@ -13,8 +15,8 @@ filename="${filename%%.*}"
 tmpfilebase=/tmp/shl_$filename
 
 # build/shlc -O3 $fullfile -o $tmpfilebase.ll
-build/shlc -O0 -g $fullfile -o $tmpfilebase.ll
+$scriptdir/build/shlc -O0 -g $fullfile -o $tmpfilebase.ll
 llc $tmpfilebase.ll
-gcc $tmpfilebase.s -Lbuild -lstdshl -o $filename
+gcc $tmpfilebase.s -L$scriptdir/build -lstdshl -o $filename
 rm $tmpfilebase.s
 rm $tmpfilebase.ll

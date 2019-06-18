@@ -122,6 +122,23 @@ int Parser::getTokenPrecedence(int type)
   return pos->second;
 }
 
+void Parser::addIncludePath(std::filesystem::path path)
+{
+    if (std::filesystem::exists(path)) {
+        includePaths.emplace_back(std::move(path));
+    }
+}
+
+std::filesystem::path Parser::findHeaderFile(const std::string &name) {
+    for (auto &dir : includePaths) {
+        auto path = dir / name;
+        if (std::filesystem::exists(path)) {
+            return path;
+        }
+    }
+    error("could not find include file " + name);
+}
+
 std::vector<FunctionPtr> Parser::parse(CompilationUnit compUnit)
 {
   pushLexer(std::move(compUnit));
@@ -157,10 +174,11 @@ std::vector<FunctionPtr> Parser::parse(CompilationUnit compUnit)
           {
             assertTokens({Token::dq_string, Token::identifier});
           }
+          auto headerName = findHeaderFile(filename);
           readNextToken();
           assertToken(';');
           readNextToken();
-          pushLexer(filename);
+          pushLexer(headerName);
           readNextToken();
           break;
         }

@@ -26,6 +26,10 @@ void CodeGenerator::generateCode(int optLevel, bool emitDebugInfo)
   std::stringstream errorMsg;
   try
   {
+    parser.addIncludePath(std::filesystem::current_path());
+#ifdef STD_LIBRARY_PATH
+    parser.addIncludePath(STD_LIBRARY_PATH);
+#endif
     std::string inputFileName = compUnit.getFilename();
     auto parseRes = parser.parse(std::move(compUnit));
     gl_ctx.optimizeLevel = optLevel;

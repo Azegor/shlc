@@ -1,0 +1,2 @@
+#!/bin/sh
+~/src/afl-2.35b/afl-fuzz -m 500 -x shl.dict -i corpus/ -o results build.fuzz/compiler @@

@@ -20,15 +20,17 @@
 
 #include <string>
 #include <istream>
+#include <filesystem>
 
 class CompilationUnit
 {
 public:
-    CompilationUnit(std::string file, std::istream *is = nullptr) : fileName(std::move(file)), istream(is) {}
+    CompilationUnit(std::string file, std::istream *is = nullptr) : filePath({file}), istream(is) {}
+    CompilationUnit(std::filesystem::path &path, std::istream *is = nullptr) : filePath(std::move(path)), istream(is) {}
     
     CompilationUnit(const CompilationUnit &o) = delete;
     CompilationUnit(CompilationUnit &&o) {
-        fileName = std::move(o.fileName);
+        filePath = std::move(o.filePath);
         istream = o.istream;
         ownsStream = o.ownsStream;
         
@@ -41,19 +43,20 @@ public:
             delete istream;
     }
     
-    const std::string& getFilename() const { return fileName; }
+    const std::filesystem::path &getFilepath() const { return filePath; }
+    std::string getFilename() const { return filePath.string(); }
     
     std::istream* getStream() const
     {
       if (!istream)
       {
           ownsStream = true;
-          istream = new std::ifstream(fileName);
+          istream = new std::ifstream(filePath);
       }
       return istream;
     }
 private:
-    std::string fileName;
+    std::filesystem::path filePath;
     mutable std::istream * istream;
     mutable bool ownsStream = false;
 };

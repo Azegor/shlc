@@ -1,0 +1,20 @@
+use std;
+
+fn test() {
+    prtln("this is test()");
+}
+
+fn test2(int i) : int {
+    prt("this is test2(");
+    prt(i);
+    prtln(")");
+    ret i;
+}
+
+fn main() {
+    prtln("this is main()");
+    test();
+    var test = test2(42);
+    test();
+    prtln("main is done");
+}
