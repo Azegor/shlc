@@ -264,11 +264,7 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
     gl_ctx.emitDILocation(body.get());
   }
 
-  ctx.pushFrame();
-
-  body->codegen(ctx);
-
-  ctx.popFrame();
+  body->codegen(ctx); // is a BlockStmt -> handles pushFrame & popFrame
 
   if (gl_ctx.emitDebugInfo) {
     gl_ctx.emitDILocation(body->srcLoc.endToken.line, body->srcLoc.endToken.col);

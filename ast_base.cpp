@@ -21,6 +21,7 @@
 
 #include "ast_statements.h"
 #include "parser.h"
+#include "context.h"
 
 void printIndent(int indent)
 {
@@ -45,13 +46,14 @@ void BlockStmt::print(int indent)
 
 llvm::Value *BlockStmt::codegen(Context &ctx)
 {
-  // TODO: create debug information blocks
+  ctx.pushFrame(this);
   for (auto &&stmt : block)
   {
     stmt->codegen(ctx);
     if (stmt->codeFlowReturn() == Statement::CodeFlowReturn::Never)
-      return nullptr; // don't generate dead code
+      break; // don't generate dead code
   }
+  ctx.popFrame();
   return nullptr;
 }
 
