@@ -152,7 +152,7 @@ llvm::Value *ReturnStmt::codegen(Context &ctx)
 
 llvm::Value *IfStmt::codegen(Context &ctx)
 {
-  ctx.pushFrame();
+  ctx.pushFrame(this);
 
   auto condType = cond->getType(ctx);
   if (condType != TypeRegistry::getBuiltinType(BuiltinTypeKind::boo_t)) {
@@ -185,14 +185,22 @@ llvm::Value *IfStmt::codegen(Context &ctx)
     builder.CreateCondBr(condVal, thenBB, endBB);
 
   builder.SetInsertPoint(thenBB);
-  thenExpr->codegen(ctx);
+  {
+    ctx.pushFrame(thenExpr.get());
+    thenExpr->codegen(ctx);
+    ctx.popFrame();
+  }
   if (thenExpr->codeFlowReturn() != Statement::CodeFlowReturn::Never)
     builder.CreateBr(endBB);
 
   if (elseExpr) {
     ctx.currentFn->getBasicBlockList().push_back(elseBB);
     builder.SetInsertPoint(elseBB);
-    elseExpr->codegen(ctx);
+    {
+      ctx.pushFrame(elseExpr.get());
+      elseExpr->codegen(ctx);
+      ctx.popFrame();
+    }
     if (elseExpr->codeFlowReturn() != Statement::CodeFlowReturn::Never)
       builder.CreateBr(endBB);
   }
@@ -208,7 +216,7 @@ llvm::Value *IfStmt::codegen(Context &ctx)
 
 llvm::Value *WhileStmt::codegen(Context &ctx)
 {
-  ctx.pushFrame();
+  ctx.pushFrame(this);
 
   auto condType = cond->getType(ctx);
   if (condType != TypeRegistry::getBuiltinType(BuiltinTypeKind::boo_t)) {
@@ -244,9 +252,11 @@ llvm::Value *WhileStmt::codegen(Context &ctx)
 
   ctx.currentFn->getBasicBlockList().push_back(loopBB);
   builder.SetInsertPoint(loopBB);
-  ctx.pushLoop(this);
-  body->codegen(ctx);
-  ctx.popLoop();
+  {
+    ctx.pushLoop(this, body.get());
+    body->codegen(ctx);
+    ctx.popLoop();
+  }
   if (body->codeFlowReturn() != Statement::CodeFlowReturn::Never)
     builder.CreateBr(headBB);
 
@@ -259,7 +269,7 @@ llvm::Value *WhileStmt::codegen(Context &ctx)
 
 llvm::Value *DoWhileStmt::codegen(Context &ctx)
 {
-  ctx.pushFrame();
+  ctx.pushFrame(this);
 
   auto condType = cond->getType(ctx);
   if (condType != TypeRegistry::getBuiltinType(BuiltinTypeKind::boo_t)) {
@@ -290,9 +300,11 @@ llvm::Value *DoWhileStmt::codegen(Context &ctx)
   builder.CreateBr(loopBB);
 
   builder.SetInsertPoint(loopBB);
-  ctx.pushLoop(this);
-  body->codegen(ctx);
-  ctx.popLoop();
+  {
+    ctx.pushLoop(this, body.get());
+    body->codegen(ctx);
+    ctx.popLoop();
+  }
   auto bodyReturnsCF =
     body->codeFlowReturn() != Statement::CodeFlowReturn::Never;
   if (bodyReturnsCF) {
@@ -324,7 +336,7 @@ llvm::Value *DoWhileStmt::codegen(Context &ctx)
 llvm::Value *ForStmt::codegen(Context &ctx)
 {
 
-  ctx.pushFrame();
+  ctx.pushFrame(this);
 
   // 1. init (only once)
   // -> loop:
@@ -370,11 +382,13 @@ llvm::Value *ForStmt::codegen(Context &ctx)
     builder.CreateBr(loopBB); // assume true
   }
 
-  ctx.pushLoop(this);
   ctx.currentFn->getBasicBlockList().push_back(loopBB);
   builder.SetInsertPoint(loopBB);
-  body->codegen(ctx);
-  ctx.popLoop();
+  {
+    ctx.pushLoop(this, body.get());
+    body->codegen(ctx);
+    ctx.popLoop();
+  }
   if (incr) incr->codegen(ctx);
   if (body->codeFlowReturn() != Statement::CodeFlowReturn::Never)
     builder.CreateBr(headBB);

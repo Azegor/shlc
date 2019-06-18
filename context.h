@@ -201,20 +201,35 @@ public:
   llvm::Function *currentFn;
   std::vector<LoopStmt *> currentLoops;
 
-public:
-  Context(GlobalContext &gl_ctx) : global(gl_ctx) { pushFrame(); }
-  void pushFrame()
-  {
+  void pushFrameImpl() {
     frames.emplace_back();
     top = &frames.back();
   }
-  void popFrame()
-  {
+  void popFrameImpl() {
     frames.pop_back();
     if (frames.empty())
       top = nullptr;
     else
       top = &frames.back();
+  }
+
+public:
+  Context(GlobalContext &gl_ctx) : global(gl_ctx) { pushFrameImpl(); }
+  ~Context() { popFrameImpl(); }
+  void pushFrame(AstNode *block)
+  {
+    pushFrameImpl();
+    if (global.emitDebugInfo) {
+        global.enterDebugScope(global.diBuilder.createLexicalBlock(global.diLexicalBlocks.top(),
+            global.currentDIFile, block->srcLoc.startToken.line, block->srcLoc.startToken.col));
+    }
+  }
+  void popFrame()
+  {
+    popFrameImpl();
+    if (global.emitDebugInfo) {
+        global.leaveDebugScope();
+    }
   }
   void putVar(const std::string &name, Type *type, llvm::AllocaInst *aInst)
   {
@@ -243,10 +258,14 @@ public:
 
   int frameCount() const { return frames.size(); }
 
-  void pushLoop(LoopStmt *loop) { currentLoops.push_back(loop); }
+  void pushLoop(LoopStmt *loop, AstNode *body) {
+    currentLoops.push_back(loop);
+    pushFrame(body);
+  }
   bool popLoop()
   {
-    if (currentLoops.empty()) return false;
+    popFrame();
+    // if (currentLoops.empty()) return false; // why this?
     currentLoops.pop_back();
     return true;
   }
