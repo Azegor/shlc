@@ -1,0 +1,11 @@
+fn test() {}
+
+fn test2(int i) : int {
+    ret i;
+}
+
+fn main() {
+    test();
+    var test = test2(42);
+    test();
+}
