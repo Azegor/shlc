@@ -12,8 +12,9 @@ filename="${filename%%.*}"
 
 tmpfilebase=/tmp/shl_$filename
 
-build/compiler -O3 $fullfile -o $tmpfilebase.ll
-~/src/llvm/build/bin/llc $tmpfilebase.ll
+# build/shlc -O3 $fullfile -o $tmpfilebase.ll
+build/shlc -O0 -g $fullfile -o $tmpfilebase.ll
+llc $tmpfilebase.ll
 gcc $tmpfilebase.s -Lbuild -lstdshl -o $filename
 rm $tmpfilebase.s
 rm $tmpfilebase.ll
