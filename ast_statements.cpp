@@ -429,12 +429,27 @@ Type *VarDeclStmt::getType(Context &ctx)
 
 llvm::Value *VarDeclStmt::codegen(Context &ctx)
 {
-  ctx.global.emitDILocation(this);
+  auto &gctx = ctx.global;
+  gctx.emitDILocation(this);
+
   auto llvm_type = ctx.global.llvmTypeRegistry.getType(getType(ctx));
   for (auto &var : vars)
   {
     auto alloca = createEntryBlockAlloca(ctx.currentFn, var.first, llvm_type);
     ctx.putVar(var.first, type, alloca);
+
+    if (gctx.emitDebugInfo) {
+      int lineNr = var.second->srcLoc.startToken.line;
+      int colNr = var.second->srcLoc.startToken.col;
+      // NOTE: the passed parameter indices should start at 1 -> +1
+      auto *scope = gctx.diLexicalBlocks.top();
+      llvm::DILocalVariable *d = gctx.diBuilder.createAutoVariable(
+          scope, var.first, gctx.currentDIFile, lineNr, gctx.llvmTypeRegistry.getDIType(type)/*, true*/);
+      gctx.diBuilder.insertDeclare(alloca, d, gctx.diBuilder.createExpression(),
+          llvm::DebugLoc::get(lineNr, colNr, scope),
+          gctx.builder.GetInsertBlock());
+    }
+
     llvm::Value *init;
     if (var.second) // has initializer
     {
