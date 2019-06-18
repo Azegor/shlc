@@ -28,7 +28,7 @@ const std::string &getMangleName(BuiltinTypeKind t)
   static std::map<BuiltinTypeKind, std::string> names = {{BuiltinTypeKind::int_t, "i"},
                                        {BuiltinTypeKind::flt_t, "f"},
                                        {BuiltinTypeKind::chr_t, "c"},
-                                       {BuiltinTypeKind::boo_t, "'b"},
+                                       {BuiltinTypeKind::boo_t, "b"},
                                        {BuiltinTypeKind::str_t, "s"},
                                        {BuiltinTypeKind::vac_t, "v"}};
   auto pos = names.find(t);
