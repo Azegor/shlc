@@ -697,3 +697,19 @@ llvm::Value *createAssignment(Context &ctx, llvm::Value *val, FieldAccessExpr *f
   ctx.global.builder.CreateStore(val, fieldAddr);
   return val;
 }
+
+void handleAssignmentRefCounts(Context &ctx, llvm::Value *lhsAddress, llvm::Value *rhs)
+{
+  auto &gctx = ctx.global;
+  // first rhs
+  auto xincRefFn = gctx.getXIncRefFn();
+  auto rhsCast = gctx.builder.CreateBitCast(rhs, gctx.llvmTypeRegistry.getVoidPointerType(), "cls_vcst");
+  gctx.builder.CreateCall(xincRefFn, {rhsCast});
+  // then lhs (to avoid leakage if both are the same object)
+  if (lhsAddress) { // null in case of newly declared variable -> don't decrement
+    auto xdecRefFn = gctx.getXDecRefFn();
+    auto lhsCast = gctx.builder.CreateBitCast(gctx.builder.CreateLoad(lhsAddress, "lhs"),
+                      gctx.llvmTypeRegistry.getVoidPointerType(), "cls_vcst");
+    gctx.builder.CreateCall(xdecRefFn, {lhsCast});
+  }
+}

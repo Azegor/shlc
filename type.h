@@ -65,17 +65,20 @@ public:
 
     llvm::Type *getType(Type *t);
     llvm::PointerType *getClassType(ClassType *t);
-    llvm::Type *getBuiltinType(BuiltinTypeKind tk);
+    llvm::Type *getBuiltinType(BuiltinTypeKind tk) const;
 
     llvm::DIType *getDIType(Type *t);
     llvm::DIType *getDIBuiltinType(BuiltinTypeKind tk);
 
     llvm::PointerType *getVoidPointerType() const { return voidPointerType; }
+    llvm::Type *getRefCounterType() const { return getBuiltinType(BuiltinTypeKind::int_t); }
+    llvm::PointerType *getRefCounterPointerType() const { return refCounterPtrType; }
 
 private:
     GlobalContext &gl_ctx;
     std::unordered_map<ClassType*, llvm::PointerType*> classTypeMap;
     llvm::PointerType *voidPointerType;
+    llvm::PointerType *refCounterPtrType;
     llvm::DIType *diBuiltinTypes[(int)BuiltinTypeKind::str_t + 1];
     bool diTypesInitialized = false;
 

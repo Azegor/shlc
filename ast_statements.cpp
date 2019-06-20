@@ -417,7 +417,12 @@ llvm::Value *ContinueStmt::codegen(Context &ctx)
 llvm::Value *ExprStmt::codegen(Context &ctx)
 {
   ctx.global.emitDILocation(this);
-  expr->codegen(ctx);
+  auto val = expr->codegen(ctx);
+  if (dynamic_cast<NewExpr*>(expr.get())) {
+    // unused new expr -> have to delete it
+    auto voidPtr = ctx.global.builder.CreateBitCast(val, ctx.global.llvmTypeRegistry.getVoidPointerType(), "obj_vcst");
+    ctx.global.builder.CreateCall(ctx.global.getFreeFn(), {voidPtr});
+  }
   return nullptr;
 }
 
@@ -446,11 +451,12 @@ llvm::Value *VarDeclStmt::codegen(Context &ctx)
   auto &gctx = ctx.global;
   gctx.emitDILocation(this);
 
-  auto llvm_type = ctx.global.llvmTypeRegistry.getType(getType(ctx));
+  auto deducedType = getType(ctx);
+  auto llvm_type = ctx.global.llvmTypeRegistry.getType(deducedType);
   for (auto &var : vars)
   {
     auto alloca = createEntryBlockAlloca(ctx.currentFn, var.first, llvm_type);
-    ctx.putVar(var.first, type, alloca);
+    ctx.putVar(var.first, deducedType, alloca);
 
     if (gctx.emitDebugInfo) {
       int lineNr = var.second->srcLoc.startToken.line;
@@ -458,7 +464,7 @@ llvm::Value *VarDeclStmt::codegen(Context &ctx)
       // NOTE: the passed parameter indices should start at 1 -> +1
       auto *scope = gctx.diLexicalBlocks.top();
       llvm::DILocalVariable *d = gctx.diBuilder.createAutoVariable(
-          scope, var.first, gctx.currentDIFile, lineNr, gctx.llvmTypeRegistry.getDIType(type)/*, true*/);
+          scope, var.first, gctx.currentDIFile, lineNr, gctx.llvmTypeRegistry.getDIType(deducedType)/*, true*/);
       gctx.diBuilder.insertDeclare(alloca, d, gctx.diBuilder.createExpression(),
           llvm::DebugLoc::get(lineNr, colNr, scope),
           gctx.builder.GetInsertBlock());
@@ -474,6 +480,9 @@ llvm::Value *VarDeclStmt::codegen(Context &ctx)
       init = createDefaultValueConst(ctx, llvm_type);
     }
     VariableExpr tmpVarExp(srcLoc, var.first);
+    if (deducedType->getKind() == BuiltinTypeKind::cls_t) {
+      handleAssignmentRefCounts(ctx, nullptr, init);
+    }
     createAssignment(ctx, init, &tmpVarExp);
   }
   return nullptr;

@@ -728,7 +728,7 @@ ClassTypePtr Parser::parseClassDef()
       readNextToken();
       Type *fieldType = parseTypeName();
       assertToken(';');
-      fieldL.emplace_back(std::move(fieldName), fieldType, fieldIdx++);
+      fieldL.emplace_back(std::move(fieldName), fieldType, ++fieldIdx);
       readNextToken();
   }
   readNextToken(); // eat '}'

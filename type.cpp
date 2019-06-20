@@ -52,6 +52,7 @@ LLVMTypeRegistry::LLVMTypeRegistry(GlobalContext &gl_ctx)
   : gl_ctx(gl_ctx)
 {
     voidPointerType = llvm::Type::getInt8PtrTy(gl_ctx.llvm_context); // is void in llvm
+    refCounterPtrType = getRefCounterType()->llvm::Type::getPointerTo();
 }
 
 llvm::Type *LLVMTypeRegistry::getType(Type *t)
@@ -74,7 +75,7 @@ llvm::PointerType *LLVMTypeRegistry::getClassType(ClassType *ct)
     return type;
 }
 
-llvm::Type *LLVMTypeRegistry::getBuiltinType(BuiltinTypeKind tk)
+llvm::Type *LLVMTypeRegistry::getBuiltinType(BuiltinTypeKind tk) const
 {
   switch (tk)
   {
@@ -99,7 +100,8 @@ llvm::Type *LLVMTypeRegistry::getBuiltinType(BuiltinTypeKind tk)
 llvm::PointerType *LLVMTypeRegistry::createLLVMClassType(ClassType *ct)
 {
     std::vector<llvm::Type*> members;
-    members.reserve(ct->fields.size());
+    members.reserve(ct->fields.size() + 1);
+    members.push_back(getRefCounterType());
     for (auto &field : ct->fields) {
         members.push_back(getType(field.type));
     }

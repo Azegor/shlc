@@ -104,7 +104,12 @@ public:
   GlobalVars globalVars;
   std::unordered_map<std::string, std::string> stringConstants;
 
-  llvm::Function *mallocFunction = nullptr;
+  mutable llvm::Function *mallocFunction = nullptr;
+  mutable llvm::Function *freeFunction = nullptr;
+  llvm::Function *incRefFunction = nullptr;
+  llvm::Function *xIncRefFunction = nullptr;
+  llvm::Function *decRefFunction = nullptr;
+  llvm::Function *xDecRefFunction = nullptr;
 
   GlobalContext();
   ~GlobalContext();
@@ -160,7 +165,18 @@ public:
     return getGlobalVar(name).type;
   }
 
-  llvm::Function *getMallocFn() const { return mallocFunction; }
+  llvm::Function *getMallocFn() const;
+  llvm::Function *getFreeFn() const;
+  llvm::Function *getIncRefFn();
+  llvm::Function *getXIncRefFn();
+  llvm::Function *getDecRefFn();
+  llvm::Function *getXDecRefFn();
+
+private:
+  llvm::Function *createIncDecRefFn(bool isDecrement, llvm::StringRef name);
+  llvm::Function *createNullCheckDelegationFn(llvm::Function *callee, llvm::StringRef name);
+
+public:
 
   // TODO: move into extra class
   llvm::DISubroutineType *createDIFunctionType(FunctionHead *fnHead);
