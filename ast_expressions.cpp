@@ -315,8 +315,9 @@ llvm::Value *BinOpExpr::codegen(Context &ctx)
                            targetType->getName() + '\'',
                          this);
     rhs = make_EPtr<CastExpr>(rhs->srcLoc, std::move(rhs), targetType);
-    auto assignVal = createBinOp(ctx, assign_op, targetType->getKind(), lhs->codegen(ctx),
-                                 rhs->codegen(ctx));
+    auto lhsVal = lhs->codegen(ctx);
+    auto rhsVal = rhs->codegen(ctx);
+    auto assignVal = createBinOp(ctx, assign_op, targetType->getKind(), lhsVal, rhsVal);
     if (auto varexpr = dynamic_cast<VariableExpr *>(lhs.get())) {
       return createAssignment(ctx, assignVal, varexpr);
     } else if (auto fieldexpr = dynamic_cast<FieldAccessExpr *>(lhs.get())) {
@@ -336,13 +337,19 @@ llvm::Value *BinOpExpr::codegen(Context &ctx)
           '\'',
         this);
     rhs = make_EPtr<CastExpr>(rhs->srcLoc, std::move(rhs), targetType);
+    auto rhsVal = rhs->codegen(ctx);
+    llvm::Value *lhsAddress = nullptr;
     if (auto varexpr = dynamic_cast<VariableExpr *>(lhs.get())) {
-      return createAssignment(ctx, rhs->codegen(ctx), varexpr);
+      lhsAddress = varexpr->getAlloca(ctx);
     } else if (auto fieldexpr = dynamic_cast<FieldAccessExpr *>(lhs.get())) {
-      return createAssignment(ctx, rhs->codegen(ctx), fieldexpr);
+      lhsAddress = fieldexpr->codegenFieldAddress(ctx);
     } else {
       throw CodeGenError("left hand side of assignment must be a variable or field access", this);
     }
+    if (targetType->getKind() == BuiltinTypeKind::cls_t) {
+      handleAssignmentRefCounts(ctx, lhsAddress, rhsVal);
+    }
+    return ctx.global.builder.CreateStore(rhsVal, lhsAddress);
   }
   throw CodeGenError("invalid binary operation " + Lexer::getTokenName(op),
                      this);
@@ -382,14 +389,19 @@ void NewExpr::print(int indent)
 
 llvm::Value *NewExpr::codegen(Context &ctx)
 {
-    auto mallocFn = ctx.global.getMallocFn();
-    auto classPtrType = ctx.global.llvmTypeRegistry.getClassType(cls);
+    auto &gctx = ctx.global;
+    auto mallocFn = gctx.getMallocFn();
+    auto classPtrType = gctx.llvmTypeRegistry.getClassType(cls);
     auto classType = classPtrType->getPointerElementType();
-    size_t allocSize = ctx.global.module->getDataLayout().getTypeAllocSize(classType);
-    auto allocSizeVal = llvm::ConstantInt::get(ctx.global.llvm_context,
+    size_t allocSize = gctx.module->getDataLayout().getTypeAllocSize(classType);
+    auto allocSizeVal = llvm::ConstantInt::get(gctx.llvm_context,
                                 llvm::APInt(64, allocSize, false));
-    auto rawPointer = ctx.global.builder.CreateCall(mallocFn, {allocSizeVal}, "allocmemory");
-    return ctx.global.builder.CreateBitCast(rawPointer, classPtrType, "allocres");
+    auto rawPointer = gctx.builder.CreateCall(mallocFn, {allocSizeVal}, "allocmemory");
+    auto classPtr = gctx.builder.CreateBitCast(rawPointer, classPtrType, "allocres");
+    auto zeroIdx = llvm::ConstantInt::get(gctx.llvm_context, llvm::APInt(32, 0));
+    auto refCountPtr = gctx.builder.CreateInBoundsGEP(classPtr, {zeroIdx, zeroIdx}, "refcnt_ptr");
+    gctx.builder.CreateStore(llvm::ConstantInt::get(gctx.llvm_context, llvm::APInt(64, 0, true)), refCountPtr);
+    return classPtr;
 }
 
 void FieldAccessExpr::print(int indent)

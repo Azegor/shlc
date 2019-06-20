@@ -95,18 +95,6 @@ GlobalContext::GlobalContext()
   //   mpm.addPass(llvm::createFunctionInliningPass());
   //   mpm.addPass(llvm::createGlobalOptimizerPass());
   //   mpm.addPass(llvm::createDeadArgEliminationPass());
-
-  // others
-  mallocFunction = llvm::Function::Create(
-    llvm::FunctionType::get(
-      llvmTypeRegistry.getVoidPointerType(),
-      {llvmTypeRegistry.getBuiltinType(BuiltinTypeKind::int_t)},
-      false),
-    llvm::Function::ExternalLinkage,
-    "malloc",
-    module
-  );
-  //mallocFunction->addFnAttr(llvm::Attribute::NoAlias);
 }
 
 GlobalContext::~GlobalContext()
@@ -182,6 +170,156 @@ FunctionHead *GlobalContext::getFunctionOverload(
   return nullptr;
 }
 
+llvm::Function *GlobalContext::getMallocFn() const
+{
+  if (!mallocFunction) {
+    mallocFunction = llvm::Function::Create(
+        llvm::FunctionType::get(
+            llvmTypeRegistry.getVoidPointerType(),
+            {llvmTypeRegistry.getBuiltinType(BuiltinTypeKind::int_t)},
+            false),
+        llvm::Function::ExternalLinkage,
+        "malloc",
+        module
+    );
+    //mallocFunction->addFnAttr(llvm::Attribute::NoAlias);
+  }
+  return mallocFunction;
+}
+
+llvm::Function *GlobalContext::getFreeFn() const
+{
+  if (!freeFunction) {
+    freeFunction = llvm::Function::Create(
+        llvm::FunctionType::get(
+            llvmTypeRegistry.getBuiltinType(BuiltinTypeKind::vac_t),
+            {llvmTypeRegistry.getVoidPointerType()},
+            false),
+        llvm::Function::ExternalLinkage,
+        "free",
+        module
+    );
+  }
+  return freeFunction;
+}
+
+llvm::Function *GlobalContext::getIncRefFn()
+{
+  if (!incRefFunction) {
+    incRefFunction = createIncDecRefFn(false, "__shlcore_incref");
+  }
+  return incRefFunction;
+}
+
+llvm::Function *GlobalContext::getXIncRefFn()
+{
+  if (!xIncRefFunction) {
+    auto incRefFn = getIncRefFn(); // generates it if necessary
+    xIncRefFunction = createNullCheckDelegationFn(incRefFn, "__shlcore_xincref");
+  }
+  return xIncRefFunction;
+}
+
+llvm::Function *GlobalContext::getDecRefFn()
+{
+  if (!decRefFunction) {
+    decRefFunction = createIncDecRefFn(true, "__shlcore_decref");
+  }
+  return decRefFunction;
+}
+
+llvm::Function *GlobalContext::getXDecRefFn()
+{
+  if (!xDecRefFunction) {
+    auto incRefFn = getDecRefFn(); // generates it if necessary
+    xDecRefFunction = createNullCheckDelegationFn(incRefFn, "__shlcore_xdecref");
+  }
+  return xDecRefFunction;
+}
+
+llvm::Function *GlobalContext::createIncDecRefFn(bool isDecrement, llvm::StringRef name)
+{
+  auto fn = llvm::Function::Create(
+      llvm::FunctionType::get(
+          llvmTypeRegistry.getBuiltinType(BuiltinTypeKind::vac_t),
+          {llvmTypeRegistry.getVoidPointerType()}, // TODO
+          false),
+      llvm::Function::LinkOnceODRLinkage,
+      name,
+      module
+  );
+  auto oldInsertBlock = builder.GetInsertBlock();
+  auto oldInsertPoint = builder.GetInsertPoint();
+
+  // create body
+  llvm::BasicBlock *entryBB =
+      llvm::BasicBlock::Create(llvm_context, "entry", fn);
+  builder.SetInsertPoint(entryBB);
+
+  auto arg1 = &*fn->arg_begin();
+  auto counterCast = builder.CreateBitCast(arg1, llvmTypeRegistry.getRefCounterPointerType(), "refcnt_ptr");
+  auto oldC = builder.CreateLoad(counterCast, "cnt_val");
+  auto newC = builder.CreateAdd(oldC, llvm::ConstantInt::get(llvm_context, llvm::APInt(64, isDecrement ? -1 : 1)));
+  builder.CreateStore(newC, counterCast);
+  if (isDecrement) {
+    llvm::BasicBlock *freeBB =
+        llvm::BasicBlock::Create(llvm_context, "free", fn);
+    llvm::BasicBlock *retBB =
+        llvm::BasicBlock::Create(llvm_context, "return", fn);
+    auto isNullCond = builder.CreateICmpEQ(newC, llvm::ConstantInt::get(llvm_context, llvm::APInt(64, 0)), "is_zero");
+    builder.CreateCondBr(isNullCond, freeBB, retBB);
+
+    builder.SetInsertPoint(freeBB);
+    builder.CreateCall(getFreeFn(), {arg1});
+    builder.CreateBr(retBB);
+
+    builder.SetInsertPoint(retBB);
+  }
+  builder.CreateRetVoid();
+
+  // reset insert point to current function
+  builder.SetInsertPoint(oldInsertBlock, oldInsertPoint);
+  return fn;
+}
+
+llvm::Function *GlobalContext::createNullCheckDelegationFn(llvm::Function *callee, llvm::StringRef name)
+{
+  auto fn = llvm::Function::Create(
+      llvm::FunctionType::get(
+          llvmTypeRegistry.getBuiltinType(BuiltinTypeKind::vac_t),
+          {llvmTypeRegistry.getVoidPointerType()}, // TODO
+          false),
+      llvm::Function::LinkOnceODRLinkage,
+      name,
+      module
+  );
+  auto oldInsertBlock = builder.GetInsertBlock();
+  auto oldInsertPoint = builder.GetInsertPoint();
+
+  // create body
+  llvm::BasicBlock *entryBB =
+      llvm::BasicBlock::Create(llvm_context, "entry", fn);
+  llvm::BasicBlock *callBB =
+      llvm::BasicBlock::Create(llvm_context, "nonnull", fn);
+  llvm::BasicBlock *retBB =
+      llvm::BasicBlock::Create(llvm_context, "return", fn);
+  builder.SetInsertPoint(entryBB);
+  auto arg1 = &*fn->arg_begin();
+  auto cmp = builder.CreateICmpNE(arg1, llvm::ConstantPointerNull::get(llvmTypeRegistry.getVoidPointerType()));
+  builder.CreateCondBr(cmp, callBB, retBB);
+
+  builder.SetInsertPoint(callBB);
+  builder.CreateCall(callee, {arg1});
+  builder.CreateBr(retBB);
+
+  builder.SetInsertPoint(retBB);
+  builder.CreateRetVoid();
+
+  // reset insert point to current function
+  builder.SetInsertPoint(oldInsertBlock, oldInsertPoint);
+  return fn;
+}
+
 llvm::DISubroutineType *GlobalContext::createDIFunctionType(FunctionHead *fnHead)
 {
   llvm::SmallVector<llvm::Metadata *, 8> EltTys;
@@ -223,7 +361,6 @@ void GlobalContext::emitDILocation(AstNode *astNode)
 void GlobalContext::emitDILocation(size_t line, size_t col)
 {
   if(!emitDebugInfo) { return; }
-  // TODO: update current file when changing lexer nr (keep current nr & compare)?!
   llvm::DIScope *scope;
   if (diLexicalBlocks.empty()) {
       scope = diCompUnit;
