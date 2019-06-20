@@ -584,6 +584,7 @@ StmtPtr Parser::parseIfStmt()
 StmtPtr Parser::parseForStmt()
 {
   startSLContext();
+  assertNextToken('(');
   readNextToken();
   StmtPtr init;
   if (curTok.type != ';') // empty init
@@ -598,6 +599,8 @@ StmtPtr Parser::parseForStmt()
   readNextToken();
   ExprPtr incr;
   if (curTok.type != '{') incr = parseExpr();
+  assertToken(')');
+  readNextToken();
   if (curTok.type != '{')
     error("unexpected '" + curTok.str + "', expected '{'");
   auto body = parseStmtBlock();
