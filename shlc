@@ -14,8 +14,9 @@ filename="${filename%%.*}"
 
 tmpfilebase=/tmp/shl_$filename
 
-# build/shlc -O3 $fullfile -o $tmpfilebase.ll
-$scriptdir/build/shlc -O0 -g $fullfile -o $tmpfilebase.ll
+$scriptdir/build/shlc $fullfile -o $tmpfilebase.ll
+# $scriptdir/build/shlc -O3 $fullfile -o $tmpfilebase.ll
+# $scriptdir/build/shlc -O0 -g $fullfile -o $tmpfilebase.ll
 llc $tmpfilebase.ll
 gcc $tmpfilebase.s -L$scriptdir/build -lstdshl -o $filename
 rm $tmpfilebase.s
