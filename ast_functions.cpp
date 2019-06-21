@@ -221,8 +221,8 @@ void NormalFunction::print(int indent)
 
 llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
 {
-  gl_ctx.enterFunction(this);
   Context ctx(gl_ctx);
+  gl_ctx.enterFunction(&ctx, this);
   auto &builder = gl_ctx.builder;
   head->addToFunctionTable(gl_ctx, FunctionHead::FnReg::Define);
   auto fn = head->codegen(ctx);
@@ -255,6 +255,7 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
       gl_ctx.llvmTypeRegistry.getType(head->getReturnType()), 0, "retval");
   }
   ctx.ret.BB = llvm::BasicBlock::Create(gl_ctx.llvm_context, "ret");
+  gl_ctx.cleanupManager.addJumpTargetInCurrentScope(ctx.ret.BB);
 
   // make main block, leave entry for allocas only
   auto mainBB = llvm::BasicBlock::Create(gl_ctx.llvm_context, "fnbody", fn);
@@ -265,8 +266,6 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
   }
 
   body->codegen(ctx); // is a BlockStmt -> handles pushFrame & popFrame
-  //gl_ctx.builder.CreateGCStatepointCall();
-  //gl_ctx.builder.CreateGCRelocate();
 
   if (gl_ctx.emitDebugInfo) {
     gl_ctx.emitDILocation(body->srcLoc.endToken.line, body->srcLoc.endToken.col);
@@ -286,7 +285,7 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
   if (CFR != Statement::CodeFlowReturn::Never) {
     if (head->getReturnType() == TypeRegistry::getVoidType()) // missing return statement
     {
-      ReturnStmt({0, body->srcLoc.endToken, body->srcLoc.endToken}).codegen(ctx);
+      builder.CreateBr(ctx.ret.BB);
     }
     else
     {
@@ -310,9 +309,9 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
     gl_ctx.leaveDebugScope();
   }
 
-  gl_ctx.fpm->run(*fn);
-
   gl_ctx.leaveFunction();
+
+  gl_ctx.fpm->run(*fn);
 
   return fn;
 }

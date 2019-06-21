@@ -35,14 +35,15 @@ GlobalContext::GlobalContext()
       fpm(),
       mpm(),
       errorString(),
-                  execEngine(llvm::EngineBuilder(std::unique_ptr<llvm::Module>(module)).setErrorStr(&errorString)
+      execEngine(llvm::EngineBuilder(std::unique_ptr<llvm::Module>(module)).setErrorStr(&errorString)
 //       execEngine(
 //         llvm::EngineBuilder(module)
 //           .setErrorStr(&errorString)
 //           //           .setMCJITMemoryManager(std::make_unique<llvm::SectionMemoryManager>())
 //           //           .setMCJITMemoryManager(new
 //           //           llvm::SectionMemoryManager)
-          .create())
+          .create()),
+      cleanupManager(*this)
 {
   if (!execEngine)
     throw std::runtime_error("Could not create Execution Engine: " +
