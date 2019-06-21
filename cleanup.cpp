@@ -2,8 +2,20 @@
 
 #include <string>
 #include "codegen.h"
+#include "context.h"
 
 using namespace std::string_literals;
+
+CleanupManager::CleanupManager(GlobalContext &ctx)
+    : ctx(ctx), cleanupTargetVarType(llvm::Type::getInt32Ty(ctx.llvm_context))
+{
+}
+
+CleanupManager::~CleanupManager() {
+  assert(blockScopeSizes.empty());
+  assert(cleanupBlocks.empty());
+  assert(cleanupScopes.empty());
+}
 
 void CleanupManager::enterFunction(Context *fn_ctx) {
   currentFnCtx = fn_ctx;
@@ -21,12 +33,12 @@ void CleanupManager::leaveFunction() {
   assert(cleanupBlocks.size() == 1);
   cleanupBlocks.pop();
   jumpTargetIDs.clear();
-  cleanupTargetVar = nullptr;
+  cleanupTargetAlloca = nullptr;
   currentFnCtx = nullptr;
 }
 
-void CleanupManager::addCleanupTargetVar() {
-  cleanupTargetVar = createEntryBlockAlloca(currentFnCtx->currentFn, "cleanup_target"s, cleanupTargetVarType);
+void CleanupManager::addCleanupTargetAlloca() {
+  cleanupTargetAlloca = createEntryBlockAlloca(currentFnCtx->currentFn, "cleanup_target"s, cleanupTargetVarType);
 }
 
 void CleanupManager::createJumpViaCleanupTarget(llvm::BasicBlock *target) {
@@ -38,7 +50,7 @@ void CleanupManager::createJumpViaCleanupTarget(llvm::BasicBlock *target) {
 
 void CleanupManager::assignJumpTargetId(JumpTargetId id) {
   auto jumpTargetIdConst = llvm::ConstantInt::get(ctx.llvm_context, llvm::APInt(32, id, false));
-  ctx.builder.CreateStore(jumpTargetIdConst, getCleanupTargetVar());
+  ctx.builder.CreateStore(jumpTargetIdConst, getCleanupTargetAlloca());
 }
 
 JumpTargetSet CleanupManager::createCleanup(const CleanupScope& cs, const CleanupBlockInfo &outerCleanupBlock) {
@@ -47,10 +59,15 @@ JumpTargetSet CleanupManager::createCleanup(const CleanupScope& cs, const Cleanu
   bool hasExtTargets = cs.hasExternalTargets();
   if (hasExtTargets) {
     assignJumpTargetId(0);
-    ctx.builder.SetInsertPoint(cs.cleanupBlockLabel);
+    auto *cleanupBB = cs.cleanupBlockLabel;
+    ctx.builder.CreateBr(cleanupBB);
+    fn->getBasicBlockList().push_back(cleanupBB);
+    ctx.builder.SetInsertPoint(cleanupBB);
   }
 
-  ctx.builder.CreateCall(ctx.getXDecRefFn(), {cs.varAlloca});
+  auto ptrCst = ctx.builder.CreateBitCast(ctx.builder.CreateLoad(cs.varAlloca, "obj"),
+                      ctx.llvmTypeRegistry.getVoidPointerType(), "obj_vcst");
+  ctx.builder.CreateCall(ctx.getXDecRefFn(), {ptrCst});
 
   if (hasExtTargets) {
     JumpTargetSet newOuterJumpTargets;
@@ -60,7 +77,8 @@ JumpTargetSet CleanupManager::createCleanup(const CleanupScope& cs, const Cleanu
     } else {
       defaultTarget = currentCleanupScope().cleanupBlockLabel;
     }
-    auto switchStmt = ctx.builder.CreateSwitch(getCleanupTargetVar(), defaultTarget, cs.externalTargets.size());
+    auto targetVal = ctx.builder.CreateLoad(getCleanupTargetAlloca(), "cleanup_target");
+    auto switchStmt = ctx.builder.CreateSwitch(targetVal, defaultTarget, cs.externalTargets.size());
     for (auto extTarget : cs.externalTargets) {
       if (!outerCleanupBlock.isJumpTargetInScope(extTarget)) {
         newOuterJumpTargets.emplace(extTarget);
@@ -73,16 +91,17 @@ JumpTargetSet CleanupManager::createCleanup(const CleanupScope& cs, const Cleanu
       }
     }
     // all remaining entries go to the outer cleanup label
-    llvm::BasicBlock *continueBB = llvm::BasicBlock::Create(ctx.llvm_context, "cleanup.after", currentFnCtx->currentFn);
+    llvm::BasicBlock *afterBB = llvm::BasicBlock::Create(ctx.llvm_context, "after_cleanup", currentFnCtx->currentFn);
     if (newOuterJumpTargets.empty()) {
       // we need a default label -> use for the 0 case too
-      switchStmt->setDefaultDest(continueBB); // change default target
+      switchStmt->setDefaultDest(afterBB); // change default target
     } else {
       // 0 is always the "continue" target
-      switchStmt->addCase(llvm::ConstantInt::get(ctx.llvm_context, llvm::APInt(32, 0, false)), continueBB);
+      switchStmt->addCase(llvm::ConstantInt::get(ctx.llvm_context, llvm::APInt(32, 0, false)), afterBB);
 //       switchStmt->setDefaultDest(defaultTarget); // already set
     }
-    fn->getBasicBlockList().push_back(continueBB); // add continue block
+    fn->getBasicBlockList().push_back(afterBB); // add continue block
+    ctx.builder.SetInsertPoint(afterBB);
     return newOuterJumpTargets;
   } else {
     return {};

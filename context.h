@@ -39,6 +39,7 @@
 
 #include "type.h"
 #include "ast_functions.h"
+#include "cleanup.h"
 
 class VariableAlreadyDefinedError : public CodeGenError
 {
@@ -70,6 +71,8 @@ struct GlobalVars
   std::map<std::string, GlobVarInfo> globVars;
 };
 
+class Context;
+
 class GlobalContext
 {
   std::unique_ptr<llvm::LLVMContext> _llvm_context;
@@ -92,6 +95,8 @@ public:
   llvm::ExecutionEngine *execEngine;
   int optimizeLevel = 0;
   bool emitDebugInfo = false;
+
+  CleanupManager cleanupManager;
 
   struct Fn
   {
@@ -125,14 +130,24 @@ public:
   void initMPM();
   void finalizeMPM();
 
-  void enterFunction(Function *fn) {
+  void enterFunction(Context *fn_ctx, Function *fn) {
+    cleanupManager.enterFunction(fn_ctx);
     if (emitDebugInfo) {
       currentDIFile = allDIFiles[fn->srcLoc.lexerNr];
     }
   }
   void leaveFunction() {
+    cleanupManager.leaveFunction();
     if (emitDebugInfo) {
       currentDIFile = allDIFiles[0];
+    }
+  }
+
+  void createBrCheckCleanup(llvm::BasicBlock *target) {
+    if (cleanupManager.isJumpTargetInScope(target)) {
+      builder.CreateBr(target);
+    } else {
+      cleanupManager.createJumpViaCleanupTarget(target);
     }
   }
 
@@ -235,6 +250,7 @@ public:
   void pushFrame(AstNode *block)
   {
     pushFrameImpl();
+    global.cleanupManager.enterBlockScope();
     if (global.emitDebugInfo) {
         global.enterDebugScope(global.diBuilder.createLexicalBlock(global.diLexicalBlocks.top(),
             global.currentDIFile, block->srcLoc.startToken.line, block->srcLoc.startToken.col));
@@ -243,6 +259,7 @@ public:
   void popFrame()
   {
     popFrameImpl();
+    global.cleanupManager.leaveBlockScope();
     if (global.emitDebugInfo) {
         global.leaveDebugScope();
     }

@@ -9,7 +9,9 @@
 #include <llvm/IR/Instructions.h>
 
 #include "type.h"
-#include "context.h"
+
+class Context;
+class GlobalContext;
 
 using JumpTargetSet = std::unordered_set<llvm::BasicBlock*>;
 
@@ -67,20 +69,14 @@ class CleanupManager {
     std::stack<int> blockScopeSizes;
     std::stack<CleanupBlockInfo> cleanupBlocks;
     std::stack<CleanupScope> cleanupScopes;
-    llvm::AllocaInst *cleanupTargetVar = nullptr;
+    llvm::AllocaInst *cleanupTargetAlloca = nullptr;
 
     JumpTargetId jumpTargetHighestId;
     std::unordered_map<llvm::BasicBlock *, JumpTargetId> jumpTargetIDs;
 
 public:
-    CleanupManager(GlobalContext &ctx) : ctx(ctx), cleanupTargetVarType(llvm::Type::getInt32Ty(ctx.llvm_context))
-    {
-    }
-    ~CleanupManager() {
-        assert(blockScopeSizes.empty());
-        assert(cleanupBlocks.empty());
-        assert(cleanupScopes.empty());
-    }
+    CleanupManager(GlobalContext &ctx);
+    ~CleanupManager();
 
     void enterFunction(Context *fn_ctx);
     void leaveFunction();
@@ -108,12 +104,12 @@ public:
         }
     }
 
-    void addCleanupTargetVar();
-    llvm::AllocaInst *getCleanupTargetVar() {
-        if (!cleanupTargetVar) {
-            addCleanupTargetVar();
+    void addCleanupTargetAlloca();
+    llvm::AllocaInst *getCleanupTargetAlloca() {
+        if (!cleanupTargetAlloca) {
+            addCleanupTargetAlloca();
         }
-        return cleanupTargetVar;
+        return cleanupTargetAlloca;
     }
 
     void enterCleanupScope(llvm::LLVMContext &llvmContext, llvm::AllocaInst *varAlloca/*, clang::CXXDestructorDecl *destructor*/) {
