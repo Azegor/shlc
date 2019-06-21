@@ -357,13 +357,15 @@ llvm::Value *ForStmt::codegen(Context &ctx)
     llvm::BasicBlock::Create(ctx.global.llvm_context, "forhead", ctx.currentFn);
   auto loopBB =
     llvm::BasicBlock::Create(ctx.global.llvm_context, "forloop");
+  auto incBB =
+    llvm::BasicBlock::Create(ctx.global.llvm_context, "forinc");
   auto endBB =
     llvm::BasicBlock::Create(ctx.global.llvm_context, "forend");
 
-  ctx.global.cleanupManager.addJumpTargetInCurrentScope(headBB);
+  ctx.global.cleanupManager.addJumpTargetInCurrentScope(incBB);
   ctx.global.cleanupManager.addJumpTargetInCurrentScope(endBB);
 
-  contBB = headBB;
+  contBB = incBB;
   breakBB = endBB;
 
   if (init) init->codegen(ctx);
@@ -398,6 +400,9 @@ llvm::Value *ForStmt::codegen(Context &ctx)
     body->codegen(ctx);
     ctx.popLoop();
   }
+  builder.CreateBr(incBB);
+  ctx.currentFn->getBasicBlockList().push_back(incBB);
+  builder.SetInsertPoint(incBB);
   if (incr) incr->codegen(ctx);
   if (body->codeFlowReturn() != Statement::CodeFlowReturn::Never)
     builder.CreateBr(headBB);
