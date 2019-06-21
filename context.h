@@ -252,6 +252,9 @@ public:
     if (top->variables.find(name) != top->variables.end())
       throw VariableAlreadyDefinedError(name);
     top->variables[name] = {type, aInst};
+    if (type->getKind() == BuiltinTypeKind::cls_t) {
+
+    }
   }
   const ContextFrame::VarInfo &getVar(const std::string &name) const
   {
