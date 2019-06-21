@@ -53,7 +53,7 @@ llvm::Value *BlockStmt::codegen(Context &ctx)
     if (stmt->codeFlowReturn() == Statement::CodeFlowReturn::Never)
       break; // don't generate dead code
   }
-  ctx.popFrame();
+  ctx.popFrame(); // TODO: free variables that go out of scope (cleanup pad)!
   return nullptr;
 }
 
