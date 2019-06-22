@@ -473,8 +473,8 @@ llvm::Value *VarDeclStmt::codegen(Context &ctx)
     ctx.putVar(var.first, deducedType, alloca);
 
     if (gctx.emitDebugInfo) {
-      int lineNr = var.second->srcLoc.startToken.line;
-      int colNr = var.second->srcLoc.startToken.col;
+      int lineNr = srcLoc.startToken.line;
+      int colNr = srcLoc.startToken.col;
       // NOTE: the passed parameter indices should start at 1 -> +1
       auto *scope = gctx.diLexicalBlocks.top();
       llvm::DILocalVariable *d = gctx.diBuilder.createAutoVariable(
