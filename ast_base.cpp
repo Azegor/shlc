@@ -53,6 +53,7 @@ llvm::Value *BlockStmt::codegen(Context &ctx)
     if (stmt->codeFlowReturn() == Statement::CodeFlowReturn::Never)
       break; // don't generate dead code
   }
+  ctx.global.emitDILocation(srcLoc.endToken.line, srcLoc.endToken.col); // for cleanup
   ctx.popFrame();
   return nullptr;
 }

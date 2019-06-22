@@ -112,8 +112,7 @@ llvm::PointerType *LLVMTypeRegistry::createLLVMClassType(ClassType *ct)
 llvm::DIType *LLVMTypeRegistry::getDIType(Type *t)
 {
     if (auto *ct = dynamic_cast<ClassType*>(t)) {
-        throw CodeGenError("todo implement debug class types");
-        // return getClassType(ct);
+        return getDIClassType(ct);
     } else {
         return getDIBuiltinType(t->getKind());
     }
@@ -126,6 +125,16 @@ llvm::DIType *LLVMTypeRegistry::getDIBuiltinType(BuiltinTypeKind tk)
   return diBuiltinTypes[(int)tk];
 }
 
+llvm::DIType *LLVMTypeRegistry::getDIClassType(ClassType *ct) {
+  auto pos = diClassTypes.find(ct);
+  if (pos != diClassTypes.end()) {
+    return pos->second;
+  }
+  auto clsType = createDIClassType(ct);
+  diClassTypes.insert({ct, clsType});
+  return clsType;
+}
+
 void LLVMTypeRegistry::createDIBuiltinTypes()
 {
     diBuiltinTypes[(int)BuiltinTypeKind::vac_t] = nullptr;
@@ -135,4 +144,20 @@ void LLVMTypeRegistry::createDIBuiltinTypes()
     diBuiltinTypes[(int)BuiltinTypeKind::chr_t] = gl_ctx.diBuilder.createBasicType("chr", 8, llvm::dwarf::DW_ATE_signed_char);
     diBuiltinTypes[(int)BuiltinTypeKind::str_t] = gl_ctx.diBuilder.createPointerType(diBuiltinTypes[(int)BuiltinTypeKind::chr_t], 64, 1, {}, "str");
     diTypesInitialized = true;
+}
+
+llvm::DIType *LLVMTypeRegistry::createDIClassType(ClassType *ct)
+{
+  llvm::DINode::DIFlags x;
+  std::vector<llvm::Metadata*> members;
+  members.reserve(ct->fields.size()/* + 1*/);
+  // members.push_back(getDIBuiltinType(BuiltinTypeKind::int_t)); // refcount
+  for (auto &field : ct->fields) {
+      members.push_back(getDIType(field.type));
+  }
+  auto llvmType = getClassType(ct)->getPointerElementType();
+  auto size = gl_ctx.module->getDataLayout().getTypeAllocSize(llvmType) - 8;
+  auto align = gl_ctx.module->getDataLayout().getABITypeAlignment(llvmType); // TODO
+  return gl_ctx.diBuilder.createClassType(gl_ctx.diLexicalBlocks.top(), ct->name, gl_ctx.currentDIFile, ct->srcLoc.startToken.line,
+    size, align, 8, llvm::DINode::FlagZero, nullptr, gl_ctx.diBuilder.getOrCreateArray(members));
 }

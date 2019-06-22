@@ -69,6 +69,7 @@ public:
 
     llvm::DIType *getDIType(Type *t);
     llvm::DIType *getDIBuiltinType(BuiltinTypeKind tk);
+    llvm::DIType *getDIClassType(ClassType *ct);
 
     llvm::PointerType *getVoidPointerType() const { return voidPointerType; }
     llvm::Type *getRefCounterType() const { return getBuiltinType(BuiltinTypeKind::int_t); }
@@ -80,10 +81,12 @@ private:
     llvm::PointerType *voidPointerType;
     llvm::PointerType *refCounterPtrType;
     llvm::DIType *diBuiltinTypes[(int)BuiltinTypeKind::str_t + 1];
+    std::unordered_map<ClassType*, llvm::DIType*> diClassTypes;
     bool diTypesInitialized = false;
 
     llvm::PointerType *createLLVMClassType(ClassType *ct);
     void createDIBuiltinTypes();
+    llvm::DIType *createDIClassType(ClassType *ct);
 };
 
 #endif // TYPE_H
