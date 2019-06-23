@@ -496,7 +496,7 @@ llvm::Value *VarDeclStmt::codegen(Context &ctx)
     VariableExpr tmpVarExp(srcLoc, var.first);
     if (deducedType->getKind() == BuiltinTypeKind::cls_t) {
       handleAssignmentRefCounts(ctx, nullptr, init);
-      ctx.global.cleanupManager.enterCleanupScope(ctx.global.llvm_context, alloca);
+      ctx.global.cleanupManager.enterCleanupScope(alloca);
     }
     createAssignment(ctx, init, &tmpVarExp);
   }
