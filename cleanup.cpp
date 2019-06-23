@@ -44,7 +44,7 @@ void CleanupManager::addCleanupTargetAlloca() {
 void CleanupManager::createJumpViaCleanupTarget(llvm::BasicBlock *target) {
   currentCleanupScope().addExternalTarget(target);
   assignJumpTargetId(getJumpTargetId(target));
-  auto cleanupPadTarget = currentCleanupScope().getCleanupTarget();
+  auto cleanupPadTarget = currentCleanupScope().getCleanupTarget(ctx.llvm_context);
   ctx.builder.CreateBr(cleanupPadTarget);
 }
 
@@ -63,6 +63,10 @@ JumpTargetSet CleanupManager::createCleanup(const CleanupScope& cs, const Cleanu
     ctx.builder.CreateBr(cleanupBB);
     fn->getBasicBlockList().push_back(cleanupBB);
     ctx.builder.SetInsertPoint(cleanupBB);
+    std::cout << "placing cleanup block " << cleanupBB << "\n";
+  } else {
+    assert(cs.cleanupBlockLabel == nullptr);
+    std::cout << "unused cleanup block " << cs.cleanupBlockLabel << "\n";
   }
 
   auto ptrCst = ctx.builder.CreateBitCast(ctx.builder.CreateLoad(cs.varAlloca, "obj"),

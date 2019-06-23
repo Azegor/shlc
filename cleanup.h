@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <stack>
+#include <iostream>
 
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Instructions.h>
@@ -37,8 +38,8 @@ class CleanupScope {
     llvm::BasicBlock *cleanupBlockLabel;
 
 public:
-    CleanupScope(llvm::LLVMContext &llvm_ctx, /*const llvm::Type *varType,*/ llvm::AllocaInst *alloca/*, clang::CXXDestructorDecl *destructor*/)
-        : /*varType(varType),*/ varAlloca(alloca), /*destructor(destructor),*/ cleanupBlockLabel(llvm::BasicBlock::Create(llvm_ctx, "cleanup"))
+    CleanupScope(/*const llvm::Type *varType,*/ llvm::AllocaInst *alloca/*, clang::CXXDestructorDecl *destructor*/)
+        : /*varType(varType),*/ varAlloca(alloca), /*destructor(destructor),*/ cleanupBlockLabel(nullptr)
     {
     }
     CleanupScope(const CleanupScope &) = delete;
@@ -57,7 +58,13 @@ public:
         return externalTargets.find(target) != externalTargets.end();
     }
     bool hasExternalTargets() const { return !externalTargets.empty(); }
-    llvm::BasicBlock *getCleanupTarget() const { return cleanupBlockLabel; }
+    llvm::BasicBlock *getCleanupTarget(llvm::LLVMContext &llvm_ctx) {
+      if (!cleanupBlockLabel) {
+        cleanupBlockLabel = llvm::BasicBlock::Create(llvm_ctx, "cleanup");
+        std::cout << "created new cleanup block " << cleanupBlockLabel << "\n";
+      }
+      return cleanupBlockLabel;
+    }
 };
 
 class CleanupManager {
@@ -112,9 +119,9 @@ public:
         return cleanupTargetAlloca;
     }
 
-    void enterCleanupScope(llvm::LLVMContext &llvmContext, llvm::AllocaInst *varAlloca/*, clang::CXXDestructorDecl *destructor*/) {
+    void enterCleanupScope(llvm::AllocaInst *varAlloca/*, clang::CXXDestructorDecl *destructor*/) {
         assert(!blockScopeSizes.empty());
-        cleanupScopes.emplace(llvmContext, /*varType,*/ varAlloca/*, destructor*/);
+        cleanupScopes.emplace(/*varType,*/ varAlloca/*, destructor*/);
         cleanupBlocks.emplace();
         ++blockScopeSizes.top();
     }
