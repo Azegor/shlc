@@ -397,10 +397,9 @@ llvm::Value *NewExpr::codegen(Context &ctx)
     auto allocSizeVal = llvm::ConstantInt::get(gctx.llvm_context,
                                 llvm::APInt(64, allocSize, false));
     auto rawPointer = gctx.builder.CreateCall(mallocFn, {allocSizeVal}, "allocmemory");
+    auto align = gctx.module->getDataLayout().getABITypeAlignment(classType); // TODO
+    gctx.builder.CreateMemSet(rawPointer, llvm::ConstantInt::get(gctx.llvm_context, llvm::APInt(8, 0)), allocSize, align);
     auto classPtr = gctx.builder.CreateBitCast(rawPointer, classPtrType, "allocres");
-    auto zeroIdx = llvm::ConstantInt::get(gctx.llvm_context, llvm::APInt(32, 0));
-    auto refCountPtr = gctx.builder.CreateInBoundsGEP(classPtr, {zeroIdx, zeroIdx}, "refcnt_ptr");
-    gctx.builder.CreateStore(llvm::ConstantInt::get(gctx.llvm_context, llvm::APInt(64, 0, true)), refCountPtr);
     return classPtr;
 }
 
