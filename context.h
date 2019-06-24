@@ -39,6 +39,7 @@
 
 #include "type.h"
 #include "ast_functions.h"
+#include "ast_statements.h"
 #include "cleanup.h"
 
 class VariableAlreadyDefinedError : public CodeGenError
@@ -248,10 +249,10 @@ public:
 public:
   Context(GlobalContext &gl_ctx) : global(gl_ctx) { pushFrameImpl(); }
   ~Context() { popFrameImpl(); }
-  void pushFrame(AstNode *block)
+  void pushFrame(Statement *block)
   {
     pushFrameImpl();
-    global.cleanupManager.enterBlockScope();
+    global.cleanupManager.enterBlockScope(block);
     if (global.emitDebugInfo) {
         global.enterDebugScope(global.diBuilder.createLexicalBlock(global.getCurrentDILexicalScope(),
             global.currentDIFile, block->srcLoc.startToken.line, block->srcLoc.startToken.col));
@@ -295,7 +296,7 @@ public:
 
   int frameCount() const { return frames.size(); }
 
-  void pushLoop(LoopStmt *loop, AstNode *body) {
+  void pushLoop(LoopStmt *loop, Statement *body) {
     currentLoops.push_back(loop);
     pushFrame(body);
   }

@@ -13,6 +13,7 @@
 
 class Context;
 class GlobalContext;
+class Statement;
 
 using JumpTargetSet = std::unordered_set<llvm::BasicBlock*>;
 
@@ -67,13 +68,20 @@ public:
     }
 };
 
+struct BlockScopeInfo {
+  int size;
+  Statement *block;
+
+  BlockScopeInfo(int size, Statement *block) : size(size), block(block) {}
+};
+
 class CleanupManager {
     GlobalContext &ctx;
     Context *currentFnCtx = nullptr;
 
     llvm::Type *cleanupTargetVarType;
 
-    std::stack<int> blockScopeSizes;
+    std::stack<BlockScopeInfo> blockScopeInfos;
     std::stack<CleanupBlockInfo> cleanupBlocks;
     std::stack<CleanupScope> cleanupScopes;
     llvm::AllocaInst *cleanupTargetAlloca = nullptr;
@@ -88,16 +96,16 @@ public:
     void enterFunction(Context *fn_ctx);
     void leaveFunction();
 
-    void enterBlockScope() {
-        blockScopeSizes.emplace(0);
+    void enterBlockScope(Statement *block) {
+        blockScopeInfos.emplace(0, block);
     }
     void leaveBlockScope() {
-        assert(!blockScopeSizes.empty());
+        assert(!blockScopeInfos.empty());
         createCleanupsForCurrentBlockScope();
-        blockScopeSizes.pop();
+        blockScopeInfos.pop();
     }
     void createCleanupsForCurrentBlockScope() {
-        while (blockScopeSizes.top() > 0) {
+        while (blockScopeInfos.top().size > 0) {
             cleanupBlocks.pop(); // pop inner targets, which are not needed anymore
             assert(!cleanupBlocks.empty());
             CleanupScope topScope = std::move(cleanupScopes.top());
@@ -120,10 +128,10 @@ public:
     }
 
     void enterCleanupScope(llvm::AllocaInst *varAlloca/*, clang::CXXDestructorDecl *destructor*/) {
-        assert(!blockScopeSizes.empty());
+        assert(!blockScopeInfos.empty());
         cleanupScopes.emplace(/*varType,*/ varAlloca/*, destructor*/);
         cleanupBlocks.emplace();
-        ++blockScopeSizes.top();
+        ++blockScopeInfos.top().size;
     }
 
     void addJumpTargetInCurrentScope(llvm::BasicBlock *target) {
@@ -142,8 +150,8 @@ public:
         return newId;
     }
     void leaveCleanupScope() {
-        assert(blockScopeSizes.top() > 0);
-        --blockScopeSizes.top();
+        assert(blockScopeInfos.top().size > 0);
+        --blockScopeInfos.top().size;
         assert(!cleanupScopes.empty());
         cleanupScopes.pop();
     }
