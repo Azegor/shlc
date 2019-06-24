@@ -12,14 +12,14 @@ CleanupManager::CleanupManager(GlobalContext &ctx)
 }
 
 CleanupManager::~CleanupManager() {
-  assert(blockScopeSizes.empty());
+  assert(blockScopeInfos.empty());
   assert(cleanupBlocks.empty());
   assert(cleanupScopes.empty());
 }
 
 void CleanupManager::enterFunction(Context *fn_ctx) {
   currentFnCtx = fn_ctx;
-  assert(blockScopeSizes.empty());
+  assert(blockScopeInfos.empty());
   assert(cleanupBlocks.empty());
   cleanupBlocks.emplace();
   llvm::BasicBlock *returnLabel = fn_ctx->ret.BB;
@@ -29,7 +29,7 @@ void CleanupManager::enterFunction(Context *fn_ctx) {
   assert(returnId == JumpTargetId(1));
 }
 void CleanupManager::leaveFunction() {
-  assert(blockScopeSizes.empty());
+  assert(blockScopeInfos.empty());
   assert(cleanupBlocks.size() == 1);
   cleanupBlocks.pop();
   jumpTargetIDs.clear();
@@ -57,10 +57,15 @@ JumpTargetSet CleanupManager::createCleanup(const CleanupScope& cs, const Cleanu
   // NOTE: jumpTargets.pop() was called before this function, meaning jumpTargets.top() is now the outer scope's targets
   llvm::Function *fn = currentFnCtx->currentFn;
   bool hasExtTargets = cs.hasExternalTargets();
+  bool hasRegularControlFlow;
   if (hasExtTargets) {
-    assignJumpTargetId(0);
     auto *cleanupBB = cs.cleanupBlockLabel;
-    ctx.builder.CreateBr(cleanupBB);
+    assert(cleanupBB);
+    hasRegularControlFlow = blockScopeInfos.top().block->codeFlowReturn() != Statement::CodeFlowReturn::Never;
+    if (hasRegularControlFlow) {
+      assignJumpTargetId(0);
+      ctx.builder.CreateBr(cleanupBB);
+    }
     fn->getBasicBlockList().push_back(cleanupBB);
     ctx.builder.SetInsertPoint(cleanupBB);
     std::cout << "placing cleanup block " << cleanupBB << "\n";
@@ -80,7 +85,7 @@ JumpTargetSet CleanupManager::createCleanup(const CleanupScope& cs, const Cleanu
     if (cleanupScopes.empty()) { // is the outmost scope
       defaultTarget = currentFnCtx->ret.BB;
     } else {
-      defaultTarget = currentCleanupScope().cleanupBlockLabel;
+      defaultTarget = currentCleanupScope().getCleanupTarget(ctx.llvm_context); // NOTE: creates the block if necessary
     }
     auto targetVal = ctx.builder.CreateLoad(getCleanupTargetAlloca(), "cleanup_target");
     auto switchStmt = ctx.builder.CreateSwitch(targetVal, defaultTarget, cs.externalTargets.size());
@@ -95,17 +100,20 @@ JumpTargetSet CleanupManager::createCleanup(const CleanupScope& cs, const Cleanu
         // target == default target -> no need for a case stmt
       }
     }
-    // all remaining entries go to the outer cleanup label
-    llvm::BasicBlock *afterBB = llvm::BasicBlock::Create(ctx.llvm_context, "after_cleanup", currentFnCtx->currentFn);
+    llvm::BasicBlock *afterBB;
+    if (hasRegularControlFlow) {
+      // all remaining entries go to the outer cleanup label
+      afterBB = llvm::BasicBlock::Create(ctx.llvm_context, "after_cleanup", currentFnCtx->currentFn);
+    } else {
+      afterBB = defaultTarget;
+    }
     if (newOuterJumpTargets.empty()) {
       // we need a default label -> use for the 0 case too
       switchStmt->setDefaultDest(afterBB); // change default target
-    } else {
+    } else if (hasRegularControlFlow) {
       // 0 is always the "continue" target
       switchStmt->addCase(llvm::ConstantInt::get(ctx.llvm_context, llvm::APInt(32, 0, false)), afterBB);
-//       switchStmt->setDefaultDest(defaultTarget); // already set
     }
-    fn->getBasicBlockList().push_back(afterBB); // add continue block
     ctx.builder.SetInsertPoint(afterBB);
     return newOuterJumpTargets;
   } else {
