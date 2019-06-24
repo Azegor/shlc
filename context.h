@@ -131,24 +131,24 @@ public:
   void finalizeMPM();
 
   void enterFunction(Context *fn_ctx, Function *fn) {
-//     cleanupManager.enterFunction(fn_ctx);
+    cleanupManager.enterFunction(fn_ctx);
     if (emitDebugInfo) {
       currentDIFile = allDIFiles[fn->srcLoc.lexerNr];
     }
   }
   void leaveFunction() {
-//     cleanupManager.leaveFunction();
+    cleanupManager.leaveFunction();
     if (emitDebugInfo) {
       currentDIFile = allDIFiles[0];
     }
   }
 
   void createBrCheckCleanup(llvm::BasicBlock *target) {
-//     if (cleanupManager.isJumpTargetInScope(target)) {
+    if (cleanupManager.isJumpTargetInScope(target)) {
       builder.CreateBr(target);
-//     } else {
+    } else {
       cleanupManager.createJumpViaCleanupTarget(target);
-//     }
+    }
   }
 
   FunctionHead *getFunction(const std::string &name) const; // unused!
