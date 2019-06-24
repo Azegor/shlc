@@ -126,7 +126,8 @@ llvm::Value *ReturnStmt::codegen(Context &ctx)
   {
     if (ctx.ret.type != TypeRegistry::getVoidType())
       throw CodeGenError("cannot return void in non-void function", this);
-    ctx.global.createBrCheckCleanup(ctx.ret.BB);
+//     ctx.global.createBrCheckCleanup(ctx.ret.BB);
+    ctx.global.builder.CreateBr(ctx.ret.BB);
   }
   else
   {
@@ -145,7 +146,8 @@ llvm::Value *ReturnStmt::codegen(Context &ctx)
     auto val = expr->codegen(ctx);
     assert(val);
     ctx.global.builder.CreateStore(val, ctx.ret.val);
-    ctx.global.createBrCheckCleanup(ctx.ret.BB);
+//     ctx.global.createBrCheckCleanup(ctx.ret.BB);
+    ctx.global.builder.CreateBr(ctx.ret.BB);
   }
   return nullptr;
 }
@@ -241,8 +243,8 @@ llvm::Value *WhileStmt::codegen(Context &ctx)
   auto endBB =
     llvm::BasicBlock::Create(ctx.global.llvm_context, "whlend");
 
-  ctx.global.cleanupManager.addJumpTargetInCurrentScope(headBB);
-  ctx.global.cleanupManager.addJumpTargetInCurrentScope(endBB);
+//   ctx.global.cleanupManager.addJumpTargetInCurrentScope(headBB);
+//   ctx.global.cleanupManager.addJumpTargetInCurrentScope(endBB);
 
   contBB = headBB;
   breakBB = endBB;
@@ -297,8 +299,8 @@ llvm::Value *DoWhileStmt::codegen(Context &ctx)
   auto endBB =
     llvm::BasicBlock::Create(ctx.global.llvm_context, "doend");
 
-  ctx.global.cleanupManager.addJumpTargetInCurrentScope(headBB);
-  ctx.global.cleanupManager.addJumpTargetInCurrentScope(endBB);
+//   ctx.global.cleanupManager.addJumpTargetInCurrentScope(headBB);
+//   ctx.global.cleanupManager.addJumpTargetInCurrentScope(endBB);
 
   contBB = headBB;
   breakBB = endBB;
@@ -362,8 +364,8 @@ llvm::Value *ForStmt::codegen(Context &ctx)
   auto endBB =
     llvm::BasicBlock::Create(ctx.global.llvm_context, "forend");
 
-  ctx.global.cleanupManager.addJumpTargetInCurrentScope(incBB);
-  ctx.global.cleanupManager.addJumpTargetInCurrentScope(endBB);
+//   ctx.global.cleanupManager.addJumpTargetInCurrentScope(incBB);
+//   ctx.global.cleanupManager.addJumpTargetInCurrentScope(endBB);
 
   contBB = incBB;
   breakBB = endBB;
@@ -417,14 +419,16 @@ llvm::Value *ForStmt::codegen(Context &ctx)
 llvm::Value *BreakStmt::codegen(Context &ctx)
 {
   ctx.global.emitDILocation(this);
-  ctx.global.createBrCheckCleanup(ctx.currentLoop()->breakTarget());
+//   ctx.global.createBrCheckCleanup(ctx.currentLoop()->breakTarget());
+  ctx.global.builder.CreateBr(ctx.currentLoop()->breakTarget());
   return nullptr;
 }
 
 llvm::Value *ContinueStmt::codegen(Context &ctx)
 {
   ctx.global.emitDILocation(this);
-  ctx.global.createBrCheckCleanup(ctx.currentLoop()->continueTarget());
+//   ctx.global.createBrCheckCleanup(ctx.currentLoop()->continueTarget());
+  ctx.global.builder.CreateBr(ctx.currentLoop()->continueTarget());
   return nullptr;
 }
 
@@ -496,7 +500,7 @@ llvm::Value *VarDeclStmt::codegen(Context &ctx)
     VariableExpr tmpVarExp(srcLoc, var.first);
     if (deducedType->getKind() == BuiltinTypeKind::cls_t) {
       handleAssignmentRefCounts(ctx, nullptr, init);
-      ctx.global.cleanupManager.enterCleanupScope(alloca);
+//       ctx.global.cleanupManager.enterCleanupScope(alloca);
     }
     createAssignment(ctx, init, &tmpVarExp);
   }

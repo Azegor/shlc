@@ -255,7 +255,7 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
       gl_ctx.llvmTypeRegistry.getType(head->getReturnType()), 0, "retval");
   }
   ctx.ret.BB = llvm::BasicBlock::Create(gl_ctx.llvm_context, "ret");
-  gl_ctx.cleanupManager.addJumpTargetInCurrentScope(ctx.ret.BB);
+//   gl_ctx.cleanupManager.addJumpTargetInCurrentScope(ctx.ret.BB);
 
   // make main block, leave entry for allocas only
   auto mainBB = llvm::BasicBlock::Create(gl_ctx.llvm_context, "fnbody", fn);
