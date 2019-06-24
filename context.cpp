@@ -359,14 +359,20 @@ void GlobalContext::emitDILocation(AstNode *astNode)
   }
 }
 
-void GlobalContext::emitDILocation(size_t line, size_t col)
+llvm::DIScope *GlobalContext::getCurrentDILexicalScope() const
 {
-  if(!emitDebugInfo) { return; }
   llvm::DIScope *scope;
   if (diLexicalBlocks.empty()) {
       scope = diCompUnit;
   } else {
       scope = diLexicalBlocks.top();
   }
+  return scope;
+}
+
+void GlobalContext::emitDILocation(size_t line, size_t col)
+{
+  if(!emitDebugInfo) { return; }
+  llvm::DIScope *scope = getCurrentDILexicalScope();
   builder.SetCurrentDebugLocation(llvm::DebugLoc::get(line, col, scope));
 }

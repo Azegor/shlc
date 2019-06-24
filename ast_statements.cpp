@@ -480,7 +480,7 @@ llvm::Value *VarDeclStmt::codegen(Context &ctx)
       int lineNr = srcLoc.startToken.line;
       int colNr = srcLoc.startToken.col;
       // NOTE: the passed parameter indices should start at 1 -> +1
-      auto *scope = gctx.diLexicalBlocks.top();
+      auto *scope = gctx.getCurrentDILexicalScope();
       llvm::DILocalVariable *d = gctx.diBuilder.createAutoVariable(
           scope, var.first, gctx.currentDIFile, lineNr, gctx.llvmTypeRegistry.getDIType(deducedType)/*, true*/);
       gctx.diBuilder.insertDeclare(alloca, d, gctx.diBuilder.createExpression(),

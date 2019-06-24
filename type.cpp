@@ -158,6 +158,6 @@ llvm::DIType *LLVMTypeRegistry::createDIClassType(ClassType *ct)
   auto llvmType = getClassType(ct)->getPointerElementType();
   auto size = gl_ctx.module->getDataLayout().getTypeAllocSize(llvmType) - 8;
   auto align = gl_ctx.module->getDataLayout().getABITypeAlignment(llvmType); // TODO
-  return gl_ctx.diBuilder.createClassType(gl_ctx.diLexicalBlocks.top(), ct->name, gl_ctx.currentDIFile, ct->srcLoc.startToken.line,
+  return gl_ctx.diBuilder.createClassType(gl_ctx.getCurrentDILexicalScope(), ct->name, gl_ctx.currentDIFile, ct->srcLoc.startToken.line,
     size, align, 8, llvm::DINode::FlagZero, nullptr, gl_ctx.diBuilder.getOrCreateArray(members));
 }
