@@ -197,6 +197,7 @@ public:
   llvm::DISubroutineType *createDIFunctionType(FunctionHead *fnHead);
   void enterDebugScope(llvm::DIScope *lexBlock);
   void leaveDebugScope();
+  llvm::DIScope *getCurrentDILexicalScope() const;
   void emitDILocation(AstNode *astNode);
   void emitDILocation(size_t line, size_t col);
 };
@@ -252,7 +253,7 @@ public:
     pushFrameImpl();
     global.cleanupManager.enterBlockScope();
     if (global.emitDebugInfo) {
-        global.enterDebugScope(global.diBuilder.createLexicalBlock(global.diLexicalBlocks.top(),
+        global.enterDebugScope(global.diBuilder.createLexicalBlock(global.getCurrentDILexicalScope(),
             global.currentDIFile, block->srcLoc.startToken.line, block->srcLoc.startToken.col));
     }
   }
