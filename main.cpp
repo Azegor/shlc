@@ -200,13 +200,13 @@ void testCodeGen(const char *filename, const char *outName, bool optimize)
     outFile.close();
 
     if (mainFn) {
-      auto main_ptr = gl_ctx.execEngine->getPointerToFunction(mainFn);
+//       auto main_ptr = gl_ctx.execEngine->getPointerToFunction(mainFn);
       //         auto main_ptr = gl_ctx.execEngine->getFunctionAddress("main");
-      void (*_main)() = (void (*)())main_ptr;
-      if (_main) {
-        std::cout << " --- calling main() ---" << std::endl;
-        _main();
-      }
+//       void (*_main)() = (void (*)())main_ptr;
+//       if (_main) {
+//         std::cout << " --- calling main() ---" << std::endl;
+//         _main();
+//       }
     }
   }
   catch (LexError &e)

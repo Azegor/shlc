@@ -79,7 +79,7 @@ class GlobalContext
   std::unique_ptr<llvm::LLVMContext> _llvm_context;
 public:
   llvm::LLVMContext &llvm_context;
-  llvm::Module *const module;
+  std::unique_ptr<llvm::Module> module;
   llvm::IRBuilder<> builder;
   llvm::DIBuilder diBuilder;
   llvm::DICompileUnit *diCompUnit = nullptr;
@@ -92,8 +92,10 @@ public:
   std::unique_ptr<llvm::legacy::FunctionPassManager> fpm;
   //   llvm::legacy::PassManager mpm;
   std::unique_ptr<llvm::legacy::PassManager> mpm;
+  std::unique_ptr<llvm::TargetMachine> targetMachine;
   std::string errorString;
-  llvm::ExecutionEngine *execEngine;
+//   llvm::EngineBuilder engineBuilder;
+//   llvm::ExecutionEngine *execEngine;
   int optimizeLevel = 0;
   bool emitDebugInfo = false;
 
