@@ -87,7 +87,7 @@ llvm::Function *FunctionHead::createLLVMFunction(GlobalContext &gl_ctx)
 
     llvm::Type *fnReturnType = nullptr;
     if (name == "main") {
-        fnReturnType = llvm::Type::getInt32Ty(gl_ctx.llvm_context);
+        fnReturnType = gl_ctx.llvmTypeRegistry.getBuiltinType(BuiltinTypeKind::int_t);
     } else {
         fnReturnType = gl_ctx.llvmTypeRegistry.getType(retType);
     }
@@ -240,8 +240,10 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
 
   // code gen
 
+  bool isMainFunction = head->getName() == "main"; // TODO?
+
   ctx.currentFn = fn;
-  ctx.ret.type = head->getReturnType();
+  ctx.ret.type = isMainFunction ? TypeRegistry::getBuiltinType(BuiltinTypeKind::int_t) : head->getReturnType();
 
   // Create a new basic block to start insertion into.
   llvm::BasicBlock *entryBB =
@@ -252,7 +254,8 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
 
   if (ctx.ret.type != TypeRegistry::getBuiltinType(BuiltinTypeKind::vac_t)) {
     ctx.ret.val = builder.CreateAlloca(
-      gl_ctx.llvmTypeRegistry.getType(head->getReturnType()), 0, "retval");
+      gl_ctx.llvmTypeRegistry.getType(ctx.ret.type), 0, "retval"
+    );
   }
   ctx.ret.BB = llvm::BasicBlock::Create(gl_ctx.llvm_context, "ret");
   gl_ctx.cleanupManager.addJumpTargetInCurrentScope(ctx.ret.BB);
@@ -283,23 +286,18 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
 
   auto CFR = body->codeFlowReturn();
   if (CFR != Statement::CodeFlowReturn::Never) {
-    if (head->getReturnType() == TypeRegistry::getVoidType()) // missing return statement
-    {
+    if (isMainFunction) {
+      createMainFunctionReturn(ctx);
+    } else if (head->getReturnType() == TypeRegistry::getVoidType()) { // missing return statement
       builder.CreateBr(ctx.ret.BB);
-    }
-    else
-    {
+    } else {
       throw CodeGenError("not all control flow branches return a value", this);
     }
   }
 
-  bool isMainFunction = head->getName() == "main"; // TODO?
-
   fn->getBasicBlockList().push_back(ctx.ret.BB); // add return block last!
   builder.SetInsertPoint(ctx.ret.BB);
-  if (isMainFunction) {
-    builder.CreateRet(llvm::ConstantInt::get(ctx.global.llvm_context, llvm::APInt(32, 0, false)));
-  } else if (ctx.ret.type == TypeRegistry::getVoidType()) {
+  if (ctx.ret.type == TypeRegistry::getVoidType()) {
     builder.CreateRetVoid();
   } else {
     builder.CreateRet(builder.CreateLoad(ctx.ret.val));

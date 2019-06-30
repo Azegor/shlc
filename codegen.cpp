@@ -713,3 +713,8 @@ void handleAssignmentRefCounts(Context &ctx, llvm::Value *lhsAddress, llvm::Valu
     gctx.builder.CreateCall(xdecRefFn, {lhsCast});
   }
 }
+
+void createMainFunctionReturn(Context &ctx) {
+  ctx.global.builder.CreateStore(llvm::ConstantInt::get(ctx.global.llvm_context, llvm::APInt(64, 0, false)), ctx.ret.val);
+  ctx.global.createBrCheckCleanup(ctx.ret.BB);
+}

@@ -124,9 +124,15 @@ llvm::Value *ReturnStmt::codegen(Context &ctx)
   ctx.global.emitDILocation(this);
   if (!expr) // void
   {
-    if (ctx.ret.type != TypeRegistry::getVoidType())
-      throw CodeGenError("cannot return void in non-void function", this);
-    ctx.global.createBrCheckCleanup(ctx.ret.BB);
+    if (ctx.ret.type != TypeRegistry::getVoidType()) {
+      if (ctx.currentFn->getName() == "main") {
+        createMainFunctionReturn(ctx);
+      } else {
+        throw CodeGenError("cannot return void in non-void function", this);
+      }
+    } else {
+      ctx.global.createBrCheckCleanup(ctx.ret.BB);
+    }
   }
   else
   {
