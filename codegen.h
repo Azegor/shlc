@@ -114,4 +114,6 @@ llvm::Value *createAssignment(Context &ctx, llvm::Value *val,
                               FieldAccessExpr *fa);
 void handleAssignmentRefCounts(Context &ctx, llvm::Value *lhsAddress, llvm::Value *rhs);
 
+void createMainFunctionReturn(Context &ctx);
+
 #endif // CODEGEN_H

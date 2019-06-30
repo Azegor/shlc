@@ -17,6 +17,8 @@
 
 #include "compiler.h"
 
+namespace po = boost::program_options;
+
 void Compiler::parseArguments(int argc, char* argv[])
 {
   po::positional_options_description posArgs;
@@ -26,7 +28,7 @@ void Compiler::parseArguments(int argc, char* argv[])
     ("help,h", "print this help message") //
     (",O", po::value<int>(&optLevel)->default_value(0),
      "optimization level") //
-    ("emit-debug-info,g", "emit debug information") //
+    (",g", "emit debug information") //
     ("input-file", po::value<std::string>(&inFile),
      "input file") //
     ("output-file,o", po::value<std::string>(&outFile),
@@ -61,7 +63,7 @@ void Compiler::parseArguments(int argc, char* argv[])
     if (!vm.count("output-file")) {
       outFile = inFile + ".ll";
     }
-    if (vm.count("emit-debug-info")) {
+    if (vm.count("-g")) {
        emitDebugInfo = true;
     }
     if (vm.count("run")) {

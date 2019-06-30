@@ -25,8 +25,6 @@
 #include "parser.h"
 #include "codegenerator.h"
 
-namespace po = boost::program_options;
-
 class Compiler
 {
   int optLevel = 0;
