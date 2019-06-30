@@ -20,6 +20,8 @@
 #include <sstream>
 
 #include <llvm/Support/FileSystem.h>
+#include <llvm/IR/Mangler.h>
+#include <llvm/Support/raw_ostream.h>
 
 void CodeGenerator::generateCode(int optLevel, bool emitDebugInfo)
 {
@@ -105,14 +107,23 @@ void CodeGenerator::runFunction(std::string name)
     std::cerr << "no main function found, exiting" << std::endl;
     exit(1);
   }
-//   auto main_ptr = gl_ctx.execEngine->getPointerToFunction(mainFn);
-  auto main_ptr = gl_ctx.execEngine->getFunctionAddress("main");
-  if (main_ptr) {
-    void (*_main)() = (void (*)())main_ptr;
-    _main();
-  }
-  else
+  auto K = execSession.allocateVModule();
+  llvm::cantFail(compileLayer.addModule(K, std::move(gl_ctx.module)));
+  // ModuleKeys.push_back(K); // might not need this
+
+  std::string mainFnName("main");
+  std::string MangledName;
   {
+    llvm::raw_string_ostream MangledNameStream(MangledName);
+    llvm::Mangler::getNameWithPrefix(MangledNameStream, mainFnName, DL);
+  }
+  std::cerr << "mname: " << MangledName << "\n";
+  llvm::JITSymbol jitSymbol = compileLayer.findSymbolIn(K, MangledName, false);
+  if (jitSymbol) {
+    int (*_main)() = reinterpret_cast<int (*)()>(static_cast<intptr_t>(cantFail(jitSymbol.getAddress())));
+    int returnCode = _main();
+    std::cout << "return code: " << returnCode << "\n";
+  } else {
     throw std::runtime_error("cannot call main() function");
   }
 }

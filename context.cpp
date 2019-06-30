@@ -24,34 +24,28 @@
 // std::string GlobalContext::errorString;
 
 GlobalContext::GlobalContext()
-//     : llvm_context(llvm::getGlobalContext()),
     : _llvm_context(std::make_unique<llvm::LLVMContext>()),
       llvm_context(*_llvm_context),
-      module(new llvm::Module("shl_global_module", llvm_context)),
+      module(std::make_unique<llvm::Module>("shl_global_module", llvm_context)),
       builder(llvm_context),
       diBuilder(*module),
       llvmTypeRegistry(*this),
       pm_builder(),
       fpm(),
       mpm(),
+      targetMachine(llvm::EngineBuilder().selectTarget()),
       errorString(),
-      execEngine(llvm::EngineBuilder(std::unique_ptr<llvm::Module>(module)).setErrorStr(&errorString)
-//       execEngine(
-//         llvm::EngineBuilder(module)
-//           .setErrorStr(&errorString)
-//           //           .setMCJITMemoryManager(std::make_unique<llvm::SectionMemoryManager>())
-//           //           .setMCJITMemoryManager(new
-//           //           llvm::SectionMemoryManager)
-          .create()),
+//       engineBuilder(std::unique_ptr<llvm::Module>(module)),
+//       execEngine(engineBuilder.setErrorStr(&errorString).create()),
       cleanupManager(*this)
 {
-  if (!execEngine)
-    throw std::runtime_error("Could not create Execution Engine: " +
-                             errorString);
+//   if (!execEngine)
+//     throw std::runtime_error("Could not create Execution Engine: " +
+//                              errorString);
 
   // Set up the optimizer pipeline.  Start with registering info about how the
   // target lays out data structures.
-  module->setDataLayout(execEngine->getDataLayout());
+  module->setDataLayout(targetMachine->createDataLayout());
 
 #if 0
   // Provide basic AliasAnalysis support for GVN.
@@ -100,7 +94,7 @@ GlobalContext::GlobalContext()
 
 GlobalContext::~GlobalContext()
 {
-    delete execEngine;
+    //delete execEngine;
 }
 void GlobalContext::initCompilationUnit(const Parser &p, bool isOptimized)
 {
@@ -131,7 +125,7 @@ void GlobalContext::initPMB()
 
 void GlobalContext::initFPM()
 {
-  fpm = std::make_unique<llvm::legacy::FunctionPassManager>(module);
+  fpm = std::make_unique<llvm::legacy::FunctionPassManager>(module.get());
   pm_builder.populateFunctionPassManager(*fpm);
 }
 void GlobalContext::finalizeFPM() { fpm->doFinalization(); }
@@ -181,7 +175,7 @@ llvm::Function *GlobalContext::getMallocFn() const
             false),
         llvm::Function::ExternalLinkage,
         "malloc",
-        module
+        module.get()
     );
     //mallocFunction->addFnAttr(llvm::Attribute::NoAlias);
   }
@@ -198,7 +192,7 @@ llvm::Function *GlobalContext::getFreeFn() const
             false),
         llvm::Function::ExternalLinkage,
         "free",
-        module
+        module.get()
     );
   }
   return freeFunction;
@@ -247,7 +241,7 @@ llvm::Function *GlobalContext::createIncDecRefFn(bool isDecrement, llvm::StringR
           false),
       llvm::Function::LinkOnceODRLinkage,
       name,
-      module
+      module.get()
   );
   auto oldInsertBlock = builder.GetInsertBlock();
   auto oldInsertPoint = builder.GetInsertPoint();
@@ -292,7 +286,7 @@ llvm::Function *GlobalContext::createNullCheckDelegationFn(llvm::Function *calle
           false),
       llvm::Function::LinkOnceODRLinkage,
       name,
-      module
+      module.get()
   );
   auto oldInsertBlock = builder.GetInsertBlock();
   auto oldInsertPoint = builder.GetInsertPoint();

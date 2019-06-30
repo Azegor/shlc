@@ -25,8 +25,8 @@ add_compile_definitions(STD_LIBRARY_PATH="${CMAKE_SOURCE_DIR}/include")
 add_executable(shlc stdlib.cpp ast_functions.cpp ast_expressions.cpp ast_statements.cpp ast_types.cpp context.cpp ast_base.cpp parser.cpp lexer.cpp codegen.cpp cleanup.cpp type.cpp codegenerator.cpp compiler.cpp main.cpp)
 add_executable(fuzzshl stdlib.cpp ast_functions.cpp ast_expressions.cpp ast_statements.cpp ast_types.cpp context.cpp ast_base.cpp parser.cpp lexer.cpp codegen.cpp cleanup.cpp type.cpp codegenerator.cpp fuzz.cpp)
 
-target_compile_options(shlc PRIVATE -fsanitize=address -fPIC)
-target_link_options(shlc PRIVATE -fsanitize=address -fPIC)
+target_compile_options(shlc PRIVATE -fsanitize=address,undefined -fPIC)
+target_link_options(shlc PRIVATE -fsanitize=address,undefined -fPIC)
 
 # set_target_properties(fuzzshl PROPERTIES CMAKE_CXX_COMPILER "clang++")
 target_compile_options(fuzzshl PRIVATE -fsanitize=fuzzer,address -fPIC)

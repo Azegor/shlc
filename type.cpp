@@ -148,7 +148,6 @@ void LLVMTypeRegistry::createDIBuiltinTypes()
 
 llvm::DIType *LLVMTypeRegistry::createDIClassType(ClassType *ct)
 {
-  llvm::DINode::DIFlags x;
   std::vector<llvm::Metadata*> members;
   members.reserve(ct->fields.size()/* + 1*/);
   // members.push_back(getDIBuiltinType(BuiltinTypeKind::int_t)); // refcount

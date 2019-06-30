@@ -102,7 +102,7 @@ llvm::Function *FunctionHead::createLLVMFunction(GlobalContext &gl_ctx)
     //         linkage = llvm::Function::PrivateLinkage;
     //     }
     llvm::Function *f =
-      llvm::Function::Create(ft, linkage, getMangledName(), gl_ctx.module);
+      llvm::Function::Create(ft, linkage, getMangledName(), gl_ctx.module.get());
     llvm_fn = f;
 
     return f;
