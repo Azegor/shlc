@@ -14,3 +14,5 @@ fn prtln(boo b) native "prtln_b";
 
 fn prt(str s) native "prt_s";
 fn prtln(str s) native "prtln_s";
+
+fn prtln() native "prtln";

@@ -186,7 +186,7 @@ std::vector<FunctionPtr> Parser::parse(CompilationUnit compUnit)
           toplevelFunctions.push_back(parseFunctionDef());
           break;
         case Token::id_cls:
-          typeRegistry.registerClassType(parseClassDef());
+          typeRegistry.registerStructureType(parseClassDef());
           break;
         case Token::eof:
           //           std::cout << "Reached end of file in " <<
@@ -218,14 +218,9 @@ FunctionPtr Parser::parseFunctionDef()
 
   while (curTok.type != ')')
   {
-    if (isVarTypeId(curTok.type)) {
-      parseFunctionArguments(arguments);
-      if (curTok.type == ';') readNextToken(); // eat ';'
-    }
-    else
-    {
-      error("Unexpected '" + curTok.str + '\'');
-    }
+    auto argType = parseTypeName();
+    parseFunctionArguments(argType, arguments);
+    if (curTok.type == ';') readNextToken(); // eat ';'
   }
 
   markSLContextEnd();
@@ -275,10 +270,8 @@ FunctionPtr Parser::parseFunctionDef()
 }
 
 // reads until ';' or ')'
-void Parser::parseFunctionArguments(ArgVector &args)
+void Parser::parseFunctionArguments(Type *argType, ArgVector &args)
 {
-  Type *argType = getTypeFromToken(curTok.type);
-  readNextToken();
   do
   {
     if (curTok.type != Token::identifier) {
@@ -702,7 +695,7 @@ Type *Parser::parseTypeName()
   if (isVarTypeId(curTok.type)) {
     type = getTypeFromToken(curTok.type);
   } else {
-    type = typeRegistry.findClassType(curTok.str);
+    type = typeRegistry.findStructureType(curTok.str);
     if (!type) {
       error("unknown type name '" + curTok.str + "'");
     }
@@ -711,26 +704,39 @@ Type *Parser::parseTypeName()
   return type;
 }
 
-ClassTypePtr Parser::parseClassDef()
+StructureTypePtr Parser::parseClassDef()
 {
   startSLContext();
   // assertToken(Token::id_cls);
   assertNextToken(Token::identifier);
   std::string className = std::move(curTok.str);
-  assertNextToken('{');
   readNextToken();
-  ClassFieldVec fieldL;
-  unsigned fieldIdx = 0;
-  while (curTok.type != '}') {
-      assertToken(Token::identifier);
-      std::string fieldName = std::move(curTok.str);
-      assertNextToken(':');
+  switch(curTok.type) {
+    case '{': {
       readNextToken();
-      Type *fieldType = parseTypeName();
-      assertToken(';');
-      fieldL.emplace_back(std::move(fieldName), fieldType, ++fieldIdx);
-      readNextToken();
+      ClassFieldVec fieldL;
+      unsigned fieldIdx = 0;
+      while (curTok.type != '}') {
+          assertToken(Token::identifier);
+          std::string fieldName = std::move(curTok.str);
+          assertNextToken(':');
+          readNextToken();
+          Type *fieldType = parseTypeName();
+          assertToken(';');
+          fieldL.emplace_back(std::move(fieldName), fieldType, ++fieldIdx);
+          readNextToken();
+      }
+      readNextToken(); // eat '}'
+      return ClassTypePtr{ new ClassType(endSLContextPrevToken(), std::move(className), std::move(fieldL)) };
+      break;
+    }
+    case Token::id_native:
+      assertNextToken(';');
+      readNextToken(); // eat ';'
+      return OpaqueTypePtr{ new OpaqueType(endSLContextPrevToken(), std::move(className)) };
+      break;
+    default:
+      errorExpected({'{', Token::id_native});
+      break;
   }
-  readNextToken(); // eat '}'
-  return ClassTypePtr{new ClassType(endSLContextPrevToken(), std::move(className), std::move(fieldL))};
 }

@@ -1,0 +1,12 @@
+cls FILE native;
+
+fn fopen(str name, mode) : FILE native;
+fn freopen (str name, mode; FILE f) : FILE native;
+fn fclose(FILE f) : int native;
+fn fflush(FILE f) : int native;
+fn fwide(FILE f; int mode) native;
+// cannot support fread / fwrite for now!
+fn fgetc(FILE f) : int native;
+fn fputc(int char; FILE f) : int native;
+fn fputs(str s; FILE f) : int native;
+fn feof(FILE f) : int native;

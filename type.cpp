@@ -40,8 +40,8 @@ const std::string &getMangleName(BuiltinTypeKind t)
 
 std::string getMangleName(Type *t)
 {
-  if (auto *classType = dynamic_cast<ClassType*>(t)) {
-    const auto &name = classType->getName();
+  if (auto *structType = dynamic_cast<StructureType*>(t)) {
+    const auto &name = structType->getName();
     return std::to_string(name.length()) + name;
   } else {
       return getMangleName(t->getKind());
@@ -57,10 +57,16 @@ LLVMTypeRegistry::LLVMTypeRegistry(GlobalContext &gl_ctx)
 
 llvm::Type *LLVMTypeRegistry::getType(Type *t)
 {
-    if (auto *ct = dynamic_cast<ClassType*>(t)) {
-        return getClassType(ct);
-    } else {
+    switch(t->getKind()) {
+      case BuiltinTypeKind::cls_t:
+        return getClassType(static_cast<ClassType*>(t));
+        break;
+      case BuiltinTypeKind::opq_t:
+        return getOpaqueType(static_cast<OpaqueType*>(t));
+        break;
+      default:
         return getBuiltinType(t->getKind());
+        break;
     }
 }
 
@@ -72,6 +78,17 @@ llvm::PointerType *LLVMTypeRegistry::getClassType(ClassType *ct)
     }
     auto type = createLLVMClassType(ct);
     classTypeMap.emplace(ct, type);
+    return type;
+}
+
+llvm::PointerType *LLVMTypeRegistry::getOpaqueType(OpaqueType *ot)
+{
+    auto pos = opaqueTypeMap.find(ot);
+    if (pos != opaqueTypeMap.end()) {
+        return pos->second;
+    }
+    auto type = createLLVMOpaqueType(ot);
+    opaqueTypeMap.emplace(ot, type);
     return type;
 }
 
@@ -109,13 +126,25 @@ llvm::PointerType *LLVMTypeRegistry::createLLVMClassType(ClassType *ct)
     return llvm::PointerType::get(structType, 0);
 }
 
+
+llvm::PointerType *LLVMTypeRegistry::createLLVMOpaqueType(OpaqueType *ot) {
+  auto structType = llvm::StructType::create(gl_ctx.llvm_context, ot->getName());
+  return llvm::PointerType::get(structType, 0);
+}
+
 llvm::DIType *LLVMTypeRegistry::getDIType(Type *t)
 {
-    if (auto *ct = dynamic_cast<ClassType*>(t)) {
-        return getDIClassType(ct);
-    } else {
-        return getDIBuiltinType(t->getKind());
-    }
+  switch(t->getKind()) {
+    case BuiltinTypeKind::cls_t:
+      return getDIClassType(static_cast<ClassType*>(t));
+      break;
+    case BuiltinTypeKind::opq_t:
+      return getDIOpaqueType(static_cast<OpaqueType*>(t));
+      break;
+    default:
+      return getDIBuiltinType(t->getKind());
+      break;
+  }
 }
 llvm::DIType *LLVMTypeRegistry::getDIBuiltinType(BuiltinTypeKind tk)
 {
@@ -133,6 +162,16 @@ llvm::DIType *LLVMTypeRegistry::getDIClassType(ClassType *ct) {
   auto clsType = createDIClassType(ct);
   diClassTypes.insert({ct, clsType});
   return clsType;
+}
+
+llvm::DIType *LLVMTypeRegistry::getDIOpaqueType(OpaqueType *ot) {
+  auto pos = diOpaqueTypes.find(ot);
+  if (pos != diOpaqueTypes.end()) {
+    return pos->second;
+  }
+  auto opaqueType = createDIOpaqueType(ot);
+  diOpaqueTypes.insert({ot, opaqueType});
+  return opaqueType;
 }
 
 void LLVMTypeRegistry::createDIBuiltinTypes()
@@ -157,6 +196,12 @@ llvm::DIType *LLVMTypeRegistry::createDIClassType(ClassType *ct)
   auto llvmType = getClassType(ct)->getPointerElementType();
   auto size = gl_ctx.module->getDataLayout().getTypeAllocSize(llvmType) - 8;
   auto align = gl_ctx.module->getDataLayout().getABITypeAlignment(llvmType); // TODO
-  return gl_ctx.diBuilder.createClassType(gl_ctx.getCurrentDILexicalScope(), ct->name, gl_ctx.currentDIFile, ct->srcLoc.startToken.line,
+  return gl_ctx.diBuilder.createClassType(gl_ctx.getCurrentDILexicalScope(), ct->name, gl_ctx.allDIFiles[ct->srcLoc.lexerNr], ct->srcLoc.startToken.line,
     size, align, 8, llvm::DINode::FlagZero, nullptr, gl_ctx.diBuilder.getOrCreateArray(members));
+}
+
+llvm::DIType *LLVMTypeRegistry::createDIOpaqueType(OpaqueType *ot)
+{
+  return gl_ctx.diBuilder.createForwardDecl(llvm::dwarf::DW_TAG_structure_type, ot->name, gl_ctx.getCurrentDILexicalScope(),
+                                            gl_ctx.allDIFiles[ot->srcLoc.lexerNr], ot->srcLoc.startToken.line);
 }

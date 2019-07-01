@@ -60,6 +60,11 @@ const ClassField *ClassType::getField(const std::string &name) const
     return pos->second;
 }
 
+void OpaqueType::print(int indent) {
+    printIndent(indent);
+    std::cout << "cls " << name << " <opaque>";
+}
+
 BuiltinTypeArray::BuiltinTypeArray()
 {
     // none & cls stay nullptr!
@@ -68,7 +73,7 @@ BuiltinTypeArray::BuiltinTypeArray()
     }
 }
 
-TypeRegistry::TypeRegistry() : classTypes()
+TypeRegistry::TypeRegistry() : structureTypes()
 {
 }
 

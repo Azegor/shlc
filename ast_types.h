@@ -56,15 +56,32 @@ struct ClassField
     llvm::Type *llvmType = nullptr;
 };
 
+class StructureType : public Type
+{
+    friend class LLVMTypeRegistry;
+public:
+    StructureType(SourceLocation loc, BuiltinTypeKind btk, std::string name)
+        : Type(loc, btk),
+          name(std::move(name))
+    {
+    }
+
+    virtual const std::string& getName() const override { return name; }
+
+protected:
+  std::string name;
+};
+
+using StructureTypePtr = std::unique_ptr<StructureType>;
+
 using ClassFieldVec = std::vector<ClassField>;
 
-class ClassType : public Type
+class ClassType : public StructureType
 {
     friend class LLVMTypeRegistry;
 public:
     ClassType(SourceLocation loc, std::string name, ClassFieldVec classFields)
-        : Type(loc, BuiltinTypeKind::cls_t),
-          name(std::move(name)),
+        : StructureType(loc, BuiltinTypeKind::cls_t, std::move(name)),
           fields(std::move(classFields))
     {
         for (auto &f : fields) {
@@ -83,6 +100,17 @@ private:
 
 using ClassTypePtr = std::unique_ptr<ClassType>;
 
+class OpaqueType : public StructureType
+{
+public:
+    OpaqueType(SourceLocation loc, std::string name)
+        : StructureType(loc, BuiltinTypeKind::opq_t, std::move(name))
+    {}
+    virtual void print(int indent = 0) override;
+};
+
+using OpaqueTypePtr = std::unique_ptr<OpaqueType>;
+
 struct BuiltinTypeArray
 {
     BuiltinTypeArray();
@@ -93,7 +121,7 @@ struct BuiltinTypeArray
 class TypeRegistry
 {
 private:
-    std::unordered_map<std::string, std::unique_ptr<ClassType>> classTypes;
+    std::unordered_map<std::string, StructureTypePtr> structureTypes;
     static const BuiltinTypeArray builtinTypes;
 
 public:
@@ -105,12 +133,12 @@ public:
       return builtinTypes.types[(int)BuiltinTypeKind::vac_t].get();
     }
 
-    void registerClassType(std::unique_ptr<ClassType> ct) {
-      std::string name = ct->getName(); // copy
-      classTypes.emplace(std::move(name), std::move(ct));
+    void registerStructureType(StructureTypePtr st) {
+      std::string name = st->getName(); // copy
+      structureTypes.emplace(std::move(name), std::move(st));
     }
-    Type *findClassType(const std::string &name) {
-        return classTypes[name].get(); // default should return nullptr
+    Type *findStructureType(const std::string &name) {
+        return structureTypes[name].get(); // default should return nullptr
     }
 };
 

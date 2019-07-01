@@ -167,10 +167,10 @@ class Parser
 
   // Types:
   Type *parseTypeName();
-  ClassTypePtr parseClassDef();
+  StructureTypePtr parseClassDef();
 
   // helpers
-  void parseFunctionArguments(ArgVector &args);
+  void parseFunctionArguments(Type *argType, ArgVector &args);
 
 
   [[noreturn]] void error(std::string msg)
@@ -183,19 +183,27 @@ class Parser
   // TODO make variadic for more tokens?
   void assertToken(int token)
   {
-    if (curTok.type != token)
-      error("Unexpected '" + curTok.str + "', expected '" +
-            Lexer::getTokenName(token) + '\'');
+    if (curTok.type != token) {
+      errorExpected(token);
+    }
   }
   void assertTokens(std::initializer_list<int> tokens)
   {
-    for (auto &&t : tokens)
+    for (auto &&t : tokens) {
       if (curTok.type == t) return;
-    error("Unexpected '" + curTok.str + "', expected one of " +
-          listToString(tokens, [](int t)
-                       {
-            return '\'' + Lexer::getTokenName(t) + '\'';
-          }));
+    }
+    errorExpected(tokens);
+  }
+  [[noreturn]] void errorExpected(int token) {
+      error("Unexpected '" + curTok.str + "', expected '" +
+            Lexer::getTokenName(token) + '\'');
+  }
+  [[noreturn]] void errorExpected(std::initializer_list<int> tokens)
+  {
+      error("Unexpected '" + curTok.str + "', expected one of " +
+        listToString(tokens, [](int t) {
+          return '\'' + Lexer::getTokenName(t) + '\'';
+      }));
   }
 
 public:
