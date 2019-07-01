@@ -158,7 +158,8 @@ void testCodeGen(const char *filename, const char *outName, bool optimize)
   try
   {
     auto parseRes = parser.parse(CompilationUnit(filename));
-    GlobalContext gl_ctx;
+    std::unique_ptr<llvm::TargetMachine> tm(llvm::EngineBuilder().selectTarget());
+    GlobalContext gl_ctx(*tm);
     gl_ctx.optimizeLevel = optimize ? 3 : 0;
     gl_ctx.initFPM();
     llvm::Function *mainFn = nullptr;

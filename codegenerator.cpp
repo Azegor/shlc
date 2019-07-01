@@ -107,23 +107,17 @@ void CodeGenerator::runFunction(std::string name)
     std::cerr << "no main function found, exiting" << std::endl;
     exit(1);
   }
-  auto K = execSession.allocateVModule();
-  llvm::cantFail(compileLayer.addModule(K, std::move(gl_ctx.module)));
-  // ModuleKeys.push_back(K); // might not need this
+  auto H = kaleidoscopeJIT.addModule(std::move(gl_ctx.module));
 
-  std::string mainFnName("main");
-  std::string MangledName;
-  {
-    llvm::raw_string_ostream MangledNameStream(MangledName);
-    llvm::Mangler::getNameWithPrefix(MangledNameStream, mainFnName, DL);
-  }
-  std::cerr << "mname: " << MangledName << "\n";
-  llvm::JITSymbol jitSymbol = compileLayer.findSymbolIn(K, MangledName, false);
-  if (jitSymbol) {
-    int (*_main)() = reinterpret_cast<int (*)()>(static_cast<intptr_t>(cantFail(jitSymbol.getAddress())));
-    int returnCode = _main();
-    std::cout << "return code: " << returnCode << "\n";
-  } else {
-    throw std::runtime_error("cannot call main() function");
-  }
+  auto ExprSymbol = kaleidoscopeJIT.findSymbol(name);
+  assert(ExprSymbol && "Function not found");
+
+  // Get the symbol's address and cast it to the right type (takes no
+  // arguments, returns a double) so we can call it as a native function.
+  long (*_main)() = (long (*)())(intptr_t)cantFail(ExprSymbol.getAddress());
+  auto retVal = _main();
+  fprintf(stderr, "Main function returned %ld\n", retVal);
+
+  // Delete the anonymous expression module from the JIT.
+//   kaleidoscopeJIT.removeModule(H);
 }
