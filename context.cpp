@@ -23,7 +23,7 @@
 
 // std::string GlobalContext::errorString;
 
-GlobalContext::GlobalContext()
+GlobalContext::GlobalContext(llvm::TargetMachine &tm)
     : _llvm_context(std::make_unique<llvm::LLVMContext>()),
       llvm_context(*_llvm_context),
       module(std::make_unique<llvm::Module>("shl_global_module", llvm_context)),
@@ -33,7 +33,6 @@ GlobalContext::GlobalContext()
       pm_builder(),
       fpm(),
       mpm(),
-      targetMachine(llvm::EngineBuilder().selectTarget()),
       errorString(),
 //       engineBuilder(std::unique_ptr<llvm::Module>(module)),
 //       execEngine(engineBuilder.setErrorStr(&errorString).create()),
@@ -45,7 +44,7 @@ GlobalContext::GlobalContext()
 
   // Set up the optimizer pipeline.  Start with registering info about how the
   // target lays out data structures.
-  module->setDataLayout(targetMachine->createDataLayout());
+  module->setDataLayout(tm.createDataLayout());
 
 #if 0
   // Provide basic AliasAnalysis support for GVN.

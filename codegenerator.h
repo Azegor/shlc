@@ -35,6 +35,7 @@
 #include "llvm/ExecutionEngine/SectionMemoryManager.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/Support/DynamicLibrary.h"
+#include "KaleidoscopeJIT.h"
 
 class CompileError : public std::runtime_error {
 public:
@@ -45,41 +46,19 @@ class CodeGenerator
 {
   CompilationUnit compUnit;
   Parser parser;
+  llvm::orc::KaleidoscopeJIT kaleidoscopeJIT;
   GlobalContext gl_ctx;
   llvm::Function* mainFn = nullptr;
 
-
-  using ObjLayerT = llvm::orc::LegacyRTDyldObjectLinkingLayer;
-  using CompileLayerT = llvm::orc::LegacyIRCompileLayer<ObjLayerT, llvm::orc::SimpleCompiler>;
-
-  llvm::orc::ExecutionSession execSession;
-  std::shared_ptr<llvm::orc::SymbolResolver> Resolver;
-  const llvm::DataLayout DL;
-  ObjLayerT objectLayer;
-  CompileLayerT compileLayer;
-  std::vector<llvm::orc::VModuleKey> ModuleKeys;
 
 #include <llvm/Support/DynamicLibrary.h>
 public:
   CodeGenerator(CompilationUnit input)
     : compUnit(std::move(input)),
       parser(),
-      gl_ctx(),
-      Resolver(createLegacyLookupResolver(
-              execSession,
-              [this](const std::string &Name) {
-                return objectLayer.findSymbol(Name, true);
-              },
-              [](llvm::Error Err) { cantFail(std::move(Err), "lookupFlags failed"); })),
-          DL(gl_ctx.targetMachine->createDataLayout()),
-          objectLayer(execSession,
-                      [this](llvm::orc::VModuleKey) {
-                        return ObjLayerT::Resources{
-                            std::make_shared<llvm::SectionMemoryManager>(), Resolver};
-                      }),
-          compileLayer(objectLayer, llvm::orc::SimpleCompiler(*gl_ctx.targetMachine))
+      kaleidoscopeJIT(),
+      gl_ctx(kaleidoscopeJIT.getTargetMachine())
   {
-    llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr);
   }
 
   void generateCode(int optLevel, bool emitDebugInfo);

@@ -92,7 +92,6 @@ public:
   std::unique_ptr<llvm::legacy::FunctionPassManager> fpm;
   //   llvm::legacy::PassManager mpm;
   std::unique_ptr<llvm::legacy::PassManager> mpm;
-  std::unique_ptr<llvm::TargetMachine> targetMachine;
   std::string errorString;
 //   llvm::EngineBuilder engineBuilder;
 //   llvm::ExecutionEngine *execEngine;
@@ -119,7 +118,7 @@ public:
   llvm::Function *decRefFunction = nullptr;
   llvm::Function *xDecRefFunction = nullptr;
 
-  GlobalContext();
+  GlobalContext(llvm::TargetMachine &tm);
   ~GlobalContext();
 
   void initCompilationUnit(const Parser &p, bool isOptimized);
