@@ -145,6 +145,9 @@ CastMode castMode(BuiltinTypeKind from, BuiltinTypeKind to)
 llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type *from, Type *to,
                           const llvm::Twine &valName)
 {
+  if (from == to) {
+    return val;
+  }
   auto &builder = ctx.global.builder;
   auto targetType = ctx.global.llvmTypeRegistry.getType(to);
   switch (from->getKind())
@@ -152,8 +155,6 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type *from, Type *to,
     case BuiltinTypeKind::int_t:
       switch (to->getKind())
       {
-        case BuiltinTypeKind::int_t:
-          return val;
         case BuiltinTypeKind::flt_t:
           return builder.CreateSIToFP(val, targetType, valName);
         case BuiltinTypeKind::chr_t:
@@ -162,6 +163,7 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type *from, Type *to,
           return builder.CreateIsNotNull(val, valName);
         case BuiltinTypeKind::str_t:
         case BuiltinTypeKind::cls_t:
+        case BuiltinTypeKind::opq_t:
           NO_CAST;
       }
     case BuiltinTypeKind::flt_t:
@@ -170,13 +172,12 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type *from, Type *to,
         case BuiltinTypeKind::int_t:
         case BuiltinTypeKind::chr_t:
           return builder.CreateFPToSI(val, targetType, valName);
-        case BuiltinTypeKind::flt_t:
-          return val;
         case BuiltinTypeKind::boo_t:
           return builder.CreateFCmpONE(val, FltNumberExpr({}, 0.0).codegen(ctx),
                                        valName);
         case BuiltinTypeKind::str_t:
         case BuiltinTypeKind::cls_t:
+        case BuiltinTypeKind::opq_t:
           NO_CAST;
       }
     case BuiltinTypeKind::chr_t:
@@ -186,12 +187,11 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type *from, Type *to,
           return builder.CreateIntCast(val, targetType, true, valName);
         case BuiltinTypeKind::flt_t:
           return builder.CreateSIToFP(val, targetType, valName);
-        case BuiltinTypeKind::chr_t:
-          return val;
         case BuiltinTypeKind::boo_t:
           return builder.CreateIsNotNull(val, valName);
         case BuiltinTypeKind::str_t:
         case BuiltinTypeKind::cls_t:
+        case BuiltinTypeKind::opq_t:
           NO_CAST;
       }
     case BuiltinTypeKind::boo_t:
@@ -202,34 +202,42 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type *from, Type *to,
           return builder.CreateIntCast(val, targetType, true, valName);
         case BuiltinTypeKind::flt_t:
           return builder.CreateSIToFP(val, targetType, valName);
-        case BuiltinTypeKind::boo_t:
-          return val;
         case BuiltinTypeKind::str_t:
         case BuiltinTypeKind::cls_t:
+        case BuiltinTypeKind::opq_t:
           NO_CAST;
       }
     case BuiltinTypeKind::str_t:
       switch (to->getKind())
       {
-        case BuiltinTypeKind::str_t:
-          return val;
         case BuiltinTypeKind::int_t:
         case BuiltinTypeKind::flt_t:
         case BuiltinTypeKind::chr_t:
         case BuiltinTypeKind::boo_t:
         case BuiltinTypeKind::cls_t:
+        case BuiltinTypeKind::opq_t:
           NO_CAST;
       }
     case BuiltinTypeKind::cls_t:
       switch (to->getKind())
       {
-        case BuiltinTypeKind::cls_t:
-          return val;
         case BuiltinTypeKind::int_t:
         case BuiltinTypeKind::flt_t:
         case BuiltinTypeKind::chr_t:
         case BuiltinTypeKind::boo_t:
         case BuiltinTypeKind::str_t:
+        case BuiltinTypeKind::opq_t:
+          NO_CAST;
+      }
+    case BuiltinTypeKind::opq_t:
+      switch (to->getKind())
+      {
+        case BuiltinTypeKind::int_t:
+        case BuiltinTypeKind::flt_t:
+        case BuiltinTypeKind::chr_t:
+        case BuiltinTypeKind::boo_t:
+        case BuiltinTypeKind::str_t:
+        case BuiltinTypeKind::cls_t:
           NO_CAST;
       }
       NO_CAST;

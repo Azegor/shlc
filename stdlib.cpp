@@ -49,7 +49,9 @@ void prt_b(types::boo_t b) { std::printf("%s", b ? "true" : "false"); }
 
 void prtln_b(types::boo_t b) { std::printf("%s\n", b ? "true" : "false"); }
 
-void prt_s(types::str_t s) { std::printf("%s", s); }
+void prt_s(types::str_t s) { std::puts(s); }
 
-void prtln_s(types::str_t s) { std::printf("%s\n", s); }
+void prtln_s(types::str_t s) { std::puts(s); std::putc('\n', stdout); }
+
+void prtln() { std::putc('\n', stdout); }
 }

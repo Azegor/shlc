@@ -31,6 +31,7 @@ enum class BuiltinTypeKind : int
   boo_t,
   str_t,
   cls_t,
+  opq_t,
 };
 
 namespace types
@@ -46,6 +47,7 @@ using str_t = char const *;
 
 class Type;
 class ClassType;
+class OpaqueType;
 class GlobalContext;
 
 namespace llvm {
@@ -64,12 +66,14 @@ public:
     LLVMTypeRegistry(GlobalContext &gl_ctx);
 
     llvm::Type *getType(Type *t);
-    llvm::PointerType *getClassType(ClassType *t);
+    llvm::PointerType *getClassType(ClassType *ct);
+    llvm::PointerType *getOpaqueType(OpaqueType *ot);
     llvm::Type *getBuiltinType(BuiltinTypeKind tk) const;
 
     llvm::DIType *getDIType(Type *t);
     llvm::DIType *getDIBuiltinType(BuiltinTypeKind tk);
     llvm::DIType *getDIClassType(ClassType *ct);
+    llvm::DIType *getDIOpaqueType(OpaqueType *ot);
 
     llvm::PointerType *getVoidPointerType() const { return voidPointerType; }
     llvm::Type *getRefCounterType() const { return getBuiltinType(BuiltinTypeKind::int_t); }
@@ -78,15 +82,19 @@ public:
 private:
     GlobalContext &gl_ctx;
     std::unordered_map<ClassType*, llvm::PointerType*> classTypeMap;
+    std::unordered_map<OpaqueType*, llvm::PointerType*> opaqueTypeMap;
     llvm::PointerType *voidPointerType;
     llvm::PointerType *refCounterPtrType;
     llvm::DIType *diBuiltinTypes[(int)BuiltinTypeKind::str_t + 1];
     std::unordered_map<ClassType*, llvm::DIType*> diClassTypes;
+    std::unordered_map<OpaqueType*, llvm::DIType*> diOpaqueTypes;
     bool diTypesInitialized = false;
 
     llvm::PointerType *createLLVMClassType(ClassType *ct);
+    llvm::PointerType *createLLVMOpaqueType(OpaqueType *ct);
     void createDIBuiltinTypes();
     llvm::DIType *createDIClassType(ClassType *ct);
+    llvm::DIType *createDIOpaqueType(OpaqueType *ot);
 };
 
 #endif // TYPE_H
