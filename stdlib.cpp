@@ -21,37 +21,39 @@
 
 #include <cstdio>
 
+#define EXPORT __attribute__((visibility("default")))
+
 extern "C" {
 
-void prt_i(types::int_t i) { std::printf("%lld", i); }
+EXPORT void prt_i(types::int_t i) { std::printf("%lld", i); }
 
-void prt_w_i(types::int_t i, types::int_t wdth)
+EXPORT void prt_w_i(types::int_t i, types::int_t wdth)
 {
   std::printf("%*lld", (int)wdth, i);
 }
 
-void prtln_i(types::int_t i) { std::printf("%lld\n", i); }
+EXPORT void prtln_i(types::int_t i) { std::printf("%lld\n", i); }
 
-void prt_f(types::flt_t f) { std::printf("%f", f); }
+EXPORT void prt_f(types::flt_t f) { std::printf("%f", f); }
 
-void prt_w_f(types::flt_t f, types::int_t wdth)
+EXPORT void prt_w_f(types::flt_t f, types::int_t wdth)
 {
   std::printf("%*f", (int)wdth, f);
 }
 
-void prtln_f(types::flt_t f) { std::printf("%f\n", f); }
+EXPORT void prtln_f(types::flt_t f) { std::printf("%f\n", f); }
 
-void prt_c(types::chr_t c) { std::printf("%c", c); }
+EXPORT void prt_c(types::chr_t c) { std::printf("%c", c); }
 
-void prtln_c(types::chr_t c) { std::printf("%c\n", c); }
+EXPORT void prtln_c(types::chr_t c) { std::printf("%c\n", c); }
 
-void prt_b(types::boo_t b) { std::printf("%s", b ? "true" : "false"); }
+EXPORT void prt_b(types::boo_t b) { std::printf("%s", b ? "true" : "false"); }
 
-void prtln_b(types::boo_t b) { std::printf("%s\n", b ? "true" : "false"); }
+EXPORT void prtln_b(types::boo_t b) { std::printf("%s\n", b ? "true" : "false"); }
 
-void prt_s(types::str_t s) { std::puts(s); }
+EXPORT void prt_s(types::str_t s) { std::puts(s); }
 
-void prtln_s(types::str_t s) { std::puts(s); std::putc('\n', stdout); }
+EXPORT void prtln_s(types::str_t s) { std::puts(s); std::putc('\n', stdout); }
 
-void prtln() { std::putc('\n', stdout); }
+EXPORT void prtln() { std::putc('\n', stdout); }
 }

@@ -47,7 +47,7 @@ public:
       : Resolver(createLegacyLookupResolver(
             ES,
             [this](const std::string &Name) {
-              return ObjectLayer.findSymbol(Name, true);
+              return findMangledSymbol(Name);
             },
             [](Error Err) { cantFail(std::move(Err), "lookupFlags failed"); })),
         TM(EngineBuilder().selectTarget()), DL(TM->createDataLayout()),
@@ -91,13 +91,8 @@ public:
 #else
     const bool ExportedSymbolsOnly = true;
 #endif
-
-    // Search modules in reverse order: from last added to first added.
-    // This is the opposite of the usual search order for dlsym, but makes more
-    // sense in a REPL where we want to bind to the newest available definition.
-    for (auto H : make_range(ModuleKeys.rbegin(), ModuleKeys.rend()))
-      if (auto Sym = CompileLayer.findSymbolIn(H, Name, ExportedSymbolsOnly))
-        return Sym;
+    if (auto Sym = CompileLayer.findSymbol(Name, ExportedSymbolsOnly))
+      return Sym;
 
     // If we can't find the symbol in the JIT, try looking in the host process.
     if (auto SymAddr = RTDyldMemoryManager::getSymbolAddressInProcess(Name))
