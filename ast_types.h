@@ -93,7 +93,6 @@ public:
     virtual const std::string& getName() const override { return name; }
     const ClassField *getField(const std::string &name) const;
 private:
-    std::string name;
     ClassFieldVec fields;
     std::unordered_map<std::string, ClassField*> fieldMap;
 };
