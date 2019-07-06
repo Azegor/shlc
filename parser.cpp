@@ -727,14 +727,12 @@ StructureTypePtr Parser::parseClassDef()
           readNextToken();
       }
       readNextToken(); // eat '}'
-      return ClassTypePtr{ new ClassType(endSLContextPrevToken(), std::move(className), std::move(fieldL)) };
-      break;
+      return StructureTypePtr{ new ClassType(endSLContextPrevToken(), std::move(className), std::move(fieldL)) };
     }
     case Token::id_native:
       assertNextToken(';');
       readNextToken(); // eat ';'
-      return OpaqueTypePtr{ new OpaqueType(endSLContextPrevToken(), std::move(className)) };
-      break;
+      return StructureTypePtr{ new OpaqueType(endSLContextPrevToken(), std::move(className)) };
     default:
       errorExpected({'{', Token::id_native});
       break;

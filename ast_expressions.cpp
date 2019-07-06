@@ -347,7 +347,7 @@ llvm::Value *BinOpExpr::codegen(Context &ctx)
       throw CodeGenError("left hand side of assignment must be a variable or field access", this);
     }
     if (targetType->getKind() == BuiltinTypeKind::cls_t) {
-      handleAssignmentRefCounts(ctx, lhsAddress, rhsVal);
+      handleAssignmentRefCounts(ctx, static_cast<ClassType*>(targetType), lhsAddress, rhsVal);
     }
     return ctx.global.builder.CreateStore(rhsVal, lhsAddress);
   }

@@ -13,10 +13,11 @@ fn fib_iter(int val) : int
   if val < 3 { ret 1; }
   var fib_1 = 1, fib_2 = 1, res = 0;
   var i : int;
-  for i = 3; i <= val; ++i {
+  for (var i = 3; i <= val; ++i) {
     res = fib_1 + fib_2;
     fib_2 = fib_1;
     fib_1 = res;
   }
   ret res;
 }
+

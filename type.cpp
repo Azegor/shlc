@@ -48,11 +48,17 @@ std::string getMangleName(Type *t)
   }
 }
 
+std::string getMangleDestructorName(ClassType *t)
+{
+  return "_ZN" + getMangleName(t) + "D1Ev";
+}
+
 LLVMTypeRegistry::LLVMTypeRegistry(GlobalContext &gl_ctx)
   : gl_ctx(gl_ctx)
 {
     voidPointerType = llvm::Type::getInt8PtrTy(gl_ctx.llvm_context); // is void in llvm
     refCounterPtrType = getRefCounterType()->llvm::Type::getPointerTo();
+    constrPtrType = llvm::PointerType::get(llvm::FunctionType::get(getBuiltinType(BuiltinTypeKind::vac_t), {voidPointerType}, false), 0);
 }
 
 llvm::Type *LLVMTypeRegistry::getType(Type *t)
@@ -72,13 +78,18 @@ llvm::Type *LLVMTypeRegistry::getType(Type *t)
 
 llvm::PointerType *LLVMTypeRegistry::getClassType(ClassType *ct)
 {
-    auto pos = classTypeMap.find(ct);
-    if (pos != classTypeMap.end()) {
-        return pos->second;
-    }
-    auto type = createLLVMClassType(ct);
-    classTypeMap.emplace(ct, type);
-    return type;
+  if (!ct->llvmType) {
+    createLLVMClassTypeAndDestructor(ct);
+  }
+  return ct->llvmType;
+}
+
+llvm::Function *LLVMTypeRegistry::getClassDestructor(ClassType *ct)
+{
+  if (!ct->llvmType) {
+    createLLVMClassTypeAndDestructor(ct);
+  }
+  return ct->destructorFn;
 }
 
 llvm::PointerType *LLVMTypeRegistry::getOpaqueType(OpaqueType *ot)
@@ -126,6 +137,62 @@ llvm::PointerType *LLVMTypeRegistry::createLLVMClassType(ClassType *ct)
     return llvm::PointerType::get(structType, 0);
 }
 
+llvm::Function *LLVMTypeRegistry::createLLVMClassDestructor(ClassType *ct)
+{
+  std::vector<ClassField*> classMembers;
+  for (auto &f : ct->fields) {
+    if (f.type->getKind() == BuiltinTypeKind::cls_t) {
+      classMembers.push_back(&f);
+    }
+  }
+  if (classMembers.empty()) {
+    return nullptr; // no destructor needed
+  }
+
+  auto &builder = gl_ctx.builder;
+  auto fn = llvm::Function::Create(
+    llvm::FunctionType::get(
+        getBuiltinType(BuiltinTypeKind::vac_t),
+        {ct->llvmType}, // has to already be avaliable!
+        false),
+    llvm::Function::LinkOnceODRLinkage,
+    getMangleDestructorName(ct),
+    gl_ctx.module.get()
+  );
+  auto oldInsertBlock = builder.GetInsertBlock();
+  auto oldInsertPoint = builder.GetInsertPoint();
+
+
+  Context ctx(gl_ctx);
+  ctx.currentFn = fn;
+
+  // create body
+  llvm::BasicBlock *entryBB =
+      llvm::BasicBlock::Create(gl_ctx.llvm_context, "entry", fn);
+  builder.SetInsertPoint(entryBB);
+
+  auto zeroIdx = llvm::ConstantInt::get(gl_ctx.llvm_context, llvm::APInt(32, 0, true));
+  auto arg1 = &*fn->arg_begin();
+  for (auto *f : classMembers) {
+    auto fieldIdx = llvm::ConstantInt::get(gl_ctx.llvm_context, llvm::APInt(32, f->index, true));
+    auto classField = gl_ctx.builder.CreateInBoundsGEP(arg1, {zeroIdx, fieldIdx}, f->name + "_fieldptr");
+    makeXDecRefCall(ctx, classField, gl_ctx.llvmTypeRegistry.getClassDestructor(static_cast<ClassType*>(f->type)));
+  }
+
+  builder.CreateRetVoid();
+
+  // reset insert point to current function (if it exists)
+  if (oldInsertBlock) {
+    builder.SetInsertPoint(oldInsertBlock, oldInsertPoint);
+  }
+  return fn;
+}
+
+void LLVMTypeRegistry::createLLVMClassTypeAndDestructor(ClassType *ct)
+{
+  ct->llvmType = createLLVMClassType(ct);
+  ct->destructorFn = createLLVMClassDestructor(ct);
+}
 
 llvm::PointerType *LLVMTypeRegistry::createLLVMOpaqueType(OpaqueType *ot) {
   auto structType = llvm::StructType::create(gl_ctx.llvm_context, ot->getName());

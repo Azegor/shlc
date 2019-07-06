@@ -34,13 +34,13 @@ class CleanupScope {
 
     // const llvm::Type *varType;
     llvm::AllocaInst *varAlloca;
-    // clang::CXXDestructorDecl *destructor;
+    llvm::Function *destructor;
     JumpTargetSet externalTargets;
     llvm::BasicBlock *cleanupBlockLabel;
 
 public:
-    CleanupScope(/*const llvm::Type *varType,*/ llvm::AllocaInst *alloca/*, clang::CXXDestructorDecl *destructor*/)
-        : /*varType(varType),*/ varAlloca(alloca), /*destructor(destructor),*/ cleanupBlockLabel(nullptr)
+    CleanupScope(/*const llvm::Type *varType,*/ llvm::AllocaInst *alloca, llvm::Function *destructor)
+        : /*varType(varType),*/ varAlloca(alloca), destructor(destructor), cleanupBlockLabel(nullptr)
     {
     }
     CleanupScope(const CleanupScope &) = delete;
@@ -127,9 +127,9 @@ public:
         return cleanupTargetAlloca;
     }
 
-    void enterCleanupScope(llvm::AllocaInst *varAlloca/*, clang::CXXDestructorDecl *destructor*/) {
+    void enterCleanupScope(llvm::AllocaInst *varAlloca, llvm::Function *destructor) {
         assert(!blockScopeInfos.empty());
-        cleanupScopes.emplace(/*varType,*/ varAlloca/*, destructor*/);
+        cleanupScopes.emplace(/*varType,*/ varAlloca, destructor);
         cleanupBlocks.emplace();
         ++blockScopeInfos.top().size;
     }

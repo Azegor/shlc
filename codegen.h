@@ -112,8 +112,10 @@ llvm::Value *createAssignment(Context &ctx, llvm::Value *val,
                               VariableExpr *var);
 llvm::Value *createAssignment(Context &ctx, llvm::Value *val,
                               FieldAccessExpr *fa);
-void handleAssignmentRefCounts(Context &ctx, llvm::Value *lhsAddress, llvm::Value *rhs);
+void handleAssignmentRefCounts(Context &ctx, ClassType *lhsType, llvm::Value *lhsAddress, llvm::Value *rhs);
 
 void createMainFunctionReturn(Context &ctx);
+
+void makeXDecRefCall(Context &ctx, llvm::Value *classPtr, llvm::Function *destructorFn);
 
 #endif // CODEGEN_H

@@ -225,18 +225,25 @@ llvm::Function *GlobalContext::getDecRefFn()
 llvm::Function *GlobalContext::getXDecRefFn()
 {
   if (!xDecRefFunction) {
-    auto incRefFn = getDecRefFn(); // generates it if necessary
-    xDecRefFunction = createNullCheckDelegationFn(incRefFn, "__shlcore_xdecref");
+    auto decRefFn = getDecRefFn(); // generates it if necessary
+    auto falseValue = llvm::ConstantInt::get(llvm_context, llvm::APInt(1, false));
+    xDecRefFunction = createNullCheckDelegationFn(decRefFn, "__shlcore_xdecref", falseValue);
   }
   return xDecRefFunction;
 }
 
 llvm::Function *GlobalContext::createIncDecRefFn(bool isDecrement, llvm::StringRef name)
 {
+  llvm::SmallVector<llvm::Type*, 2> argTypes;
+  if (isDecrement) {
+    argTypes = {llvmTypeRegistry.getVoidPointerType(), llvmTypeRegistry.getDestructorPointerType()};
+  } else {
+    argTypes = {llvmTypeRegistry.getVoidPointerType()};
+  }
   auto fn = llvm::Function::Create(
       llvm::FunctionType::get(
           llvmTypeRegistry.getBuiltinType(BuiltinTypeKind::vac_t),
-          {llvmTypeRegistry.getVoidPointerType()}, // TODO
+          argTypes,
           false),
       llvm::Function::LinkOnceODRLinkage,
       name,
@@ -251,17 +258,31 @@ llvm::Function *GlobalContext::createIncDecRefFn(bool isDecrement, llvm::StringR
   builder.SetInsertPoint(entryBB);
 
   auto arg1 = &*fn->arg_begin();
+  auto arg2 = &*(fn->arg_begin() + 1);
   auto counterCast = builder.CreateBitCast(arg1, llvmTypeRegistry.getRefCounterPointerType(), "refcnt_ptr");
   auto oldC = builder.CreateLoad(counterCast, "cnt_val");
   auto newC = builder.CreateAdd(oldC, llvm::ConstantInt::get(llvm_context, llvm::APInt(64, isDecrement ? -1 : 1)));
   builder.CreateStore(newC, counterCast);
   if (isDecrement) {
+    llvm::BasicBlock *collectBB =
+        llvm::BasicBlock::Create(llvm_context, "collect", fn);
+    llvm::BasicBlock *destroyBB =
+        llvm::BasicBlock::Create(llvm_context, "destroy", fn);
     llvm::BasicBlock *freeBB =
         llvm::BasicBlock::Create(llvm_context, "free", fn);
     llvm::BasicBlock *retBB =
         llvm::BasicBlock::Create(llvm_context, "return", fn);
+
     auto isNullCond = builder.CreateICmpEQ(newC, llvm::ConstantInt::get(llvm_context, llvm::APInt(64, 0)), "is_zero");
-    builder.CreateCondBr(isNullCond, freeBB, retBB);
+    builder.CreateCondBr(isNullCond, collectBB, retBB);
+
+    builder.SetInsertPoint(collectBB);
+    auto hasDestructor = builder.CreateICmpEQ(arg2, llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(arg2->getType())), "has_destr");
+    builder.CreateCondBr(hasDestructor, destroyBB, freeBB);
+
+    builder.SetInsertPoint(destroyBB);
+    builder.CreateCall(arg2, {arg1});
+    builder.CreateBr(freeBB);
 
     builder.SetInsertPoint(freeBB);
     builder.CreateCall(getFreeFn(), {arg1});
@@ -269,6 +290,7 @@ llvm::Function *GlobalContext::createIncDecRefFn(bool isDecrement, llvm::StringR
 
     builder.SetInsertPoint(retBB);
   }
+
   builder.CreateRetVoid();
 
   // reset insert point to current function
@@ -276,13 +298,11 @@ llvm::Function *GlobalContext::createIncDecRefFn(bool isDecrement, llvm::StringR
   return fn;
 }
 
-llvm::Function *GlobalContext::createNullCheckDelegationFn(llvm::Function *callee, llvm::StringRef name)
+llvm::Function *GlobalContext::createNullCheckDelegationFn(llvm::Function *callee, llvm::StringRef name, llvm::Value *defaultReturnValue)
 {
+  auto retType = callee->getReturnType();
   auto fn = llvm::Function::Create(
-      llvm::FunctionType::get(
-          llvmTypeRegistry.getBuiltinType(BuiltinTypeKind::vac_t),
-          {llvmTypeRegistry.getVoidPointerType()}, // TODO
-          false),
+      callee->getFunctionType(),
       llvm::Function::LinkOnceODRLinkage,
       name,
       module.get()
@@ -299,15 +319,27 @@ llvm::Function *GlobalContext::createNullCheckDelegationFn(llvm::Function *calle
       llvm::BasicBlock::Create(llvm_context, "return", fn);
   builder.SetInsertPoint(entryBB);
   auto arg1 = &*fn->arg_begin();
-  auto cmp = builder.CreateICmpNE(arg1, llvm::ConstantPointerNull::get(llvmTypeRegistry.getVoidPointerType()));
+  llvm::SmallVector<llvm::Value*, 2> arguments;
+  for (auto &arg : fn->args()) {
+    arguments.push_back(&arg);
+  }
+  auto cmp = builder.CreateICmpNE(arguments[0], llvm::ConstantPointerNull::get(llvmTypeRegistry.getVoidPointerType()));
   builder.CreateCondBr(cmp, callBB, retBB);
 
   builder.SetInsertPoint(callBB);
-  builder.CreateCall(callee, {arg1});
-  builder.CreateBr(retBB);
+  auto res = builder.CreateCall(callee, arguments);
+  if (retType->isVoidTy()) {
+    builder.CreateRetVoid();
+  } else {
+    builder.CreateRet(res);
+  }
 
   builder.SetInsertPoint(retBB);
-  builder.CreateRetVoid();
+  if (retType->isVoidTy()) {
+    builder.CreateRetVoid();
+  } else {
+    builder.CreateRet(defaultReturnValue);
+  }
 
   // reset insert point to current function
   builder.SetInsertPoint(oldInsertBlock, oldInsertPoint);

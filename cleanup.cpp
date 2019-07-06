@@ -74,9 +74,7 @@ JumpTargetSet CleanupManager::createCleanup(const CleanupScope& cs, const Cleanu
     std::cout << "unused cleanup block " << cs.cleanupBlockLabel << "\n";
   }
 
-  auto ptrCst = ctx.builder.CreateBitCast(ctx.builder.CreateLoad(cs.varAlloca, "obj"),
-                      ctx.llvmTypeRegistry.getVoidPointerType(), "obj_vcst");
-  ctx.builder.CreateCall(ctx.getXDecRefFn(), {ptrCst});
+  makeXDecRefCall(*currentFnCtx, ctx.builder.CreateLoad(cs.varAlloca, "obj"), cs.destructor);
   ctx.builder.CreateStore(llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(cs.varAlloca->getAllocatedType())), cs.varAlloca);
 
   if (hasExtTargets) {

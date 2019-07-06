@@ -191,7 +191,7 @@ public:
 
 private:
   llvm::Function *createIncDecRefFn(bool isDecrement, llvm::StringRef name);
-  llvm::Function *createNullCheckDelegationFn(llvm::Function *callee, llvm::StringRef name);
+  llvm::Function *createNullCheckDelegationFn(llvm::Function *callee, llvm::StringRef name, llvm::Value *defaultReturnValue = nullptr);
 
 public:
 

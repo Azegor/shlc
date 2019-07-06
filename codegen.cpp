@@ -729,7 +729,7 @@ llvm::Value *createAssignment(Context &ctx, llvm::Value *val, FieldAccessExpr *f
   return val;
 }
 
-void handleAssignmentRefCounts(Context &ctx, llvm::Value *lhsAddress, llvm::Value *rhs)
+void handleAssignmentRefCounts(Context &ctx, ClassType *lhsType, llvm::Value *lhsAddress, llvm::Value *rhs)
 {
   auto &gctx = ctx.global;
   // first rhs
@@ -738,14 +738,21 @@ void handleAssignmentRefCounts(Context &ctx, llvm::Value *lhsAddress, llvm::Valu
   gctx.builder.CreateCall(xincRefFn, {rhsCast});
   // then lhs (to avoid leakage if both are the same object)
   if (lhsAddress) { // null in case of newly declared variable -> don't decrement
-    auto xdecRefFn = gctx.getXDecRefFn();
-    auto lhsCast = gctx.builder.CreateBitCast(gctx.builder.CreateLoad(lhsAddress, "lhs"),
-                      gctx.llvmTypeRegistry.getVoidPointerType(), "obj_vcst");
-    gctx.builder.CreateCall(xdecRefFn, {lhsCast});
+    makeXDecRefCall(ctx, gctx.builder.CreateLoad(lhsAddress, "lhs"), ctx.global.llvmTypeRegistry.getClassDestructor(lhsType));
   }
 }
 
 void createMainFunctionReturn(Context &ctx) {
   ctx.global.builder.CreateStore(llvm::ConstantInt::get(ctx.global.llvm_context, llvm::APInt(64, 0, false)), ctx.ret.val);
   ctx.global.createBrCheckCleanup(ctx.ret.BB);
+}
+
+void makeXDecRefCall(Context &ctx, llvm::Value *classPtr, llvm::Function *destructorFn)
+{
+  // TODO: have to call destructor *before* free!!!!!argTypes
+  auto &builder = ctx.global.builder;
+  auto ptrCst = builder.CreateBitCast(classPtr, ctx.global.llvmTypeRegistry.getVoidPointerType(), "obj_vcst");
+  auto destrFnType = ctx.global.llvmTypeRegistry.getDestructorPointerType();
+  llvm::Value *destr = destructorFn ? builder.CreateBitCast(destructorFn, destrFnType, "destr_cst") : llvm::ConstantPointerNull::get(destrFnType);
+  builder.CreateCall(ctx.global.getXDecRefFn(), {ptrCst, destr});
 }
