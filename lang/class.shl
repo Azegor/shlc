@@ -27,6 +27,10 @@ fn allocateTest3() : Test3 {
     ret res;
 }
 
+fn passCls(Test1 t) : Test1 {
+    ret t;
+}
+
 fn main()
 {
     var i : int;
@@ -48,6 +52,8 @@ fn main()
 
     t8.t1 = t6;
     t8.t2 = t7;
+
+    var t9 = passCls(t1);
 
     var test3 = allocateTest3();
 }

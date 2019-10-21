@@ -150,6 +150,10 @@ llvm::Value *ReturnStmt::codegen(Context &ctx)
     }
     auto val = expr->codegen(ctx);
     assert(val);
+    if (type->getKind() == BuiltinTypeKind::cls_t) {
+      auto cst = ctx.global.builder.CreateBitCast(val, ctx.global.llvmTypeRegistry.getVoidPointerType(), "obj_vcst");
+      ctx.global.builder.CreateCall(ctx.global.getXIncRefFn(), cst);
+    }
     ctx.global.builder.CreateStore(val, ctx.ret.val);
     ctx.global.createBrCheckCleanup(ctx.ret.BB);
   }

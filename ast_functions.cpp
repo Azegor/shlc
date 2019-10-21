@@ -134,8 +134,16 @@ void FunctionHead::createArgumentAllocas(Context &ctx, llvm::Function *fn)
             gctx.builder.GetInsertBlock());
     }
 
+    auto arg = &*ai;
+
+    if (args[idx].type->getKind() == BuiltinTypeKind::cls_t) {
+      auto cst_obj = gctx.builder.CreateBitCast(arg, gctx.llvmTypeRegistry.getVoidPointerType(), "obj_vcst");
+      gctx.builder.CreateCall(gctx.getXIncRefFn(), {cst_obj});
+      gctx.cleanupManager.enterCleanupScope(alloca, gctx.llvmTypeRegistry.getClassDestructor(static_cast<ClassType*>(args[idx].type)));
+    }
+
     // Store the initial value into the alloca.
-    ctx.global.builder.CreateStore(&*ai, alloca);
+    gctx.builder.CreateStore(arg, alloca);
 
     // Add arguments to variable symbol table.
     ctx.putVar(args[idx].name, args[idx].type, alloca);
@@ -250,6 +258,8 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
     llvm::BasicBlock::Create(gl_ctx.llvm_context, "entry", fn);
   builder.SetInsertPoint(entryBB);
 
+  gl_ctx.cleanupManager.enterBlockScope(nullptr); // outmost block scope (for parameters) // TODO
+
   head->createArgumentAllocas(ctx, fn);
 
   if (ctx.ret.type != TypeRegistry::getBuiltinType(BuiltinTypeKind::vac_t)) {
@@ -297,6 +307,7 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
 
   fn->getBasicBlockList().push_back(ctx.ret.BB); // add return block last!
   builder.SetInsertPoint(ctx.ret.BB);
+  gl_ctx.cleanupManager.leaveBlockScope(); // outmost block scope (for parameters)
   if (ctx.ret.type == TypeRegistry::getVoidType()) {
     builder.CreateRetVoid();
   } else {
