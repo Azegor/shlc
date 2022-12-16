@@ -116,8 +116,9 @@ void FunctionHead::createArgumentAllocas(Context &ctx, llvm::Function *fn)
        ++ai, ++idx)
   {
     // Create an alloca for this variable.
+    llvm::Type* allocaType = ctx.global.llvmTypeRegistry.getType(args[idx].type);
     llvm::AllocaInst *alloca = createEntryBlockAlloca(
-      fn, args[idx].name, ctx.global.llvmTypeRegistry.getType(args[idx].type));
+      fn, args[idx].name, allocaType);
 
     auto &gctx = ctx.global;
 
@@ -130,7 +131,7 @@ void FunctionHead::createArgumentAllocas(Context &ctx, llvm::Function *fn)
       llvm::DILocalVariable *d = gctx.diBuilder.createParameterVariable(
           subp, args[idx].name, (idx + 1), gctx.currentDIFile, lineNr, gctx.llvmTypeRegistry.getDIType(args[idx].type), true);
       gctx.diBuilder.insertDeclare(alloca, d, gctx.diBuilder.createExpression(),
-          llvm::DebugLoc::get(lineNr, colNr, subp),
+          llvm::DILocation::get(ctx.global.llvm_context, lineNr, colNr, subp),
             gctx.builder.GetInsertBlock());
     }
 
@@ -139,7 +140,7 @@ void FunctionHead::createArgumentAllocas(Context &ctx, llvm::Function *fn)
     if (args[idx].type->getKind() == BuiltinTypeKind::cls_t) {
       auto cst_obj = gctx.builder.CreateBitCast(arg, gctx.llvmTypeRegistry.getVoidPointerType(), "obj_vcst");
       gctx.builder.CreateCall(gctx.getXIncRefFn(), {cst_obj});
-      gctx.cleanupManager.enterCleanupScope(alloca, gctx.llvmTypeRegistry.getClassDestructor(static_cast<ClassType*>(args[idx].type)));
+      gctx.cleanupManager.enterCleanupScope(allocaType, alloca, gctx.llvmTypeRegistry.getClassDestructor(static_cast<ClassType*>(args[idx].type)));
     }
 
     // Store the initial value into the alloca.
@@ -311,7 +312,8 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
   if (ctx.ret.type == TypeRegistry::getVoidType()) {
     builder.CreateRetVoid();
   } else {
-    builder.CreateRet(builder.CreateLoad(ctx.ret.val));
+    builder.CreateRet(builder.CreateLoad(
+      gl_ctx.llvmTypeRegistry.getType(ctx.ret.type), ctx.ret.val));
   }
 
   if (gl_ctx.emitDebugInfo) {

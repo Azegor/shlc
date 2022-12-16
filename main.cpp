@@ -4,6 +4,7 @@
 #include <cstdio>
 // #include <csignal>
 
+#include <llvm/IR/DataLayout.h>
 #include <string>
 #include <unordered_set>
 
@@ -159,7 +160,8 @@ void testCodeGen(const char *filename, const char *outName, bool optimize)
   {
     auto parseRes = parser.parse(CompilationUnit(filename));
     std::unique_ptr<llvm::TargetMachine> tm(llvm::EngineBuilder().selectTarget());
-    GlobalContext gl_ctx(*tm);
+    llvm::DataLayout dl = tm->createDataLayout();
+    GlobalContext gl_ctx(dl);
     gl_ctx.optimizeLevel = optimize ? 3 : 0;
     gl_ctx.initFPM();
     llvm::Function *mainFn = nullptr;

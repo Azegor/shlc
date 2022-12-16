@@ -231,7 +231,7 @@ public:
     void print(int indent = 0) override;
     Type *getType(Context &ctx) override { return getClassField(ctx)->type; }
     llvm::Value *codegen(Context &ctx) override;
-    llvm::Value *codegenFieldAddress(Context &ctx);
+    std::pair<llvm::Value *, llvm::Type*> codegenFieldAddress(Context &ctx);
 
 private:
     const ClassField *getClassField(Context &ctx) const ;

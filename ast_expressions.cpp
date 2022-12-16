@@ -23,6 +23,7 @@
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/GlobalValue.h>
 #include <llvm/ADT/APInt.h>
+#include <llvm/Support/Alignment.h>
 
 #include "ast.h"
 #include "context.h"
@@ -230,7 +231,9 @@ Type *VariableExpr::getType(Context &ctx) { return ctx.getVariableType(name); }
 
 llvm::Value *VariableExpr::codegen(Context &ctx)
 {
-  return ctx.global.builder.CreateLoad(ctx.getVarAlloca(name), name);
+  ContextFrame::VarInfo varInfo = ctx.getVar(name);
+  llvm::Type* varType = ctx.global.llvmTypeRegistry.getType(varInfo.type);
+  return ctx.global.builder.CreateLoad(varType, ctx.getVarAlloca(name), name);
 }
 
 Type *GlobalVarExpr::getType(Context &ctx)
@@ -241,10 +244,11 @@ Type *GlobalVarExpr::getType(Context &ctx)
 llvm::Value *GlobalVarExpr::codegen(Context &ctx)
 {
   auto var = ctx.global.getGlobalVar(name);
+  llvm::Type* varType = ctx.global.llvmTypeRegistry.getType(var.type);
   if (var.type == TypeRegistry::getBuiltinType(BuiltinTypeKind::str_t))
-    return ctx.global.builder.CreateConstGEP2_32(nullptr, var.var, 0, 0); // FIXME
+    return ctx.global.builder.CreateConstGEP2_32(varType, var.var, 0, 0); // FIXME
   else
-    return ctx.global.builder.CreateConstGEP1_32(var.var, 0);
+    return ctx.global.builder.CreateConstGEP1_32(varType, var.var, 0);
 }
 
 llvm::AllocaInst *VariableExpr::getAlloca(Context &ctx)
@@ -342,7 +346,7 @@ llvm::Value *BinOpExpr::codegen(Context &ctx)
     if (auto varexpr = dynamic_cast<VariableExpr *>(lhs.get())) {
       lhsAddress = varexpr->getAlloca(ctx);
     } else if (auto fieldexpr = dynamic_cast<FieldAccessExpr *>(lhs.get())) {
-      lhsAddress = fieldexpr->codegenFieldAddress(ctx);
+      lhsAddress = fieldexpr->codegenFieldAddress(ctx).first;
     } else {
       throw CodeGenError("left hand side of assignment must be a variable or field access", this);
     }
@@ -391,14 +395,14 @@ llvm::Value *NewExpr::codegen(Context &ctx)
 {
     auto &gctx = ctx.global;
     auto mallocFn = gctx.getMallocFn();
-    auto classPtrType = gctx.llvmTypeRegistry.getClassType(cls);
-    auto classType = classPtrType->getPointerElementType();
+    auto classType = gctx.llvmTypeRegistry.getClassType(cls);
+    auto classPtrType = gctx.llvmTypeRegistry.getClassPtrType(cls);
     size_t allocSize = gctx.module->getDataLayout().getTypeAllocSize(classType);
     auto allocSizeVal = llvm::ConstantInt::get(gctx.llvm_context,
                                 llvm::APInt(64, allocSize, false));
     auto rawPointer = gctx.builder.CreateCall(mallocFn, {allocSizeVal}, "allocmemory");
     auto align = gctx.module->getDataLayout().getABITypeAlignment(classType); // TODO
-    gctx.builder.CreateMemSet(rawPointer, llvm::ConstantInt::get(gctx.llvm_context, llvm::APInt(8, 0)), allocSize, align);
+    gctx.builder.CreateMemSet(rawPointer, llvm::ConstantInt::get(gctx.llvm_context, llvm::APInt(8, 0)), allocSize, llvm::MaybeAlign(align));
     auto classPtr = gctx.builder.CreateBitCast(rawPointer, classPtrType, "allocres");
     return classPtr;
 }
@@ -416,15 +420,18 @@ void FieldAccessExpr::print(int indent)
 
 llvm::Value *FieldAccessExpr::codegen(Context &ctx)
 {
-    return ctx.global.builder.CreateLoad(codegenFieldAddress(ctx), field + "_field");
+    std::pair<llvm::Value*, llvm::Type*> fieldAccess = codegenFieldAddress(ctx);
+    return ctx.global.builder.CreateLoad(fieldAccess.second, fieldAccess.first, field + "_field");
 }
 
-llvm::Value *FieldAccessExpr::codegenFieldAddress(Context &ctx)
+std::pair<llvm::Value *, llvm::Type*> FieldAccessExpr::codegenFieldAddress(Context &ctx)
 {
     auto classField = getClassField(ctx);
     auto zeroIdx = llvm::ConstantInt::get(ctx.global.llvm_context, llvm::APInt(32, 0, true));
     auto fieldIdx = llvm::ConstantInt::get(ctx.global.llvm_context, llvm::APInt(32, classField->index, true));
-    return ctx.global.builder.CreateInBoundsGEP(expr->codegen(ctx), {zeroIdx, fieldIdx}, field + "_fieldptr");
+    llvm::Type* fieldType = ctx.global.llvmTypeRegistry.getType(getType(ctx));
+    llvm::Value* val = ctx.global.builder.CreateInBoundsGEP(fieldType, expr->codegen(ctx), {zeroIdx, fieldIdx}, field + "_fieldptr");
+    return {val, fieldType};
 }
 
 const ClassField *FieldAccessExpr::getClassField(Context &ctx) const

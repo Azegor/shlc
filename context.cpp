@@ -19,11 +19,12 @@
 #include "parser.h"
 
 // #include <llvm/ExecutionEngine/JIT.h> // needed because of error "JIT has not been linked in"
+#include <llvm/IR/DerivedTypes.h>
 #include <llvm/Transforms/IPO.h>
 
 // std::string GlobalContext::errorString;
 
-GlobalContext::GlobalContext(llvm::TargetMachine &tm)
+GlobalContext::GlobalContext(const llvm::DataLayout &dl)
     : _llvm_context(std::make_unique<llvm::LLVMContext>()),
       llvm_context(*_llvm_context),
       module(std::make_unique<llvm::Module>("shl_global_module", llvm_context)),
@@ -44,7 +45,7 @@ GlobalContext::GlobalContext(llvm::TargetMachine &tm)
 
   // Set up the optimizer pipeline.  Start with registering info about how the
   // target lays out data structures.
-  module->setDataLayout(tm.createDataLayout());
+  module->setDataLayout(dl);
 
 #if 0
   // Provide basic AliasAnalysis support for GVN.
@@ -260,7 +261,7 @@ llvm::Function *GlobalContext::createIncDecRefFn(bool isDecrement, llvm::StringR
   auto arg1 = &*fn->arg_begin();
   auto arg2 = &*(fn->arg_begin() + 1);
   auto counterCast = builder.CreateBitCast(arg1, llvmTypeRegistry.getRefCounterPointerType(), "refcnt_ptr");
-  auto oldC = builder.CreateLoad(counterCast, "cnt_val");
+  auto oldC = builder.CreateLoad(llvmTypeRegistry.getRefCounterType(), counterCast, "cnt_val");
   auto newC = builder.CreateAdd(oldC, llvm::ConstantInt::get(llvm_context, llvm::APInt(64, isDecrement ? -1 : 1)));
   builder.CreateStore(newC, counterCast);
   if (isDecrement) {
@@ -281,7 +282,7 @@ llvm::Function *GlobalContext::createIncDecRefFn(bool isDecrement, llvm::StringR
     builder.CreateCondBr(hasDestructor, destroyBB, freeBB);
 
     builder.SetInsertPoint(destroyBB);
-    builder.CreateCall(arg2, {arg1});
+    builder.CreateCall(llvmTypeRegistry.getDestructorType(), arg2, {arg1});
     builder.CreateBr(freeBB);
 
     builder.SetInsertPoint(freeBB);
@@ -399,5 +400,5 @@ void GlobalContext::emitDILocation(size_t line, size_t col)
 {
   if(!emitDebugInfo) { return; }
   llvm::DIScope *scope = getCurrentDILexicalScope();
-  builder.SetCurrentDebugLocation(llvm::DebugLoc::get(line, col, scope));
+  builder.SetCurrentDebugLocation(llvm::DILocation::get(llvm_context, line, col, scope));
 }

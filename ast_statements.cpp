@@ -490,7 +490,7 @@ llvm::Value *VarDeclStmt::codegen(Context &ctx)
       llvm::DILocalVariable *d = gctx.diBuilder.createAutoVariable(
           scope, var.first, gctx.currentDIFile, lineNr, gctx.llvmTypeRegistry.getDIType(deducedType)/*, true*/);
       gctx.diBuilder.insertDeclare(alloca, d, gctx.diBuilder.createExpression(),
-          llvm::DebugLoc::get(lineNr, colNr, scope),
+          llvm::DILocation::get(ctx.global.llvm_context, lineNr, colNr, scope),
           gctx.builder.GetInsertBlock());
     }
 
@@ -506,7 +506,7 @@ llvm::Value *VarDeclStmt::codegen(Context &ctx)
     VariableExpr tmpVarExp(srcLoc, var.first);
     if (deducedType->getKind() == BuiltinTypeKind::cls_t) {
       handleAssignmentRefCounts(ctx, nullptr, nullptr, init);
-      ctx.global.cleanupManager.enterCleanupScope(alloca, ctx.global.llvmTypeRegistry.getClassDestructor(static_cast<ClassType*>(deducedType)));
+      ctx.global.cleanupManager.enterCleanupScope(llvm_type, alloca, ctx.global.llvmTypeRegistry.getClassDestructor(static_cast<ClassType*>(deducedType)));
     }
     createAssignment(ctx, init, &tmpVarExp);
   }

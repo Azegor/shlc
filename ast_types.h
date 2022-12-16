@@ -96,7 +96,8 @@ private:
     ClassFieldVec fields;
     std::unordered_map<std::string, ClassField*> fieldMap;
 
-    llvm::PointerType *llvmType = nullptr;
+    llvm::StructType *llvmType = nullptr;
+    llvm::PointerType *llvmPtrType = nullptr;
     llvm::Function *destructorFn = nullptr;
 };
 

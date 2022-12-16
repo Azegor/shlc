@@ -74,7 +74,7 @@ JumpTargetSet CleanupManager::createCleanup(const CleanupScope& cs, const Cleanu
     std::cout << "unused cleanup block " << cs.cleanupBlockLabel << "\n";
   }
 
-  makeXDecRefCall(*currentFnCtx, ctx.builder.CreateLoad(cs.varAlloca, "obj"), cs.destructor);
+  makeXDecRefCall(*currentFnCtx, ctx.builder.CreateLoad(cs.varType, cs.varAlloca, "obj"), cs.destructor);
   ctx.builder.CreateStore(llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(cs.varAlloca->getAllocatedType())), cs.varAlloca);
 
   if (hasExtTargets) {
@@ -85,7 +85,7 @@ JumpTargetSet CleanupManager::createCleanup(const CleanupScope& cs, const Cleanu
     } else {
       defaultTarget = currentCleanupScope().getCleanupTarget(ctx.llvm_context); // NOTE: creates the block if necessary
     }
-    auto targetVal = ctx.builder.CreateLoad(getCleanupTargetAlloca(), "cleanup_target");
+    auto targetVal = ctx.builder.CreateLoad(getCleanupTargetType(), getCleanupTargetAlloca(), "cleanup_target");
     auto switchStmt = ctx.builder.CreateSwitch(targetVal, defaultTarget, cs.externalTargets.size());
     for (auto extTarget : cs.externalTargets) {
       if (!outerCleanupBlock.isJumpTargetInScope(extTarget)) {

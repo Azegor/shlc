@@ -107,16 +107,16 @@ void CodeGenerator::runFunction(std::string name)
     std::cerr << "no main function found, exiting" << std::endl;
     exit(1);
   }
-  auto H = kaleidoscopeJIT.addModule(std::move(gl_ctx.module));
+  // auto H = kaleidoscopeJIT->addModule(std::move(gl_ctx.module));
 
-  auto ExprSymbol = kaleidoscopeJIT.findSymbol(name);
-  assert(ExprSymbol && "Function not found");
+  // auto ExprSymbol = kaleidoscopeJIT->findSymbol(name);
+  // assert(ExprSymbol && "Function not found");
 
-  // Get the symbol's address and cast it to the right type (takes no
-  // arguments, returns a double) so we can call it as a native function.
-  long (*_main)() = (long (*)())(intptr_t)cantFail(ExprSymbol.getAddress());
-  auto retVal = _main();
-  fprintf(stderr, "Main function returned %ld\n", retVal);
+  // // Get the symbol's address and cast it to the right type (takes no
+  // // arguments, returns a double) so we can call it as a native function.
+  // long (*_main)() = (long (*)())(intptr_t)cantFail(ExprSymbol.getAddress());
+  // auto retVal = _main();
+  // fprintf(stderr, "Main function returned %ld\n", retVal);
 
   // Delete the anonymous expression module from the JIT.
 //   kaleidoscopeJIT.removeModule(H);

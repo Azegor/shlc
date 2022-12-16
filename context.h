@@ -18,6 +18,7 @@
 #ifndef CONTEXT_H
 #define CONTEXT_H
 
+#include <llvm/IR/DataLayout.h>
 #include <vector>
 #include <map>
 #include <memory>
@@ -118,7 +119,7 @@ public:
   llvm::Function *decRefFunction = nullptr;
   llvm::Function *xDecRefFunction = nullptr;
 
-  GlobalContext(llvm::TargetMachine &tm);
+  GlobalContext(const llvm::DataLayout &dl);
   ~GlobalContext();
 
   void initCompilationUnit(const Parser &p, bool isOptimized);

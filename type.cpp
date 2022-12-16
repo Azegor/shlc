@@ -1,5 +1,6 @@
 #include "type.h"
 
+#include <llvm/IR/DerivedTypes.h>
 #include <map>
 #include <unordered_map>
 
@@ -58,7 +59,8 @@ LLVMTypeRegistry::LLVMTypeRegistry(GlobalContext &gl_ctx)
 {
     voidPointerType = llvm::Type::getInt8PtrTy(gl_ctx.llvm_context); // is void in llvm
     refCounterPtrType = getRefCounterType()->llvm::Type::getPointerTo();
-    constrPtrType = llvm::PointerType::get(llvm::FunctionType::get(getBuiltinType(BuiltinTypeKind::vac_t), {voidPointerType}, false), 0);
+    destrType = llvm::FunctionType::get(getBuiltinType(BuiltinTypeKind::vac_t), {voidPointerType}, false);
+    destrPtrType = llvm::PointerType::get(destrType, 0);
 }
 
 llvm::Type *LLVMTypeRegistry::getType(Type *t)
@@ -76,12 +78,20 @@ llvm::Type *LLVMTypeRegistry::getType(Type *t)
     }
 }
 
-llvm::PointerType *LLVMTypeRegistry::getClassType(ClassType *ct)
+llvm::StructType *LLVMTypeRegistry::getClassType(ClassType *ct)
 {
   if (!ct->llvmType) {
     createLLVMClassTypeAndDestructor(ct);
   }
   return ct->llvmType;
+}
+
+llvm::PointerType *LLVMTypeRegistry::getClassPtrType(ClassType *ct)
+{
+  if (!ct->llvmType) {
+    createLLVMClassTypeAndDestructor(ct);
+  }
+  return ct->llvmPtrType;
 }
 
 llvm::Function *LLVMTypeRegistry::getClassDestructor(ClassType *ct)
@@ -125,7 +135,7 @@ llvm::Type *LLVMTypeRegistry::getBuiltinType(BuiltinTypeKind tk) const
   }
 }
 
-llvm::PointerType *LLVMTypeRegistry::createLLVMClassType(ClassType *ct)
+llvm::StructType *LLVMTypeRegistry::createLLVMClassType(ClassType *ct)
 {
     std::vector<llvm::Type*> members;
     members.reserve(ct->fields.size() + 1);
@@ -133,8 +143,7 @@ llvm::PointerType *LLVMTypeRegistry::createLLVMClassType(ClassType *ct)
     for (auto &field : ct->fields) {
         members.push_back(getType(field.type));
     }
-    auto structType = llvm::StructType::create(gl_ctx.llvm_context, members, ct->getName());
-    return llvm::PointerType::get(structType, 0);
+    return llvm::StructType::create(gl_ctx.llvm_context, members, ct->getName());
 }
 
 llvm::Function *LLVMTypeRegistry::createLLVMClassDestructor(ClassType *ct)
@@ -175,7 +184,7 @@ llvm::Function *LLVMTypeRegistry::createLLVMClassDestructor(ClassType *ct)
   auto arg1 = &*fn->arg_begin();
   for (auto *f : classMembers) {
     auto fieldIdx = llvm::ConstantInt::get(gl_ctx.llvm_context, llvm::APInt(32, f->index, true));
-    auto classField = gl_ctx.builder.CreateInBoundsGEP(arg1, {zeroIdx, fieldIdx}, f->name + "_fieldptr");
+    auto classField = gl_ctx.builder.CreateInBoundsGEP(f->llvmType, arg1, {zeroIdx, fieldIdx}, f->name + "_fieldptr");
     makeXDecRefCall(ctx, classField, gl_ctx.llvmTypeRegistry.getClassDestructor(static_cast<ClassType*>(f->type)));
   }
 
@@ -191,6 +200,7 @@ llvm::Function *LLVMTypeRegistry::createLLVMClassDestructor(ClassType *ct)
 void LLVMTypeRegistry::createLLVMClassTypeAndDestructor(ClassType *ct)
 {
   ct->llvmType = createLLVMClassType(ct);
+  ct->llvmPtrType = llvm::PointerType::get(ct->llvmType, 0);
   ct->destructorFn = createLLVMClassDestructor(ct);
 }
 
@@ -260,7 +270,7 @@ llvm::DIType *LLVMTypeRegistry::createDIClassType(ClassType *ct)
   for (auto &field : ct->fields) {
       members.push_back(getDIType(field.type));
   }
-  auto llvmType = getClassType(ct)->getPointerElementType();
+  auto llvmType = getClassType(ct);
   auto size = gl_ctx.module->getDataLayout().getTypeAllocSize(llvmType) - 8;
   auto align = gl_ctx.module->getDataLayout().getABITypeAlignment(llvmType); // TODO
   return gl_ctx.diBuilder.createClassType(gl_ctx.getCurrentDILexicalScope(), ct->name, gl_ctx.allDIFiles[ct->srcLoc.lexerNr], ct->srcLoc.startToken.line,

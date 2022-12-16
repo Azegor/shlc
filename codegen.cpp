@@ -724,8 +724,8 @@ llvm::Value *createAssignment(Context &ctx, llvm::Value *val, VariableExpr *var)
 
 llvm::Value *createAssignment(Context &ctx, llvm::Value *val, FieldAccessExpr *fa)
 {
-  auto fieldAddr = fa->codegenFieldAddress(ctx);
-  ctx.global.builder.CreateStore(val, fieldAddr);
+  std::pair<llvm::Value*, llvm::Type*> fieldAddr = fa->codegenFieldAddress(ctx);
+  ctx.global.builder.CreateStore(val, fieldAddr.first);
   return val;
 }
 
@@ -738,7 +738,8 @@ void handleAssignmentRefCounts(Context &ctx, ClassType *lhsType, llvm::Value *lh
   gctx.builder.CreateCall(xincRefFn, {rhsCast});
   // then lhs (to avoid leakage if both are the same object)
   if (lhsAddress) { // null in case of newly declared variable -> don't decrement
-    makeXDecRefCall(ctx, gctx.builder.CreateLoad(lhsAddress, "lhs"), ctx.global.llvmTypeRegistry.getClassDestructor(lhsType));
+    llvm::Type* classType = ctx.global.llvmTypeRegistry.getClassType(lhsType);
+    makeXDecRefCall(ctx, gctx.builder.CreateLoad(classType, lhsAddress, "lhs"), ctx.global.llvmTypeRegistry.getClassDestructor(lhsType));
   }
 }
 

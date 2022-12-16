@@ -29,7 +29,6 @@
 #include "llvm/ExecutionEngine/JITSymbol.h"
 #include "llvm/ExecutionEngine/Orc/CompileUtils.h"
 #include "llvm/ExecutionEngine/Orc/IRCompileLayer.h"
-#include "llvm/ExecutionEngine/Orc/LambdaResolver.h"
 #include "llvm/ExecutionEngine/Orc/RTDyldObjectLinkingLayer.h"
 #include "llvm/ExecutionEngine/RTDyldMemoryManager.h"
 #include "llvm/ExecutionEngine/SectionMemoryManager.h"
@@ -46,7 +45,7 @@ class CodeGenerator
 {
   CompilationUnit compUnit;
   Parser parser;
-  llvm::orc::KaleidoscopeJIT kaleidoscopeJIT;
+  std::unique_ptr<llvm::orc::KaleidoscopeJIT> kaleidoscopeJIT;
   GlobalContext gl_ctx;
   llvm::Function* mainFn = nullptr;
 
@@ -56,8 +55,8 @@ public:
   CodeGenerator(CompilationUnit input)
     : compUnit(std::move(input)),
       parser(),
-      kaleidoscopeJIT(),
-      gl_ctx(kaleidoscopeJIT.getTargetMachine())
+      kaleidoscopeJIT(std::move(llvm::orc::KaleidoscopeJIT::Create().get())),
+      gl_ctx(kaleidoscopeJIT->getDataLayout())
   {
   }
 

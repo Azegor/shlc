@@ -18,6 +18,7 @@
 #ifndef TYPE_H
 #define TYPE_H
 
+#include <llvm/IR/DerivedTypes.h>
 #include <string>
 #include <unordered_map>
 
@@ -68,7 +69,8 @@ public:
     LLVMTypeRegistry(GlobalContext &gl_ctx);
 
     llvm::Type *getType(Type *t);
-    llvm::PointerType *getClassType(ClassType *ct);
+    llvm::StructType *getClassType(ClassType *ct);
+    llvm::PointerType *getClassPtrType(ClassType *ct);
     llvm::Function *getClassDestructor(ClassType *ct);
     llvm::PointerType *getOpaqueType(OpaqueType *ot);
     llvm::Type *getBuiltinType(BuiltinTypeKind tk) const;
@@ -81,7 +83,8 @@ public:
     llvm::PointerType *getVoidPointerType() const { return voidPointerType; }
     llvm::Type *getRefCounterType() const { return getBuiltinType(BuiltinTypeKind::int_t); }
     llvm::PointerType *getRefCounterPointerType() const { return refCounterPtrType; }
-    llvm::PointerType *getDestructorPointerType() const { return constrPtrType; }
+    llvm::FunctionType *getDestructorType() const { return destrType; }
+    llvm::PointerType *getDestructorPointerType() const { return destrPtrType; }
 
 private:
     GlobalContext &gl_ctx;
@@ -89,13 +92,14 @@ private:
     std::unordered_map<OpaqueType*, llvm::PointerType*> opaqueTypeMap;
     llvm::PointerType *voidPointerType;
     llvm::PointerType *refCounterPtrType;
-    llvm::PointerType *constrPtrType;
+    llvm::FunctionType *destrType;
+    llvm::PointerType *destrPtrType;
     llvm::DIType *diBuiltinTypes[(int)BuiltinTypeKind::str_t + 1];
     std::unordered_map<ClassType*, llvm::DIType*> diClassTypes;
     std::unordered_map<OpaqueType*, llvm::DIType*> diOpaqueTypes;
     bool diTypesInitialized = false;
 
-    llvm::PointerType *createLLVMClassType(ClassType *ct);
+    llvm::StructType *createLLVMClassType(ClassType *ct);
     llvm::Function *createLLVMClassDestructor(ClassType *ct);
     void createLLVMClassTypeAndDestructor(ClassType *ct);
     llvm::PointerType *createLLVMOpaqueType(OpaqueType *ct);
