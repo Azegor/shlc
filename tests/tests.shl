@@ -152,7 +152,7 @@ fn test_fib()
   prtln(fib_iter(100));
   prtln(fib_iter(1000));
   prtln(fib_iter(10000));
-  for var i = 0; i < 100; ++i {
+  for (var i = 0; i < 100; ++i) {
     var val = fib_iter(i);
     if val < 0 { brk; }
     prt(val);
