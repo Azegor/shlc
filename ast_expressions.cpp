@@ -119,29 +119,29 @@ void UnOpExpr::print(int indent)
   std::cout << ']' << std::endl;
 }
 
-llvm::Constant *IntNumberExpr::codegen(Context &ctx)
+llvm::Constant *IntNumberExpr::genLLVM(Context &ctx)
 {
   return llvm::ConstantInt::get(ctx.global.llvm_context,
                                 llvm::APInt(64, value, true));
 }
 
-llvm::Constant *CharConstExpr::codegen(Context &ctx)
+llvm::Constant *CharConstExpr::genLLVM(Context &ctx)
 {
   return llvm::ConstantInt::get(ctx.global.llvm_context,
                                 llvm::APInt(8, value, true));
 }
 
-llvm::Constant *FltNumberExpr::codegen(Context &ctx)
+llvm::Constant *FltNumberExpr::genLLVM(Context &ctx)
 {
   return llvm::ConstantFP::get(ctx.global.llvm_context, llvm::APFloat(value));
 }
 
-llvm::Constant *BoolConstExpr::codegen(Context &ctx)
+llvm::Constant *BoolConstExpr::genLLVM(Context &ctx)
 {
   return llvm::ConstantInt::get(ctx.global.llvm_context, llvm::APInt(1, value));
 }
 
-llvm::Value *StringConstExpr::codegen(Context &ctx)
+llvm::Value *StringConstExpr::genLLVM(Context &ctx)
 {
   auto pos = ctx.global.stringConstants.find(value);
   std::string globalVarName;
@@ -165,7 +165,7 @@ llvm::Value *StringConstExpr::codegen(Context &ctx)
   {
     globalVarName = pos->second;
   }
-  return GlobalVarExpr(srcLoc, globalVarName).codegen(ctx);
+  return GlobalVarExpr(srcLoc, globalVarName).genLLVM(ctx);
 }
 
 void FunctionCallExpr::findFunction(Context &ctx)
@@ -192,7 +192,7 @@ std::vector<Type*> FunctionCallExpr::getArgTypes(Context &ctx) const
   return res;
 }
 
-llvm::Value *FunctionCallExpr::codegen(Context &ctx)
+llvm::Value *FunctionCallExpr::genLLVM(Context &ctx)
 {
   if (!fnHead) findFunction(ctx);
   auto callArgs = getArgTypes(ctx);
@@ -212,7 +212,7 @@ llvm::Value *FunctionCallExpr::codegen(Context &ctx)
     if (callArgs[i] != functionArgs[i])
       args[i] = make_EPtr<CastExpr>(args[i]->srcLoc, std::move(args[i]),
                                     functionArgs[i]);
-    params[i] = args[i]->codegen(ctx);
+    params[i] = args[i]->genLLVM(ctx);
   }
   if (fnHead->getReturnType() == TypeRegistry::getVoidType()) {
     return ctx.global.builder.CreateCall(
@@ -229,7 +229,7 @@ llvm::Value *FunctionCallExpr::codegen(Context &ctx)
 
 Type *VariableExpr::getType(Context &ctx) { return ctx.getVariableType(name); }
 
-llvm::Value *VariableExpr::codegen(Context &ctx)
+llvm::Value *VariableExpr::genLLVM(Context &ctx)
 {
   ContextFrame::VarInfo varInfo = ctx.getVar(name);
   llvm::Type* varType = ctx.global.llvmTypeRegistry.getType(varInfo.type);
@@ -241,7 +241,7 @@ Type *GlobalVarExpr::getType(Context &ctx)
   return ctx.global.getGlobalVarType(name);
 }
 
-llvm::Value *GlobalVarExpr::codegen(Context &ctx)
+llvm::Value *GlobalVarExpr::genLLVM(Context &ctx)
 {
   auto var = ctx.global.getGlobalVar(name);
   llvm::Type* varType = ctx.global.llvmTypeRegistry.getType(var.type);
@@ -256,14 +256,14 @@ llvm::AllocaInst *VariableExpr::getAlloca(Context &ctx)
   return ctx.getVarAlloca(name);
 }
 
-llvm::Value *CastExpr::codegen(Context &ctx)
+llvm::Value *CastExpr::genLLVM(Context &ctx)
 {
   auto from = expr->getType(ctx);
   if (!canCast(from, newType))
     throw CodeGenError("invalid cast from type '" + from->getName() +
                          "' to '" + newType->getName() + '\'',
                        this);
-  auto val = expr->codegen(ctx);
+  auto val = expr->genLLVM(ctx);
   auto valName = val->getName();
   auto castName = valName + "_cst_" + newType->getName();
   return generateCast(ctx, val, from, newType, castName);
@@ -299,14 +299,14 @@ Type *BinOpExpr::getType(Context &ctx)
   return TypeRegistry::getBuiltinType(getBinOpReturnType(op, ct->getKind()));
 }
 
-llvm::Value *BinOpExpr::codegen(Context &ctx)
+llvm::Value *BinOpExpr::genLLVM(Context &ctx)
 {
   if (isBinOp(op)) {
     auto commonType = getCommonType(ctx);
     lhs = make_EPtr<CastExpr>(lhs->srcLoc, std::move(lhs), commonType);
     rhs = make_EPtr<CastExpr>(rhs->srcLoc, std::move(rhs), commonType);
-    return createBinOp(ctx, op, commonType->getKind(), lhs->codegen(ctx),
-                       rhs->codegen(ctx));
+    return createBinOp(ctx, op, commonType->getKind(), lhs->genLLVM(ctx),
+                       rhs->genLLVM(ctx));
   }
   if (isCompAssign(op)) {
     int assign_op = getCompAssigOpBaseOp(op);
@@ -319,8 +319,8 @@ llvm::Value *BinOpExpr::codegen(Context &ctx)
                            targetType->getName() + '\'',
                          this);
     rhs = make_EPtr<CastExpr>(rhs->srcLoc, std::move(rhs), targetType);
-    auto lhsVal = lhs->codegen(ctx);
-    auto rhsVal = rhs->codegen(ctx);
+    auto lhsVal = lhs->genLLVM(ctx);
+    auto rhsVal = rhs->genLLVM(ctx);
     auto assignVal = createBinOp(ctx, assign_op, targetType->getKind(), lhsVal, rhsVal);
     if (auto varexpr = dynamic_cast<VariableExpr *>(lhs.get())) {
       return createAssignment(ctx, assignVal, varexpr);
@@ -341,7 +341,7 @@ llvm::Value *BinOpExpr::codegen(Context &ctx)
           '\'',
         this);
     rhs = make_EPtr<CastExpr>(rhs->srcLoc, std::move(rhs), targetType);
-    auto rhsVal = rhs->codegen(ctx);
+    auto rhsVal = rhs->genLLVM(ctx);
     llvm::Value *lhsAddress = nullptr;
     if (auto varexpr = dynamic_cast<VariableExpr *>(lhs.get())) {
       lhsAddress = varexpr->getAlloca(ctx);
@@ -364,10 +364,10 @@ Type *UnOpExpr::getType(Context &ctx)
   return rhs->getType(ctx); // for now, some might change type!?!
 }
 
-llvm::Value *UnOpExpr::codegen(Context &ctx)
+llvm::Value *UnOpExpr::genLLVM(Context &ctx)
 {
   if (isUnOp(op)) {
-    return createUnOp(ctx, op, getType(ctx)->getKind(), rhs->codegen(ctx));
+    return createUnOp(ctx, op, getType(ctx)->getKind(), rhs->genLLVM(ctx));
   }
   else if (op == Token::TokenType::increment ||
            op == Token::TokenType::decrement)
@@ -379,7 +379,7 @@ llvm::Value *UnOpExpr::codegen(Context &ctx)
     // the following is a bit of a hack, can be improved
     return BinOpExpr(srcLoc, getIncDecOpBaseOp(op),
                      make_EPtr<VariableExpr>(*varexpr),
-                     getIntConstExpr(varexpr->getType(ctx)->getKind(), 1)).codegen(ctx);
+                     getIntConstExpr(varexpr->getType(ctx)->getKind(), 1)).genLLVM(ctx);
   }
   throw CodeGenError("invalid unary operation " + Lexer::getTokenName(op),
                      this);
@@ -391,7 +391,7 @@ void NewExpr::print(int indent)
   std::cout << "New: [" << cls->getName() << ']' << std::endl;
 }
 
-llvm::Value *NewExpr::codegen(Context &ctx)
+llvm::Value *NewExpr::genLLVM(Context &ctx)
 {
     auto &gctx = ctx.global;
     auto mallocFn = gctx.getMallocFn();
@@ -418,7 +418,7 @@ void FieldAccessExpr::print(int indent)
     std::cout << ']' << std::endl;
 }
 
-llvm::Value *FieldAccessExpr::codegen(Context &ctx)
+llvm::Value *FieldAccessExpr::genLLVM(Context &ctx)
 {
     std::pair<llvm::Value*, llvm::Type*> fieldAccess = codegenFieldAddress(ctx);
     return ctx.global.builder.CreateLoad(fieldAccess.second, fieldAccess.first, field + "_field");
@@ -430,7 +430,7 @@ std::pair<llvm::Value *, llvm::Type*> FieldAccessExpr::codegenFieldAddress(Conte
     auto zeroIdx = llvm::ConstantInt::get(ctx.global.llvm_context, llvm::APInt(32, 0, true));
     auto fieldIdx = llvm::ConstantInt::get(ctx.global.llvm_context, llvm::APInt(32, classField->index, true));
     llvm::Type* fieldType = ctx.global.llvmTypeRegistry.getType(getType(ctx));
-    llvm::Value* val = ctx.global.builder.CreateInBoundsGEP(fieldType, expr->codegen(ctx), {zeroIdx, fieldIdx}, field + "_fieldptr");
+    llvm::Value* val = ctx.global.builder.CreateInBoundsGEP(fieldType, expr->genLLVM(ctx), {zeroIdx, fieldIdx}, field + "_fieldptr");
     return {val, fieldType};
 }
 

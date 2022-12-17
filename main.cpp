@@ -153,7 +153,7 @@ void testParser(const char *filename)
   }
 }
 
-void testCodeGen(const char *filename, const char *outName, bool optimize)
+void testgenLLVM(const char *filename, const char *outName, bool optimize)
 {
   Parser parser;
   try
@@ -169,7 +169,7 @@ void testCodeGen(const char *filename, const char *outName, bool optimize)
     {
       //       std::cout << "generating code for function " << r->getName() <<
       //       std::endl;
-      auto fn = r->codegen(gl_ctx);
+      auto fn = r->genLLVM(gl_ctx);
       if (fn && fn->getName() == "main") mainFn = fn;
       //         auto _ = gl_ctx.execEngine->getPointerToFunction(fn);
       //         if (fn)
@@ -265,7 +265,7 @@ int main(int argc, char **argv)
 //   auto optimize = (argc >= 4) ? argv[3] != ""s : false;
   //   testLexer(filename);
   //   testParser(filename);
-  //   testCodeGen(filename, outName, optimize);
+  //   testgenLLVM(filename, outName, optimize);
   Compiler compiler(argc, argv);
   int res = 0;
 #ifdef __AFL_HAVE_MANUAL_CONTROL

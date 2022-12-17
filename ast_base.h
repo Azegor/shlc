@@ -54,7 +54,7 @@ class Statement : public AstNode
 public:
   Statement(SourceLocation loc) : AstNode(loc) {}
   virtual ~Statement() {}
-  virtual llvm::Value *codegen(Context &ctx) = 0;
+  virtual llvm::Value *genLLVM(Context &ctx) = 0;
   enum class CodeFlowReturn
   {
     Never,
@@ -107,7 +107,7 @@ public:
   Expr(SourceLocation loc) : AstNode(loc) {}
   virtual ~Expr() {}
   virtual Type *getType(Context &cc) = 0;
-  virtual llvm::Value *codegen(Context &ctx) = 0;
+  virtual llvm::Value *genLLVM(Context &ctx) = 0;
 };
 
 using ExprPtr = std::unique_ptr<Expr>;
@@ -123,7 +123,7 @@ public:
   {
   }
   void print(int indent = 0) override;
-  llvm::Value *codegen(Context &ctx) override;
+  llvm::Value *genLLVM(Context &ctx) override;
   Statement::CodeFlowReturn codeFlowReturn() const override;
   Statement::BranchBehaviour branchBehaviour() const override;
 

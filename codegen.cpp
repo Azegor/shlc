@@ -194,7 +194,7 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type *from, Type *to,
         case BuiltinTypeKind::chr_t:
           return builder.CreateFPToSI(val, targetType, valName);
         case BuiltinTypeKind::boo_t:
-          return builder.CreateFCmpONE(val, FltNumberExpr({}, 0.0).codegen(ctx),
+          return builder.CreateFCmpONE(val, FltNumberExpr({}, 0.0).genLLVM(ctx),
                                        valName);
         case BuiltinTypeKind::str_t:
         case BuiltinTypeKind::cls_t:
@@ -378,16 +378,16 @@ llvm::Constant *createDefaultValueConst(Context &ctx, llvm::Type *type)
       case llvm::Type::IntegerTyID:
         switch(type->getIntegerBitWidth()) {
         case 1:
-          return BoolConstExpr({}, false).codegen(ctx);
+          return BoolConstExpr({}, false).genLLVM(ctx);
         case 8:
-          return CharConstExpr({}, '\0').codegen(ctx);
+          return CharConstExpr({}, '\0').genLLVM(ctx);
         case 64:
-          return IntNumberExpr({}, 0).codegen(ctx);
+          return IntNumberExpr({}, 0).genLLVM(ctx);
         default:
           throw CodeGenError("unknown integer size" + std::to_string(type->getIntegerBitWidth()));
         }
     case llvm::Type::DoubleTyID:
-      return FltNumberExpr({}, 0.0).codegen(ctx);
+      return FltNumberExpr({}, 0.0).genLLVM(ctx);
     case llvm::Type::PointerTyID:
       return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(type));
     default:

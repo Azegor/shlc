@@ -38,7 +38,7 @@ void FunctionHead::print(int indent)
   std::cout << ") : " << retType->getName() << std::endl;
 }
 
-llvm::Function *FunctionHead::codegen(Context &ctx)
+llvm::Function *FunctionHead::genLLVM(Context &ctx)
 {
   llvm::Function *f = createLLVMFunction(ctx.global);
 
@@ -228,13 +228,13 @@ void NormalFunction::print(int indent)
   std::cout << ']' << std::endl;
 }
 
-llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
+llvm::Function *NormalFunction::genLLVM(GlobalContext &gl_ctx)
 {
   Context ctx(gl_ctx);
   gl_ctx.enterFunction(&ctx, this);
   auto &builder = gl_ctx.builder;
   head->addToFunctionTable(gl_ctx, FunctionHead::FnReg::Define);
-  auto fn = head->codegen(ctx);
+  auto fn = head->genLLVM(ctx);
 
   // debug info
   if (gl_ctx.emitDebugInfo) {
@@ -279,7 +279,7 @@ llvm::Function *NormalFunction::codegen(GlobalContext &gl_ctx)
     gl_ctx.emitDILocation(body.get());
   }
 
-  body->codegen(ctx); // is a BlockStmt -> handles pushFrame & popFrame
+  body->genLLVM(ctx); // is a BlockStmt -> handles pushFrame & popFrame
 
   if (gl_ctx.emitDebugInfo) {
     gl_ctx.emitDILocation(body->srcLoc.endToken.line, body->srcLoc.endToken.col);
@@ -336,13 +336,13 @@ void NativeFunction::print(int indent)
   std::cout << ']' << std::endl;
 }
 
-llvm::Function *NativeFunction::codegen(GlobalContext &gl_ctx)
+llvm::Function *NativeFunction::genLLVM(GlobalContext &gl_ctx)
 {
   Context ctx(gl_ctx);
   head->addToFunctionTable(
     gl_ctx, FunctionHead::FnReg::Native); // register before codegen -> allows
                                           // self-recursion
-  return head->codegen(ctx);
+  return head->genLLVM(ctx);
 }
 
 void FunctionDecl::print(int indent)
@@ -354,11 +354,11 @@ void FunctionDecl::print(int indent)
   std::cout << ']' << std::endl;
 }
 
-llvm::Function *FunctionDecl::codegen(GlobalContext &gl_ctx)
+llvm::Function *FunctionDecl::genLLVM(GlobalContext &gl_ctx)
 {
   Context ctx(gl_ctx);
   head->addToFunctionTable(gl_ctx, FunctionHead::FnReg::Declare);
-  return head->codegen(ctx);
+  return head->genLLVM(ctx);
 }
 
 void FunctionHead::addToFunctionTable(GlobalContext &ctx, FnReg regType)

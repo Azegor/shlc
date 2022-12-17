@@ -37,7 +37,7 @@ public:
   }
   void print(int indent = 0) override;
   Type *getType(Context &ctx);
-  llvm::Value *codegen(Context &ctx) override;
+  llvm::Value *genLLVM(Context &ctx) override;
 };
 
 class ReturnStmt : public Statement
@@ -50,7 +50,7 @@ public:
   {
   }
   void print(int indent = 0) override;
-  llvm::Value *codegen(Context &ctx) override;
+  llvm::Value *genLLVM(Context &ctx) override;
   Statement::CodeFlowReturn codeFlowReturn() const override
   {
     return Statement::CodeFlowReturn::Never;
@@ -72,7 +72,7 @@ public:
   {
   }
   void print(int indent = 0) override;
-  llvm::Value *codegen(Context &ctx) override;
+  llvm::Value *genLLVM(Context &ctx) override;
   Statement::CodeFlowReturn codeFlowReturn() const override
   {
     return Statement::combineCFR(thenExpr->codeFlowReturn(),
@@ -100,7 +100,7 @@ public:
   {
   }
   void print(int indent = 0) override;
-  llvm::Value *codegen(Context &ctx) override;
+  llvm::Value *genLLVM(Context &ctx) override;
   Statement::CodeFlowReturn codeFlowReturn() const override
   {
     return Statement::combineCFR(body->codeFlowReturn(),
@@ -125,7 +125,7 @@ public:
   {
   }
   void print(int indent = 0) override;
-  llvm::Value *codegen(Context &ctx) override;
+  llvm::Value *genLLVM(Context &ctx) override;
   Statement::CodeFlowReturn codeFlowReturn() const override
   {
     auto bodyCFR = body->codeFlowReturn();
@@ -162,7 +162,7 @@ public:
   {
   }
   void print(int indent = 0) override;
-  llvm::Value *codegen(Context &ctx) override;
+  llvm::Value *genLLVM(Context &ctx) override;
   Statement::CodeFlowReturn codeFlowReturn() const override
   {
     return Statement::combineCFR(body->codeFlowReturn(),
@@ -178,7 +178,7 @@ class BreakStmt : public LoopCtrlStmt
 public:
   BreakStmt(SourceLocation loc) : LoopCtrlStmt(loc) {}
   void print(int indent = 0) override;
-  llvm::Value *codegen(Context &ctx) override;
+  llvm::Value *genLLVM(Context &ctx) override;
   Statement::BranchBehaviour branchBehaviour() const override
   {
     return Statement::BranchBehaviour::Breaks;
@@ -190,7 +190,7 @@ class ContinueStmt : public LoopCtrlStmt
 public:
   ContinueStmt(SourceLocation loc) : LoopCtrlStmt(loc) {}
   void print(int indent = 0) override;
-  llvm::Value *codegen(Context &ctx) override;
+  llvm::Value *genLLVM(Context &ctx) override;
   Statement::BranchBehaviour branchBehaviour() const override
   {
     return Statement::BranchBehaviour::Continues;
@@ -207,7 +207,7 @@ public:
   {
   }
   void print(int indent = 0) override;
-  llvm::Value *codegen(Context &ct) override;
+  llvm::Value *genLLVM(Context &ct) override;
 };
 
 #endif // ASTSTATEMENTS_H

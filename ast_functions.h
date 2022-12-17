@@ -114,7 +114,7 @@ public:
   void setBindName(const std::string &name) { bindName = name; }
   std::string getMangledName() const;
   Type *getReturnType() const { return retType; }
-  llvm::Function *codegen(Context &ctx);
+  llvm::Function *genLLVM(Context &ctx);
   void createArgumentAllocas(Context &ctx, llvm::Function *fn);
   void setBinding(Binding b) { binding = b; }
   llvm::Function *get_llvm_fn() { return llvm_fn; }
@@ -143,7 +143,7 @@ public:
   }
   void print(int indent = 0) override;
   const std::string &getName() const { return head->getName(); }
-  virtual llvm::Function *codegen(GlobalContext &gl_ctx) = 0;
+  virtual llvm::Function *genLLVM(GlobalContext &gl_ctx) = 0;
 };
 
 class NativeFunction : public Function
@@ -155,7 +155,7 @@ public:
     head->setBinding(FunctionHead::Binding::Extern_C);
   }
   void print(int indent = 0) override;
-  llvm::Function *codegen(GlobalContext &gl_ctx) override;
+  llvm::Function *genLLVM(GlobalContext &gl_ctx) override;
 };
 
 class NormalFunction : public Function
@@ -170,7 +170,7 @@ public:
       head->setBinding(FunctionHead::Binding::Extern_C); // no mangling!
   }
   void print(int indent = 0) override;
-  llvm::Function *codegen(GlobalContext &gl_ctx) override;
+  llvm::Function *genLLVM(GlobalContext &gl_ctx) override;
 };
 class FunctionDecl : public Function
 {
@@ -180,7 +180,7 @@ public:
   {
   }
   void print(int indent = 0) override;
-  llvm::Function *codegen(GlobalContext &gl_ctx) override;
+  llvm::Function *genLLVM(GlobalContext &gl_ctx) override;
 };
 
 using FunctionPtr = std::unique_ptr<Function>;

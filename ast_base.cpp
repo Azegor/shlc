@@ -44,12 +44,12 @@ void BlockStmt::print(int indent)
   std::cout << '}' << std::endl;
 }
 
-llvm::Value *BlockStmt::codegen(Context &ctx)
+llvm::Value *BlockStmt::genLLVM(Context &ctx)
 {
   ctx.pushFrame(this);
   for (auto &&stmt : block)
   {
-    stmt->codegen(ctx);
+    stmt->genLLVM(ctx);
     if (stmt->codeFlowReturn() == Statement::CodeFlowReturn::Never)
       break; // don't generate dead code
   }

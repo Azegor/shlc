@@ -60,7 +60,7 @@ public:
   {
   }
 
-  void generateCode(int optLevel, bool emitDebugInfo);
+  void generateLLVM(int optLevel, bool emitDebugInfo);
 
   void writeCodeToFile(const std::string& fileName);
 

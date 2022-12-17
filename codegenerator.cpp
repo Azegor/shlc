@@ -23,7 +23,7 @@
 #include <llvm/IR/Mangler.h>
 #include <llvm/Support/raw_ostream.h>
 
-void CodeGenerator::generateCode(int optLevel, bool emitDebugInfo)
+void CodeGenerator::generateLLVM(int optLevel, bool emitDebugInfo)
 {
   std::stringstream errorMsg;
   try
@@ -45,7 +45,7 @@ void CodeGenerator::generateCode(int optLevel, bool emitDebugInfo)
     // --- codegen start ---
     for (auto &r : parseRes)
     {
-      auto fn = r->codegen(gl_ctx);
+      auto fn = r->genLLVM(gl_ctx);
       if (fn && fn->getName() == "main") mainFn = fn;
     }
     // --- codegen end ---

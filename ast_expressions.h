@@ -41,7 +41,7 @@ public:
   void print(int indent = 0) override;
   Type *getType(Context &ctx) override;
   llvm::AllocaInst *getAlloca(Context &ctx);
-  llvm::Value *codegen(Context &ctx) override;
+  llvm::Value *genLLVM(Context &ctx) override;
 };
 
 class GlobalVarExpr : public Expr
@@ -56,7 +56,7 @@ public:
   void print(int indent = 0) override;
   Type *getType(Context &ctx) override;
   //   llvm::GlobalVariable *getGlobalVarInst(Context &ctx);
-  llvm::Value *codegen(Context &ctx) override;
+  llvm::Value *genLLVM(Context &ctx) override;
 };
 
 class FunctionCallExpr : public Expr
@@ -73,7 +73,7 @@ public:
   void print(int indent = 0) override;
   Type *getType(Context &ctx) override;
   std::vector<Type*> getArgTypes(Context &ctx) const;
-  llvm::Value *codegen(Context &ctx) override;
+  llvm::Value *genLLVM(Context &ctx) override;
 
 private:
   void findFunction(Context &ctx);
@@ -87,7 +87,7 @@ public:
   ConstantExpr(SourceLocation loc, Type *type) : Expr(loc), type(type) {}
   void print(int indent = 0) override;
   Type *getType(Context &) override { return type; }
-  llvm::Value *codegen(Context &ctx) override = 0;
+  llvm::Value *genLLVM(Context &ctx) override = 0;
 };
 
 class IntNumberExpr : public ConstantExpr
@@ -100,7 +100,7 @@ public:
   {
   }
   void print(int indent = 0) override;
-  llvm::Constant *codegen(Context &ctx) override;
+  llvm::Constant *genLLVM(Context &ctx) override;
 };
 
 class CharConstExpr : public ConstantExpr
@@ -113,7 +113,7 @@ public:
   {
   }
   void print(int indent = 0) override;
-  llvm::Constant *codegen(Context &ctx) override;
+  llvm::Constant *genLLVM(Context &ctx) override;
 };
 
 class FltNumberExpr : public ConstantExpr
@@ -126,7 +126,7 @@ public:
   {
   }
   void print(int indent = 0) override;
-  llvm::Constant *codegen(Context &ctx) override;
+  llvm::Constant *genLLVM(Context &ctx) override;
 };
 
 class BoolConstExpr : public ConstantExpr
@@ -139,7 +139,7 @@ public:
   {
   }
   void print(int indent = 0) override;
-  llvm::Constant *codegen(Context &ctx) override;
+  llvm::Constant *genLLVM(Context &ctx) override;
 };
 
 class StringConstExpr : public ConstantExpr
@@ -152,7 +152,7 @@ public:
   {
   }
   void print(int indent = 0) override;
-  llvm::Value *codegen(Context &ctx) override;
+  llvm::Value *genLLVM(Context &ctx) override;
 };
 
 class BinOpExpr : public Expr
@@ -168,7 +168,7 @@ public:
   void print(int indent = 0) override;
   Type *getCommonType(Context &ctx);
   Type *getType(Context &ctx) override;
-  llvm::Value *codegen(Context &ctx) override;
+  llvm::Value *genLLVM(Context &ctx) override;
 };
 
 class UnOpExpr : public Expr
@@ -183,7 +183,7 @@ public:
   }
   void print(int indent = 0) override;
   Type *getType(Context &ctx) override;
-  llvm::Value *codegen(Context &ctx) override;
+  llvm::Value *genLLVM(Context &ctx) override;
 };
 
 class CastExpr : public Expr
@@ -202,7 +202,7 @@ public:
   }
   void print(int indent = 0) override;
   Type *getType(Context &) override { return newType; }
-  llvm::Value *codegen(Context &ctx) override;
+  llvm::Value *genLLVM(Context &ctx) override;
 };
 
 class NewExpr : public Expr
@@ -214,7 +214,7 @@ public:
 
   void print(int indent = 0) override;
   Type *getType(Context &) override { return cls; }
-  llvm::Value *codegen(Context &ctx) override;
+  llvm::Value *genLLVM(Context &ctx) override;
 };
 
 class FieldAccessExpr : public Expr
@@ -230,7 +230,7 @@ public:
 
     void print(int indent = 0) override;
     Type *getType(Context &ctx) override { return getClassField(ctx)->type; }
-    llvm::Value *codegen(Context &ctx) override;
+    llvm::Value *genLLVM(Context &ctx) override;
     std::pair<llvm::Value *, llvm::Type*> codegenFieldAddress(Context &ctx);
 
 private:

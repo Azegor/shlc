@@ -39,10 +39,10 @@ public:
 
   int run()
   {
-    CodeGenerator codegen(CompilationUnit{inFile});
+    CodeGenerator codegenerator(CompilationUnit{inFile});
     try
     {
-        codegen.generateCode(optLevel, emitDebugInfo);
+        codegenerator.generateLLVM(optLevel, emitDebugInfo);
     }
     catch (CompileError& err)
     {
@@ -50,9 +50,9 @@ public:
         exit(1);
     }
     if (runCode)
-      codegen.runFunction("main");
+      codegenerator.runFunction("main");
     else
-      codegen.writeCodeToFile(outFile);
+      codegenerator.writeCodeToFile(outFile);
     return 0;
   }
 };

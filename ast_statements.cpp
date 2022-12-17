@@ -119,7 +119,7 @@ void ExprStmt::print(int indent)
   std::cout << std::endl;
 }
 
-llvm::Value *ReturnStmt::codegen(Context &ctx)
+llvm::Value *ReturnStmt::genLLVM(Context &ctx)
 {
   ctx.global.emitDILocation(this);
   if (!expr) // void
@@ -148,7 +148,7 @@ llvm::Value *ReturnStmt::codegen(Context &ctx)
                            this);
       }
     }
-    auto val = expr->codegen(ctx);
+    auto val = expr->genLLVM(ctx);
     assert(val);
     if (type->getKind() == BuiltinTypeKind::cls_t) {
       auto cst = ctx.global.builder.CreateBitCast(val, ctx.global.llvmTypeRegistry.getVoidPointerType(), "obj_vcst");
@@ -160,7 +160,7 @@ llvm::Value *ReturnStmt::codegen(Context &ctx)
   return nullptr;
 }
 
-llvm::Value *IfStmt::codegen(Context &ctx)
+llvm::Value *IfStmt::genLLVM(Context &ctx)
 {
   ctx.pushFrame(this);
 
@@ -188,7 +188,7 @@ llvm::Value *IfStmt::codegen(Context &ctx)
   auto endBB =
     llvm::BasicBlock::Create(ctx.global.llvm_context, "ifend");
 
-  auto condVal = cond->codegen(ctx);
+  auto condVal = cond->genLLVM(ctx);
   if (elseExpr)
     builder.CreateCondBr(condVal, thenBB, elseBB);
   else
@@ -197,7 +197,7 @@ llvm::Value *IfStmt::codegen(Context &ctx)
   builder.SetInsertPoint(thenBB);
   {
     ctx.pushFrame(thenExpr.get());
-    thenExpr->codegen(ctx);
+    thenExpr->genLLVM(ctx);
     ctx.popFrame();
   }
   if (thenExpr->codeFlowReturn() != Statement::CodeFlowReturn::Never)
@@ -208,7 +208,7 @@ llvm::Value *IfStmt::codegen(Context &ctx)
     builder.SetInsertPoint(elseBB);
     {
       ctx.pushFrame(elseExpr.get());
-      elseExpr->codegen(ctx);
+      elseExpr->genLLVM(ctx);
       ctx.popFrame();
     }
     if (elseExpr->codeFlowReturn() != Statement::CodeFlowReturn::Never)
@@ -224,7 +224,7 @@ llvm::Value *IfStmt::codegen(Context &ctx)
   return nullptr;
 }
 
-llvm::Value *WhileStmt::codegen(Context &ctx)
+llvm::Value *WhileStmt::genLLVM(Context &ctx)
 {
   ctx.pushFrame(this);
 
@@ -260,14 +260,14 @@ llvm::Value *WhileStmt::codegen(Context &ctx)
   builder.CreateBr(headBB);
 
   builder.SetInsertPoint(headBB);
-  auto condVal = cond->codegen(ctx);
+  auto condVal = cond->genLLVM(ctx);
   builder.CreateCondBr(condVal, loopBB, endBB);
 
   ctx.currentFn->getBasicBlockList().push_back(loopBB);
   builder.SetInsertPoint(loopBB);
   {
     ctx.pushLoop(this, body.get());
-    body->codegen(ctx);
+    body->genLLVM(ctx);
     ctx.popLoop();
   }
   if (body->codeFlowReturn() != Statement::CodeFlowReturn::Never)
@@ -280,7 +280,7 @@ llvm::Value *WhileStmt::codegen(Context &ctx)
   return nullptr;
 }
 
-llvm::Value *DoWhileStmt::codegen(Context &ctx)
+llvm::Value *DoWhileStmt::genLLVM(Context &ctx)
 {
   ctx.pushFrame(this);
 
@@ -318,7 +318,7 @@ llvm::Value *DoWhileStmt::codegen(Context &ctx)
   builder.SetInsertPoint(loopBB);
   {
     ctx.pushLoop(this, body.get());
-    body->codegen(ctx);
+    body->genLLVM(ctx);
     ctx.popLoop();
   }
   auto bodyReturnsCF =
@@ -333,7 +333,7 @@ llvm::Value *DoWhileStmt::codegen(Context &ctx)
     // INFO: if body never return CF, this doesn't need to be generated
     ctx.currentFn->getBasicBlockList().push_back(headBB);
     builder.SetInsertPoint(headBB);
-    auto condVal = cond->codegen(ctx);
+    auto condVal = cond->genLLVM(ctx);
     builder.CreateCondBr(condVal, loopBB, endBB);
 
     ctx.currentFn->getBasicBlockList().push_back(endBB);
@@ -349,7 +349,7 @@ llvm::Value *DoWhileStmt::codegen(Context &ctx)
   return nullptr;
 }
 
-llvm::Value *ForStmt::codegen(Context &ctx)
+llvm::Value *ForStmt::genLLVM(Context &ctx)
 {
 
   ctx.pushFrame(this);
@@ -378,7 +378,7 @@ llvm::Value *ForStmt::codegen(Context &ctx)
   contBB = incBB;
   breakBB = endBB;
 
-  if (init) init->codegen(ctx);
+  if (init) init->genLLVM(ctx);
   builder.CreateBr(headBB);
 
   builder.SetInsertPoint(headBB);
@@ -395,7 +395,7 @@ llvm::Value *ForStmt::codegen(Context &ctx)
                            this);
       }
     }
-    auto condVal = cond->codegen(ctx);
+    auto condVal = cond->genLLVM(ctx);
     builder.CreateCondBr(condVal, loopBB, endBB);
   }
   else
@@ -407,13 +407,13 @@ llvm::Value *ForStmt::codegen(Context &ctx)
   builder.SetInsertPoint(loopBB);
   {
     ctx.pushLoop(this, body.get());
-    body->codegen(ctx);
+    body->genLLVM(ctx);
     ctx.popLoop();
   }
   builder.CreateBr(incBB);
   ctx.currentFn->getBasicBlockList().push_back(incBB);
   builder.SetInsertPoint(incBB);
-  if (incr) incr->codegen(ctx);
+  if (incr) incr->genLLVM(ctx);
   if (body->codeFlowReturn() != Statement::CodeFlowReturn::Never)
     builder.CreateBr(headBB);
 
@@ -424,24 +424,24 @@ llvm::Value *ForStmt::codegen(Context &ctx)
   return nullptr;
 }
 
-llvm::Value *BreakStmt::codegen(Context &ctx)
+llvm::Value *BreakStmt::genLLVM(Context &ctx)
 {
   ctx.global.emitDILocation(this);
   ctx.global.createBrCheckCleanup(ctx.currentLoop()->breakTarget());
   return nullptr;
 }
 
-llvm::Value *ContinueStmt::codegen(Context &ctx)
+llvm::Value *ContinueStmt::genLLVM(Context &ctx)
 {
   ctx.global.emitDILocation(this);
   ctx.global.createBrCheckCleanup(ctx.currentLoop()->continueTarget());
   return nullptr;
 }
 
-llvm::Value *ExprStmt::codegen(Context &ctx)
+llvm::Value *ExprStmt::genLLVM(Context &ctx)
 {
   ctx.global.emitDILocation(this);
-  auto val = expr->codegen(ctx);
+  auto val = expr->genLLVM(ctx);
   if (dynamic_cast<NewExpr*>(expr.get())) {
     // unused new expr -> have to delete it
     auto voidPtr = ctx.global.builder.CreateBitCast(val, ctx.global.llvmTypeRegistry.getVoidPointerType(), "obj_vcst");
@@ -470,7 +470,7 @@ Type *VarDeclStmt::getType(Context &ctx)
   return type;
 }
 
-llvm::Value *VarDeclStmt::codegen(Context &ctx)
+llvm::Value *VarDeclStmt::genLLVM(Context &ctx)
 {
   auto &gctx = ctx.global;
   gctx.emitDILocation(this);
@@ -497,7 +497,7 @@ llvm::Value *VarDeclStmt::codegen(Context &ctx)
     llvm::Value *init;
     if (var.second) // has initializer
     {
-      init = var.second->codegen(ctx);
+      init = var.second->genLLVM(ctx);
     }
     else
     {
