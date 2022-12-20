@@ -207,7 +207,7 @@ llvm::Value *FunctionCallExpr::genLLVM(Context &ctx)
 
   auto params = std::make_unique<llvm::Value *[]>(args.size());
   auto functionArgs = fnHead->getArgTypes();
-  for (int i = 0; i < args.size(); ++i)
+  for (size_t i = 0; i < args.size(); ++i)
   {
     if (callArgs[i] != functionArgs[i])
       args[i] = make_EPtr<CastExpr>(args[i]->srcLoc, std::move(args[i]),

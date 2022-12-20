@@ -34,7 +34,6 @@ llvm::AllocaInst *createEntryBlockAlloca(llvm::Function *fn,
 #define SWITCH_CANNOT_CAST                                                     \
   case BuiltinTypeKind::vac_t:                                                            \
   case BuiltinTypeKind::none:                                                             \
-  default:                                                                     \
     return CastMode::None
 
 CastMode castMode(BuiltinTypeKind from, BuiltinTypeKind to)
@@ -160,7 +159,6 @@ CastMode castMode(BuiltinTypeKind from, BuiltinTypeKind to)
 #define NO_CAST                                                                \
   case BuiltinTypeKind::vac_t:                                                 \
   case BuiltinTypeKind::none:                                                  \
-  default:                                                                     \
     throw CodeGenError("Cast not implemented!");
 
 llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type *from, Type *to,
@@ -186,6 +184,8 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type *from, Type *to,
         case BuiltinTypeKind::cls_t:
         case BuiltinTypeKind::opq_t:
           NO_CAST;
+        case BuiltinTypeKind::int_t:
+          __builtin_unreachable();
       }
     case BuiltinTypeKind::flt_t:
       switch (to->getKind())
@@ -200,6 +200,8 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type *from, Type *to,
         case BuiltinTypeKind::cls_t:
         case BuiltinTypeKind::opq_t:
           NO_CAST;
+        case BuiltinTypeKind::flt_t:
+          __builtin_unreachable();
       }
     case BuiltinTypeKind::chr_t:
       switch (to->getKind())
@@ -214,6 +216,8 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type *from, Type *to,
         case BuiltinTypeKind::cls_t:
         case BuiltinTypeKind::opq_t:
           NO_CAST;
+        case BuiltinTypeKind::chr_t:
+          __builtin_unreachable();
       }
     case BuiltinTypeKind::boo_t:
       switch (to->getKind())
@@ -227,6 +231,8 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type *from, Type *to,
         case BuiltinTypeKind::cls_t:
         case BuiltinTypeKind::opq_t:
           NO_CAST;
+        case BuiltinTypeKind::boo_t:
+          __builtin_unreachable();
       }
     case BuiltinTypeKind::str_t:
       switch (to->getKind())
@@ -238,6 +244,8 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type *from, Type *to,
         case BuiltinTypeKind::cls_t:
         case BuiltinTypeKind::opq_t:
           NO_CAST;
+        case BuiltinTypeKind::str_t:
+          __builtin_unreachable();
       }
     case BuiltinTypeKind::cls_t:
       switch (to->getKind())
@@ -250,6 +258,8 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type *from, Type *to,
           NO_CAST;
         case BuiltinTypeKind::boo_t:
           return builder.CreateIsNotNull(val, valName);
+        case BuiltinTypeKind::cls_t:
+          __builtin_unreachable();
       }
     case BuiltinTypeKind::opq_t:
       switch (to->getKind())
@@ -262,6 +272,8 @@ llvm::Value *generateCast(Context &ctx, llvm::Value *val, Type *from, Type *to,
           NO_CAST;
         case BuiltinTypeKind::boo_t:
           return builder.CreateIsNotNull(val, valName);
+        case BuiltinTypeKind::opq_t:
+          __builtin_unreachable();
       }
       NO_CAST;
   }
@@ -443,8 +455,6 @@ llvm::Value *createUnOp(Context &ctx, int op, BuiltinTypeKind type, llvm::Value 
   /* !
    * ~
    */
-
-  using Tok = Token::TokenType;
 
   auto &builder = ctx.global.builder;
 

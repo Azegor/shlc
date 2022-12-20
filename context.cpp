@@ -319,7 +319,6 @@ llvm::Function *GlobalContext::createNullCheckDelegationFn(llvm::Function *calle
   llvm::BasicBlock *retBB =
       llvm::BasicBlock::Create(llvm_context, "return", fn);
   builder.SetInsertPoint(entryBB);
-  auto arg1 = &*fn->arg_begin();
   llvm::SmallVector<llvm::Value*, 2> arguments;
   for (auto &arg : fn->args()) {
     arguments.push_back(&arg);

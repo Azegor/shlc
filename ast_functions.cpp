@@ -111,7 +111,7 @@ llvm::Function *FunctionHead::createLLVMFunction(GlobalContext &gl_ctx)
 
 void FunctionHead::createArgumentAllocas(Context &ctx, llvm::Function *fn)
 {
-  int idx = 0;
+  size_t idx = 0;
   for (llvm::Function::arg_iterator ai = fn->arg_begin(); idx != args.size();
        ++ai, ++idx)
   {

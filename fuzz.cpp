@@ -27,7 +27,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     static bool initialized = init_llvm();
     (void)initialized;
 
-    std::istringstream input(std::string((char*)data, size));
+    std::istringstream input(std::string(reinterpret_cast<const char*>(data), size));
     CodeGenerator codegenerator(CompilationUnit{"<fuzz_input>", &input});
 
     try

@@ -266,7 +266,7 @@ private:
 
 public:
   Lexer(CompilationUnit inputCU)
-      : lines(1), currentLine(&lines[0]), compUnit(std::move(inputCU)), input(compUnit.getStream())
+      : compUnit(std::move(inputCU)), input(compUnit.getStream()), lines(1), currentLine(&lines[0])
   {
     checkStream();
   }

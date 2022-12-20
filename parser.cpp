@@ -158,7 +158,7 @@ std::vector<FunctionPtr> Parser::parse(CompilationUnit compUnit)
         //           std::cerr << "unexpected token '" << curTok.str << "' at "
         //                     << curTok.line << ':' << curTok.col << std::endl;
         //           readNextToken();
-        //           break;
+          break;
         case Token::id_use:
         {
           readNextToken();
